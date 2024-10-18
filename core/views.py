@@ -1,3 +1,6 @@
+import json
+from audioop import reverse
+
 from django.db.models import Sum, F
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
@@ -318,8 +321,44 @@ def remove_from_cart(request):
 
 @login_required
 def checkout(request):
-    # Здесь будет логика оформления заказа
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        cart_data = data.get('cart', [])
+        payment_type = data.get('payment_type')
+
+        if not cart_data:
+            return JsonResponse({'success': False, 'error': 'Cart is empty'})
+
+        if not payment_type:
+            return JsonResponse({'success': False, 'error': 'Payment type is required'})
+
+        total_price = sum(item['price'] * item['quantity'] for item in cart_data)
+
+        order = Order.objects.create(
+            table=request.user,
+            price=total_price,
+            total_price=total_price,
+            order_status='pending',
+            payment_type=payment_type
+        )
+
+        for item in cart_data:
+            product = get_object_or_404(Product, id=item['productId'])
+            OrderProduct.objects.create(
+                order=order,
+                product=product,
+                quantity=item['quantity']
+            )
+
+        return JsonResponse({'success': True, 'redirect_url': reverse('order_confirmation', args=[order.id])})
+
     return render(request, 'checkout.html')
+
+
+@login_required
+def order_confirmation(request, order_id):
+    order = get_object_or_404(Order, id=order_id, table=request.user)
+    return render(request, 'order_confirmation.html', {'order': order})
 
 
 @login_required

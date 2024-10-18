@@ -277,23 +277,31 @@
 
         function addToCart(productId, quantity) {
             const selectedCalories = document.querySelector('input[name="calorieOptions"]:checked').value;
-            fetch(`/api/products/${productId}/add_to_cart/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCsrfToken(),
-                },
-                body: JSON.stringify({calories: selectedCalories, quantity}),
-            })
+            fetch(`/api/products/${productId}/nutritional_info/`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
-                        console.log(`Added to cart. Price: ${data.price}, Total: ${data.total_price}`);
-                        updateCartUI(data);
-                        updateOrderSummary(data.order_summary);
+                    const variant = data.variants[selectedCalories];
+                    const cartItem = {
+                        productId: productId,
+                        name: document.getElementById('modalProductName').textContent,
+                        calories: selectedCalories,
+                        quantity: quantity,
+                        price: variant.price,
+                        grams: variant.grams
+                    };
+
+                    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                    const existingItemIndex = cart.findIndex(item => item.productId === productId && item.calories === selectedCalories);
+
+                    if (existingItemIndex !== -1) {
+                        cart[existingItemIndex].quantity += quantity;
                     } else {
-                        console.error('Failed to add to cart');
+                        cart.push(cartItem);
                     }
+
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    updateCartUI();
+                    productModal.hide();
                 })
                 .catch(error => console.error('Error:', error));
         }
@@ -334,15 +342,19 @@
             return document.querySelector('[name=csrfmiddlewaretoken]').value;
         }
 
-        function updateCartUI(cartData) {
-            const cartItemCount = document.getElementById('cartItemCount');
-            const cartTotal = document.getElementById('cartTotal');
+        function updateCartUI() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
+            const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 
-            if (cartItemCount) {
-                cartItemCount.textContent = cartData.item_count;
+            const cartItemCountElement = document.getElementById('cartItemCount');
+            const cartTotalElement = document.getElementById('cartTotal');
+
+            if (cartItemCountElement) {
+                cartItemCountElement.textContent = cartItemCount;
             }
-            if (cartTotal) {
-                cartTotal.textContent = `${cartData.total_price.toFixed(0)} IDR`;
+            if (cartTotalElement) {
+                cartTotalElement.textContent = `${cartTotal.toFixed(0)} IDR`;
             }
         }
 

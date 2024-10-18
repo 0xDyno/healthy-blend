@@ -23,7 +23,7 @@ from core.views import (
     UserViewSet, IngredientViewSet, ProductViewSet, OrderViewSet, HistoryViewSet,
     home, user_login, user_logout, custom_meal, user_management,
     product_management, ingredient_management, orders, cart,
-    checkout, add_to_cart, remove_from_cart, update_order_status
+    checkout, add_to_cart, remove_from_cart, update_order_status, order_confirmation
 )
 
 # Создаем роутер для API
@@ -56,6 +56,8 @@ urlpatterns = [
     # Функции для работы с корзиной
     path('add-to-cart/', add_to_cart, name='add_to_cart'),
     path('remove-from-cart/', remove_from_cart, name='remove_from_cart'),
+    path('checkout/', checkout, name='checkout'),
+    path('order-confirmation/<int:order_id>/', order_confirmation, name='order_confirmation'),
 
     # AJAX-запрос для обновления статуса заказа
     path('update-order-status/', update_order_status, name='update_order_status'),

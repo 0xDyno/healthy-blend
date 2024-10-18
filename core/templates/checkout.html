@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout - Restaurant System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Checkout</h2>
+    <div id="checkoutItems">
+        <!-- Checkout items will be dynamically inserted here -->
+    </div>
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Order Summary</h5>
+            <p class="card-text">Total: <span id="checkoutTotal">0</span> IDR</p>
+        </div>
+    </div>
+    <form id="checkoutForm" class="mt-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="paymentType" class="form-label">Payment Type</label>
+            <select class="form-select" id="paymentType" required>
+                <option value="">Choose payment type</option>
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="qr">QR</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Place Order</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCheckoutUI();
+
+        document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            placeOrder();
+        });
+    });
+
+    function updateCheckoutUI() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const checkoutItemsContainer = document.getElementById('checkoutItems');
+        const checkoutTotalElement = document.getElementById('checkoutTotal');
+
+        checkoutItemsContainer.innerHTML = '';
+        let total = 0;
+
+        if (cart.length === 0) {
+            checkoutItemsContainer.innerHTML = '<p>Your cart is empty.</p>';
+        } else {
+            const table = document.createElement('table');
+            table.className = 'table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Calories</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="checkoutTableBody"></tbody>
+            `;
+            checkoutItemsContainer.appendChild(table);
+
+            const tableBody = document.getElementById('checkoutTableBody');
+            cart.forEach(item => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.calories}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.price} IDR</td>
+                    <td>${item.price * item.quantity} IDR</td>
+                `;
+                total += item.price * item.quantity;
+            });
+        }
+
+        checkoutTotalElement.textContent = total.toFixed(0);
+    }
+
+    function placeOrder() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const paymentType = document.getElementById('paymentType').value;
+
+        if (cart.length === 0) {
+            alert('Your cart is empty.');
+            return;
+        }
+
+        if (!paymentType) {
+            alert('Please select a payment type.');
+            return;
+        }
+
+        fetch('{% url "checkout" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify({
+                cart: cart,
+                payment_type: paymentType
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                localStorage.removeItem('cart');
+                window.location.href = data.redirect_url;
+            } else {
+                console.error('Checkout failed:', data.error);
+                alert('Checkout failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred during checkout. Please try again.');
+        });
+    }
+
+    function getCsrfToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+</script>
+{% endblock %}

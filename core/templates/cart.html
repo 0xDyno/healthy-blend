@@ -5,71 +5,106 @@
 {% block content %}
 <div class="container">
     <h2>Your Cart</h2>
-    {% if cart_items %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Total</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in cart_items %}
-                <tr>
-                    <td>{{ item.product.name }}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td>{{ item.product.get_selling_price }} IDR</td>
-                    <td>{{ item.total_price }} IDR</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger remove-from-cart" data-product-id="{{ item.product.id }}">Remove</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <div class="text-right">
-            <h4>Total: {{ total_price }} IDR</h4>
-            <a href="{% url 'checkout' %}" class="btn btn-primary">Proceed to Checkout</a>
-        </div>
-    {% else %}
-        <p>Your cart is empty.</p>
-    {% endif %}
+    <div id="cartItems">
+        <!-- Cart items will be dynamically inserted here -->
+    </div>
+    <div class="text-right">
+        <h4>Total: <span id="cartTotal">0</span> IDR</h4>
+        <button id="checkoutButton" class="btn btn-primary">Proceed to Checkout</button>
+    </div>
 </div>
-
-{% csrf_token %}
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const removeButtons = document.querySelectorAll('.remove-from-cart');
-        removeButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const productId = this.getAttribute('data-product-id');
-                removeFromCart(productId);
-            });
+        updateCartUI();
+
+        document.getElementById('checkoutButton').addEventListener('click', function() {
+            // Here you can implement the checkout process
+            // For example, you can send the cart data to the server to create an order
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length > 0) {
+                // Send cart data to server
+                fetch('{% url "checkout" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                    },
+                    body: JSON.stringify({cart: cart}),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Clear the cart and redirect to a confirmation page
+                        localStorage.removeItem('cart');
+                        window.location.href = data.redirect_url;
+                    } else {
+                        console.error('Checkout failed:', data.error);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
         });
     });
 
-    function removeFromCart(productId) {
-        fetch('/remove-from-cart/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken(),
-            },
-            body: JSON.stringify({product_id: productId}),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                console.error('Failed to remove item from cart');
-            }
-        })
-        .catch(error => console.error('Error:', error));
+    function updateCartUI() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const cartItemsContainer = document.getElementById('cartItems');
+        const cartTotalElement = document.getElementById('cartTotal');
+
+        cartItemsContainer.innerHTML = '';
+        let total = 0;
+
+        if (cart.length === 0) {
+            cartItemsContainer.innerHTML = '<p>Your cart is empty.</p>';
+        } else {
+            const table = document.createElement('table');
+            table.className = 'table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Calories</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="cartTableBody"></tbody>
+            `;
+            cartItemsContainer.appendChild(table);
+
+            const tableBody = document.getElementById('cartTableBody');
+            cart.forEach((item, index) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.calories}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.price} IDR</td>
+                    <td>${item.price * item.quantity} IDR</td>
+                    <td><button class="btn btn-sm btn-danger remove-from-cart" data-index="${index}">Remove</button></td>
+                `;
+                total += item.price * item.quantity;
+            });
+
+            document.querySelectorAll('.remove-from-cart').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = this.getAttribute('data-index');
+                    removeFromCart(index);
+                });
+            });
+        }
+
+        cartTotalElement.textContent = total.toFixed(0);
+    }
+
+    function removeFromCart(index) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart.splice(index, 1);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartUI();
     }
 
     function getCsrfToken() {
