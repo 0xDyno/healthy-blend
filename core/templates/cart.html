@@ -1,0 +1,35 @@
+<!-- core/templates/cart.html -->
+{% extends 'base.html' %}
+
+{% block title %}Cart - Restaurant System{% endblock %}
+
+{% block content %}
+    <h2>Your Cart</h2>
+    {% if cart_items %}
+        <ul class="list-group mb-3">
+            {% for item in cart_items %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ item.product.name }}
+                    <span>
+                        Quantity: {{ item.quantity }}
+                        <button class="btn btn-sm btn-danger ml-2 remove-from-cart" data-product-id="{{ item.product.id }}">Remove</button>
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+        <p>Total: ${{ total_price }}</p>
+        <a href="{% url 'checkout' %}" class="btn btn-primary">Proceed to Checkout</a>
+    {% else %}
+        <p>Your cart is empty.</p>
+    {% endif %}
+
+    <script>
+        document.querySelectorAll('.remove-from-cart').forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+                // Здесь должен быть AJAX-запрос для удаления товара из корзины
+                console.log('Removing product ' + productId + ' from cart');
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,40 @@
+<!-- core/templates/orders.html -->
+{% extends 'base.html' %}
+
+{% block title %}Orders - Restaurant System{% endblock %}
+
+{% block content %}
+    <h2>Orders</h2>
+    {% if orders %}
+        <ul class="list-group">
+            {% for order in orders %}
+                <li class="list-group-item">
+                    <h5>Order #{{ order.id }}</h5>
+                    <p>Table: {{ order.table.username }}</p>
+                    <p>Status: {{ order.get_order_status_display }}</p>
+                    <p>Total: ${{ order.total_price }}</p>
+                    <select class="form-select status-select" data-order-id="{{ order.id }}">
+                        {% for status, display in order_statuses %}
+                            <option value="{{ status }}" {% if status == order.order_status %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No orders found.</p>
+    {% endif %}
+
+    <script>
+        document.querySelectorAll('.status-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const orderId = this.getAttribute('data-order-id');
+                const newStatus = this.value;
+                // Здесь должен быть AJAX-запрос для обновления статуса заказа
+                console.log('Updating order ' + orderId + ' status to ' + newStatus);
+            });
+        });
+    </script>
+{% endblock %}

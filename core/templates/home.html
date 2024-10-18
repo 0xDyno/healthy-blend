@@ -1,0 +1,20 @@
+<!-- core/templates/home.html -->
+{% extends 'base.html' %}
+
+{% block title %}Home - Restaurant System{% endblock %}
+
+{% block content %}
+    <h1>Welcome to Restaurant System</h1>
+    {% if user.is_authenticated %}
+        <p>Hello, {{ user.username }}!</p>
+        {% if user.role == 'table' %}
+            <p>You can browse our <a href="{% url 'menu' %}">menu</a> and place orders.</p>
+        {% elif user.role == 'manager' %}
+            <p>You can manage <a href="{% url 'orders' %}">orders</a>.</p>
+        {% elif user.role == 'admin' %}
+            <p>You have access to the <a href="{% url 'admin:index' %}">admin panel</a>.</p>
+        {% endif %}
+    {% else %}
+        <p>Please <a href="{% url 'login' %}">login</a> to access the system.</p>
+    {% endif %}
+{% endblock %}
