@@ -156,6 +156,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            updateCartUI();
+
             const showMenu = document.getElementById('showMenu');
             const showDashboard = document.getElementById('showDashboard');
             const menuView = document.getElementById('menuView');
@@ -284,14 +286,20 @@
                     const cartItem = {
                         productId: productId,
                         name: document.getElementById('modalProductName').textContent,
-                        calories: selectedCalories,
+                        calories: parseInt(selectedCalories),
                         quantity: quantity,
                         price: variant.price,
-                        grams: variant.grams
+                        grams: variant.grams,
+                        fats: variant.fats,
+                        saturatedFats: variant.saturated_fats,
+                        carbs: variant.carbohydrates,
+                        sugar: variant.sugars,
+                        fiber: variant.fiber,
+                        protein: variant.proteins
                     };
 
                     let cart = JSON.parse(localStorage.getItem('cart')) || [];
-                    const existingItemIndex = cart.findIndex(item => item.productId === productId && item.calories === selectedCalories);
+                    const existingItemIndex = cart.findIndex(item => item.productId === productId && item.calories === parseInt(selectedCalories));
 
                     if (existingItemIndex !== -1) {
                         cart[existingItemIndex].quantity += quantity;
@@ -347,15 +355,48 @@
             const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
             const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 
+            // Обновление количества товаров в корзине
             const cartItemCountElement = document.getElementById('cartItemCount');
-            const cartTotalElement = document.getElementById('cartTotal');
-
             if (cartItemCountElement) {
                 cartItemCountElement.textContent = cartItemCount;
             }
+
+            // Обновление общей стоимости
+            const cartTotalElement = document.getElementById('cartTotal');
             if (cartTotalElement) {
                 cartTotalElement.textContent = `${cartTotal.toFixed(0)} IDR`;
             }
+
+            // Обновление информации о питательной ценности
+            const nutritionalInfo = cart.reduce((total, item) => {
+                const factor = item.quantity * (item.calories / 100);  // Предполагаем, что калории указаны на 100г
+                return {
+                    calories: total.calories + (item.calories * item.quantity),
+                    fats: total.fats + (item.fats * factor),
+                    saturatedFats: total.saturatedFats + (item.saturatedFats * factor),
+                    carbs: total.carbs + (item.carbs * factor),
+                    sugar: total.sugar + (item.sugar * factor),
+                    fiber: total.fiber + (item.fiber * factor),
+                    protein: total.protein + (item.protein * factor),
+                };
+            }, {
+                calories: 0,
+                fats: 0,
+                saturatedFats: 0,
+                carbs: 0,
+                sugar: 0,
+                fiber: 0,
+                protein: 0,
+            });
+
+            document.getElementById('totalPrice').textContent = cartTotal.toFixed(2);
+            document.getElementById('totalKcal').textContent = nutritionalInfo.calories.toFixed(0);
+            document.getElementById('totalFat').textContent = nutritionalInfo.fats.toFixed(1);
+            document.getElementById('totalSaturatedFat').textContent = nutritionalInfo.saturatedFats.toFixed(1);
+            document.getElementById('totalCarbs').textContent = nutritionalInfo.carbs.toFixed(1);
+            document.getElementById('totalSugar').textContent = nutritionalInfo.sugar.toFixed(1);
+            document.getElementById('totalFiber').textContent = nutritionalInfo.fiber.toFixed(1);
+            document.getElementById('totalProtein').textContent = nutritionalInfo.protein.toFixed(1);
         }
 
         function updateOrderSummary(summary) {
