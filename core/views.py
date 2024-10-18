@@ -53,6 +53,67 @@ class ProductViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def nutritional_info(self, request, pk=None):
+        product = self.get_object()
+        nutritional_value = product.nutritional_value
+        base_calories = max(float(nutritional_value.calories or 0), 1)
+        base_grams = float(product.weight or 100)
+
+        def calculate_for_calories(target_calories):
+            factor = target_calories / base_calories
+            target_grams = base_grams * factor
+            return {
+                'calories': int(target_calories),
+                'grams': round(target_grams, 1),
+                'fats': round(float(nutritional_value.fats or 0) * factor, 1),
+                'saturated_fats': round(float(nutritional_value.saturated_fats or 0) * factor, 1),
+                'carbohydrates': round(float(nutritional_value.carbohydrates or 0) * factor, 1),
+                'sugars': round(float(nutritional_value.sugars or 0) * factor, 1),
+                'fiber': round(float(nutritional_value.fiber or 0) * factor, 1),
+                'proteins': round(float(nutritional_value.proteins or 0) * factor, 1),
+                'price': product.get_price_for_calories(target_calories),
+            }
+
+        data = {
+            'base': {
+                'calories': int(base_calories),
+                'grams': round(base_grams, 1),
+                'price': float(product.price),
+                'selling_price': float(product.get_selling_price()),
+                'is_custom_price': product.custom_price is not None,
+            },
+            'variants': {
+                '400': calculate_for_calories(400),
+                '600': calculate_for_calories(600),
+                '800': calculate_for_calories(800),
+            }
+        }
+
+        return Response(data)
+
+    @action(detail=True, methods=['patch'], permission_classes=[permissions.IsAdminUser])
+    def update_price(self, request, pk=None):
+        product = self.get_object()
+        custom_price = request.data.get('custom_price')
+        price_multiplier = request.data.get('price_multiplier')
+
+        if custom_price is not None:
+            product.custom_price = custom_price
+        elif price_multiplier is not None:
+            product.price_multiplier = price_multiplier
+            product.custom_price = None
+        else:
+            return Response({'error': 'Either custom_price or price_multiplier must be provided'}, status=400)
+
+        product.save()
+        return Response({
+            'success': True,
+            'selling_price': float(product.get_selling_price()),
+            'is_custom_price': product.custom_price is not None,
+        })
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()

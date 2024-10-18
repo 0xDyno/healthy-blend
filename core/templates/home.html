@@ -3,142 +3,339 @@
 {% block title %}Home - Restaurant System{% endblock %}
 
 {% block content %}
-<div class="container">
-    {% if user.is_authenticated %}
-        <div class="row mb-4">
-            <div class="col">
-                <h2>Welcome, {{ user.username }}!</h2>
-                <p>Role: {{ user.get_role_display }}</p>
-            </div>
-        </div>
 
-        {% if user.role == 'admin' or user.role == 'manager' %}
-        <div class="row mb-4">
-            <div class="col">
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-primary" id="showMenu">Menu View</button>
-                    <button type="button" class="btn btn-secondary" id="showDashboard">Dashboard</button>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <div id="menuView">
+    <div class="container">
+        {% if user.is_authenticated %}
             <div class="row mb-4">
                 <div class="col">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Order Summary</h5>
-                            <p class="card-text">Total: $<span id="totalPrice">0.00</span></p>
-                            <p class="card-text">kCal: <span id="totalKcal">0</span></p>
-                            <p class="card-text">Fat: <span id="totalFat">0</span>g</p>
-                            <p class="card-text">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
-                            <p class="card-text">Carbs: <span id="totalCarbs">0</span>g</p>
-                            <p class="card-text">Sugar: <span id="totalSugar">0</span>g</p>
-                            <p class="card-text">Fiber: <span id="totalFiber">0</span>g</p>
-                            <p class="card-text">Protein: <span id="totalProtein">0</span>g</p>
-                        </div>
-                    </div>
+                    <p>Role: {{ user.get_role_display }}</p>
                 </div>
             </div>
 
-            <div class="row mb-4">
-                <div class="col">
-                    <a href="{% url 'custom_meal' %}" class="btn btn-primary btn-lg btn-block">Create Custom Meal</a>
-                </div>
-            </div>
-
-            <div id="productList" class="row">
-                {% for product in products %}
-                    {% if product.is_official %}
-                        <div class="col-md-4 mb-4">
-                            <div class="card">
-                                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ product.name }}</h5>
-                                    <p class="card-text">{{ product.description }}</p>
-                                    <button class="btn btn-primary add-to-cart" data-product-id="{{ product.id }}">+</button>
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-        </div>
-
-        {% if user.role == 'admin' or user.role == 'manager' %}
-        <div id="dashboardView" style="display: none;">
-            <h3>Dashboard</h3>
-            {% if user.role == 'admin' %}
+            {% if user.role == 'admin' or user.role == 'manager' %}
                 <div class="row mb-4">
                     <div class="col">
-                        <h4>Admin Controls</h4>
-                        <ul>
-                            <li><a href="{% url 'admin:index' %}">Django Admin</a></li>
-                            <li><a href="{% url 'user_management' %}">User Management</a></li>
-                            <li><a href="{% url 'product_management' %}">Product Management</a></li>
-                            <li><a href="{% url 'ingredient_management' %}">Ingredient Management</a></li>
-                        </ul>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary" id="showMenu">Menu View</button>
+                            <button type="button" class="btn btn-secondary" id="showDashboard">Dashboard</button>
+                        </div>
                     </div>
                 </div>
             {% endif %}
-            <div class="row mb-4">
+
+            <div id="menuView">
+                <div class="row mb-4">
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Order Summary</h5>
+                                <p class="card-text">Total: <span id="totalPrice">0.00</span> IDR</p>
+                                <p class="card-text">kCal: <span id="totalKcal">0</span></p>
+                                <p class="card-text">Fat: <span id="totalFat">0</span>g</p>
+                                <p class="card-text">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
+                                <p class="card-text">Carbs: <span id="totalCarbs">0</span>g</p>
+                                <p class="card-text">Sugar: <span id="totalSugar">0</span>g</p>
+                                <p class="card-text">Fiber: <span id="totalFiber">0</span>g</p>
+                                <p class="card-text">Protein: <span id="totalProtein">0</span>g</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col">
+                        <a href="{% url 'custom_meal' %}" class="btn btn-primary btn-lg btn-block">Create Custom Meal</a>
+                    </div>
+                </div>
+
+                <div id="productList" class="row">
+                    {% for product in products %}
+                        {% if product.is_official %}
+                            <div class="col-md-6 mb-4">
+                                <div class="card product-card"
+                                     data-product-id="{{ product.id }}"
+                                     data-product-name="{{ product.name }}"
+                                     data-product-description="{{ product.description }}"
+                                     data-product-price="{{ product.price }}"
+                                     data-product-image="{{ product.image.url }}">
+                                    <div class="row g-0">
+                                        <div class="col-md-4">
+                                            <img src="{{ product.image.url }}" class="img-fluid rounded-start" alt="{{ product.name }}">
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="card-body">
+                                                <h5 class="card-title fw-bold">{{ product.name }}</h5>
+                                                <p class="card-text">{{ product.description }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if user.role == 'admin' or user.role == 'manager' %}
+                <div id="dashboardView" style="display: none;">
+                    <h3>Dashboard</h3>
+                    {% if user.role == 'admin' %}
+                        <div class="row mb-4">
+                            <div class="col">
+                                <h4>Admin Controls</h4>
+                                <ul>
+                                    <li><a href="{% url 'admin:index' %}">Django Admin</a></li>
+                                    <li><a href="{% url 'user_management' %}">User Management</a></li>
+                                    <li><a href="{% url 'product_management' %}">Product Management</a></li>
+                                    <li><a href="{% url 'ingredient_management' %}">Ingredient Management</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="row mb-4">
+                        <div class="col">
+                            <h4>Order Management</h4>
+                            <a href="{% url 'orders' %}" class="btn btn-primary">View Orders</a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+        {% else %}
+            <div class="row">
                 <div class="col">
-                    <h4>Order Management</h4>
-                    <a href="{% url 'orders' %}" class="btn btn-primary">View Orders</a>
+                    <h2>Welcome to Restaurant System</h2>
+                    <p>Please <a href="{% url 'login' %}">login</a> to access the system.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel">Product Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h3 id="modalProductName" class="fw-bold mb-3"></h3>
+                            <p id="modalProductDescription"></p>
+                        </div>
+                        <div class="col-md-4">
+                            <img id="modalProductImage" src="" class="img-fluid" alt="Product Image">
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col">
+                            <table class="table table-bordered" id="nutritionalTable">
+                                <!-- Содержимое таблицы будет добавлено динамически -->
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="modalAddToCart">Add to Cart</button>
                 </div>
             </div>
         </div>
-        {% endif %}
+    </div>
 
-    {% else %}
-        <div class="row">
-            <div class="col">
-                <h2>Welcome to Restaurant System</h2>
-                <p>Please <a href="{% url 'login' %}">login</a> to access the system.</p>
-            </div>
-        </div>
-    {% endif %}
-</div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const showMenu = document.getElementById('showMenu');
+            const showDashboard = document.getElementById('showDashboard');
+            const menuView = document.getElementById('menuView');
+            const dashboardView = document.getElementById('dashboardView');
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const showMenu = document.getElementById('showMenu');
-        const showDashboard = document.getElementById('showDashboard');
-        const menuView = document.getElementById('menuView');
-        const dashboardView = document.getElementById('dashboardView');
+            if (showMenu && showDashboard) {
+                showMenu.addEventListener('click', function () {
+                    menuView.style.display = 'block';
+                    dashboardView.style.display = 'none';
+                    showMenu.classList.add('btn-primary');
+                    showMenu.classList.remove('btn-secondary');
+                    showDashboard.classList.add('btn-secondary');
+                    showDashboard.classList.remove('btn-primary');
+                });
 
-        if (showMenu && showDashboard) {
-            showMenu.addEventListener('click', function() {
-                menuView.style.display = 'block';
-                dashboardView.style.display = 'none';
-                showMenu.classList.add('btn-primary');
-                showMenu.classList.remove('btn-secondary');
-                showDashboard.classList.add('btn-secondary');
-                showDashboard.classList.remove('btn-primary');
+                showDashboard.addEventListener('click', function () {
+                    menuView.style.display = 'none';
+                    dashboardView.style.display = 'block';
+                    showDashboard.classList.add('btn-primary');
+                    showDashboard.classList.remove('btn-secondary');
+                    showMenu.classList.add('btn-secondary');
+                    showMenu.classList.remove('btn-primary');
+                });
+            }
+
+            // Product modal functionality
+            const productCards = document.querySelectorAll('.product-card');
+            const productModal = new bootstrap.Modal(document.getElementById('productModal'));
+
+            productCards.forEach(card => {
+                card.addEventListener('click', function () {
+                    const productId = this.getAttribute('data-product-id');
+                    const productName = this.getAttribute('data-product-name');
+                    const productDescription = this.getAttribute('data-product-description');
+                    const productImage = this.getAttribute('data-product-image');
+
+                    document.getElementById('modalProductName').textContent = productName;
+                    document.getElementById('modalProductDescription').textContent = productDescription;
+                    document.getElementById('modalProductImage').src = productImage;
+
+                    document.getElementById('modalAddToCart').setAttribute('data-product-id', productId);
+
+                    // Fetch nutritional data from the server
+                    fetchNutritionalInfo(productId);
+
+                    productModal.show();
+                });
             });
 
-            showDashboard.addEventListener('click', function() {
-                menuView.style.display = 'none';
-                dashboardView.style.display = 'block';
-                showDashboard.classList.add('btn-primary');
-                showDashboard.classList.remove('btn-secondary');
-                showMenu.classList.add('btn-secondary');
-                showMenu.classList.remove('btn-primary');
-            });
-        }
-
-        // Add to cart functionality
-        const addToCartButtons = document.querySelectorAll('.add-to-cart');
-        addToCartButtons.forEach(button => {
-            button.addEventListener('click', function() {
+            // Modal Add to Cart button
+            document.getElementById('modalAddToCart').addEventListener('click', function () {
                 const productId = this.getAttribute('data-product-id');
-                // Here you would typically make an AJAX call to add the product to the cart
-                console.log('Adding product ' + productId + ' to cart');
-                // Update the order summary (this is just a placeholder, you'd need to implement the actual logic)
-                document.getElementById('totalPrice').textContent = (parseFloat(document.getElementById('totalPrice').textContent) + 10).toFixed(2);
+                addToCart(productId, 1);
+                productModal.hide();
+            });
+
+            // Close modal when clicking outside or pressing Esc key
+            document.getElementById('productModal').addEventListener('hidden.bs.modal', function () {
+                productModal.hide();
             });
         });
-    });
-</script>
+
+        function fetchNutritionalInfo(productId) {
+            console.log('Fetching nutritional info for product:', productId);
+            fetch(`/api/products/${productId}/nutritional_info/`)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Received data:', JSON.stringify(data, null, 2));
+
+                    const nutritionalTable = document.getElementById('nutritionalTable');
+                    nutritionalTable.innerHTML = '';
+
+                    if (!data.variants) {
+                        console.error('No variants data received');
+                        return;
+                    }
+
+                    // Создаем заголовок таблицы
+                    const headerRow = nutritionalTable.insertRow();
+                    ['kCal', 'Grams', 'Fat', 'Saturated Fats', 'Carbs', 'Sugar', 'Fiber', 'Protein', 'Price', ''].forEach(header => {
+                        const th = document.createElement('th');
+                        th.textContent = header;
+                        headerRow.appendChild(th);
+                    });
+
+                    ['400', '600', '800'].forEach((calories, index) => {
+                        const variant = data.variants[calories];
+                        if (!variant) {
+                            console.error(`No data for ${calories} calories`);
+                            return;
+                        }
+
+                        const row = nutritionalTable.insertRow();
+                        row.insertCell().textContent = variant.calories;
+                        row.insertCell().textContent = variant.grams;
+                        row.insertCell().textContent = variant.fats;
+                        row.insertCell().textContent = variant.saturated_fats;
+                        row.insertCell().textContent = variant.carbohydrates;
+                        row.insertCell().textContent = variant.sugars;
+                        row.insertCell().textContent = variant.fiber;
+                        row.insertCell().textContent = variant.proteins;
+                        row.insertCell().textContent = `${variant.price.toFixed(0)} IDR`;
+
+                        // Добавляем radio-кнопку в последнюю ячейку
+                        const radioCell = row.insertCell();
+                        const radioBtn = document.createElement('input');
+                        radioBtn.type = 'radio';
+                        radioBtn.name = 'calorieOptions';
+                        radioBtn.value = calories;
+                        if (index === 0) radioBtn.checked = true;
+                        radioCell.appendChild(radioBtn);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function addToCart(productId, quantity) {
+            const selectedCalories = document.querySelector('input[name="calorieOptions"]:checked').value;
+            fetch(`/api/products/${productId}/add_to_cart/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                },
+                body: JSON.stringify({calories: selectedCalories, quantity}),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log(`Added to cart. Price: ${data.price}, Total: ${data.total_price}`);
+                        // Обновите UI корзины
+                        updateCartUI(data);
+                    } else {
+                        console.error('Failed to add to cart');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function updateProductPrice(productId, customPrice, priceMultiplier) {
+            const data = {};
+            if (customPrice !== null) {
+                data.custom_price = customPrice;
+            } else if (priceMultiplier !== null) {
+                data.price_multiplier = priceMultiplier;
+            } else {
+                console.error('Either customPrice or priceMultiplier must be provided');
+                return;
+            }
+
+            fetch(`/api/products/${productId}/update_price/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                },
+                body: JSON.stringify(data),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log(`Price updated. New selling price: $${data.selling_price}`);
+                        // Обновите UI с новой ценой
+                        fetchNutritionalInfo(productId);
+                    } else {
+                        console.error('Failed to update price');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function getCsrfToken() {
+            return document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        }
+
+        function updateCartUI(cartData) {
+            // Здесь вы можете обновить UI корзины, например:
+            const cartItemCount = document.getElementById('cartItemCount');
+            const cartTotal = document.getElementById('cartTotal');
+
+            if (cartItemCount) {
+                cartItemCount.textContent = cartData.item_count;
+            }
+            if (cartTotal) {
+                cartTotal.textContent = `$${cartData.total_price.toFixed(2)}`;
+            }
+        }
+    </script>
 {% endblock %}

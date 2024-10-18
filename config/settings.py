@@ -22,8 +22,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'corsheaders',  # Добавляем поддержку CORS
-    'core',  # Ваше основное приложение
+    'corsheaders',
+    'core',
 ]
 
 MIDDLEWARE = [

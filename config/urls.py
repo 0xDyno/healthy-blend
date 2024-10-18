@@ -22,7 +22,7 @@ from rest_framework.routers import DefaultRouter
 from core.views import (
     UserViewSet, IngredientViewSet, ProductViewSet, OrderViewSet, HistoryViewSet,
     home, user_login, user_logout, custom_meal, user_management,
-    product_management, ingredient_management, orders, menu, cart,
+    product_management, ingredient_management, orders, cart,
     checkout, add_to_cart, remove_from_cart, update_order_status
 )
 
@@ -47,7 +47,6 @@ urlpatterns = [
     path('product-management/', product_management, name='product_management'),
     path('ingredient-management/', ingredient_management, name='ingredient_management'),
     path('orders/', orders, name='orders'),
-    path('menu/', menu, name='menu'),
     path('cart/', cart, name='cart'),
     path('checkout/', checkout, name='checkout'),
 

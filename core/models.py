@@ -1,10 +1,10 @@
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.db.models import Sum
+from django.db.models import Sum, F
 
 
 class User(AbstractUser):
@@ -65,7 +65,11 @@ class Ingredient(models.Model):
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(300)])
     available = models.BooleanField(default=True)
-    price_per_gram = models.DecimalField(max_digits=6, decimal_places=2)
+
+    price_per_gram = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(999)])
+    price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=3.00, validators=[MinValueValidator(0)])
+    custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name='ingredient')
 
     private_note = models.TextField(blank=True)
@@ -85,21 +89,43 @@ class Product(models.Model):
         ('dish', 'Dish'),
         ('drink', 'Drink'),
     )
+    product_type = models.CharField(max_length=10, choices=PRODUCT_TYPES, default="dish")
+
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    price = models.IntegerField()
-    is_official = models.BooleanField(default=False)
     image = models.ImageField(upload_to='products/', null=True, blank=True)
-    product_type = models.CharField(max_length=10, choices=PRODUCT_TYPES, default="dish")
+    is_official = models.BooleanField(default=False)
+
+    weight = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
+    private_note = models.TextField(blank=True)
+
+    price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+    price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=3.00, validators=[MinValueValidator(0)])
+    custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+
     ingredients = models.ManyToManyField('Ingredient', through='ProductIngredient')
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name='product', null=True, blank=True)
-
-    private_note = models.TextField(blank=True)
 
     def clean(self):
         super().clean()
         if self.is_official and not self.image:
             raise ValidationError("Official products must have an image.")
+
+    def calculate_base_price(self):
+        total_price = self.productingredient_set.aggregate(
+            total=Sum(F('ingredient__price_per_gram') * F('weight_grams'))
+        )['total'] or 0
+        return int(total_price)
+
+    def get_selling_price(self):
+        if self.custom_price is not None and self.custom_price > 0:
+            return self.custom_price
+        return int(self.price * self.price_multiplier)
+
+    def get_price_for_calories(self, calories):
+        base_calories = self.nutritional_value.calories
+        price_factor = calories / base_calories
+        return int(self.get_selling_price() * price_factor)
 
     def calculate_nutritional_value(self):
         nutritional_value = NutritionalValue()
@@ -115,26 +141,27 @@ class Product(models.Model):
                     current_value = getattr(nutritional_value, field.name) or Decimal('0')
                     ingredient_value = getattr(ingredient.nutritional_value, field.name) or Decimal('0')
                     new_value = current_value + (ingredient_value * weight_ratio)
-                    setattr(nutritional_value, field.name, new_value)
-
-        # Округляем значения до двух знаков после запятой
-        for field in NutritionalValue._meta.fields:
-            if field.name != 'id':
-                current_value = getattr(nutritional_value, field.name) or Decimal('0')
-                setattr(nutritional_value, field.name, round(current_value, 2))
+                    setattr(nutritional_value, field.name, round(new_value, 2))
 
         return nutritional_value, total_weight
 
+    @transaction.atomic
     def save(self, *args, **kwargs):
         self.full_clean()
         is_new = self.pk is None
+
+        if is_new and not hasattr(self, 'nutritional_value'):
+            self.nutritional_value = NutritionalValue.objects.create()
+
         super().save(*args, **kwargs)
 
-        if is_new:
-            self.nutritional_value = NutritionalValue.objects.create()
-            super().save(update_fields=['nutritional_value'])
-        else:
+        if self.pk:
             new_nutritional_value, total_weight = self.calculate_nutritional_value()
+
+            if total_weight is not None and total_weight > 0:
+                self.weight = int(total_weight)
+            else:
+                self.weight = None
 
             if self.nutritional_value:
                 for field in NutritionalValue._meta.fields:
@@ -144,7 +171,14 @@ class Product(models.Model):
             else:
                 new_nutritional_value.save()
                 self.nutritional_value = new_nutritional_value
-                super().save(update_fields=['nutritional_value'])
+
+            self.price = self.calculate_base_price()
+
+            Product.objects.filter(pk=self.pk).update(
+                weight=self.weight,
+                nutritional_value=self.nutritional_value,
+                price=self.price
+            )
 
     def __str__(self):
         return self.name
