@@ -83,7 +83,7 @@ class Product(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    type_ = models.CharField(max_length=10, choices=TYPES)
+    product_type = models.CharField(max_length=10, choices=TYPES)
     ingredients = models.ManyToManyField('Ingredient', through='ProductIngredient')
 
     total_calories = models.DecimalField(max_digits=8, decimal_places=2, default=0)
