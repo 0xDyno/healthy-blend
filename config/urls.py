@@ -23,7 +23,8 @@ from core.views import (
     UserViewSet, IngredientViewSet, ProductViewSet, OrderViewSet, HistoryViewSet,
     home, user_login, user_logout, custom_meal, user_management,
     product_management, ingredient_management, orders, cart,
-    checkout, add_to_cart, remove_from_cart, update_order_status, order_confirmation
+    checkout, add_to_cart, remove_from_cart, update_order_status, order_confirmation, ingredient_detail, get_ingredients,
+    get_custom_meal_summary, add_ingredient_to_custom_meal, remove_ingredient_from_custom_meal, add_custom_meal_to_order
 )
 
 # Создаем роутер для API
@@ -68,6 +69,15 @@ urlpatterns = [
     path('api/products/custom/', ProductViewSet.as_view({'post': 'custom'}), name='custom_product'),
     path('api/orders/current/', OrderViewSet.as_view({'get': 'current'}), name='current_order'),
     path('api/orders/<int:pk>/update-status/', OrderViewSet.as_view({'post': 'update_status'}), name='update_order_status'),
+
+    path('custom-meal/', custom_meal, name='custom_meal'),
+    path('ingredient/<int:ingredient_id>/', ingredient_detail, name='ingredient_detail'),
+    path('api/ingredients/', get_ingredients, name='get_ingredients'),
+    path('api/custom-meal-summary/', get_custom_meal_summary, name='get_custom_meal_summary'),
+    path('api/add-ingredient-to-custom-meal/', add_ingredient_to_custom_meal, name='add_ingredient_to_custom_meal'),
+
+    path('api/remove-ingredient-from-custom-meal/', remove_ingredient_from_custom_meal, name='remove_ingredient_from_custom_meal'),
+    path('api/add-custom-meal-to-order/', add_custom_meal_to_order, name='add_custom_meal_to_order'),
 ]
 
 if settings.DEBUG:

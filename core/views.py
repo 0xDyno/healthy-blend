@@ -10,9 +10,13 @@ from django.http import JsonResponse
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import User, Ingredient, Product, Order, OrderProduct, History
+from .models import User, Ingredient, Product, Order, OrderProduct, History, ProductIngredient
 from .serializers import UserSerializer, IngredientSerializer, ProductSerializer, OrderSerializer, HistorySerializer
 from .forms import LoginForm
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class IsAdminUser(permissions.BasePermission):
@@ -253,8 +257,210 @@ def home(request):
 
 @login_required
 def custom_meal(request):
-    # Implement custom meal creation logic here
-    return render(request, 'custom_meal.html')
+    ingredients = Ingredient.objects.filter(available=True)
+    return render(request, 'custom_meal.html', {'ingredients': ingredients})
+
+
+@login_required
+def ingredient_detail(request, ingredient_id):
+    ingredient = get_object_or_404(Ingredient, id=ingredient_id)
+    return render(request, 'ingredient_detail.html', {'ingredient': ingredient})
+
+
+@login_required
+def get_ingredients(request):
+    sort_by = request.GET.get('sort', 'protein')
+
+    sort_mapping = {
+        'protein': '-nutritional_value__proteins',
+        'fat': '-nutritional_value__fats',
+        'fiber': '-nutritional_value__fiber',
+        'carbs': '-nutritional_value__carbohydrates',
+        'sugar': '-nutritional_value__sugars',
+    }
+
+    ingredients = Ingredient.objects.filter(available=True).order_by(sort_mapping.get(sort_by, 'name'))
+
+    data = [{
+        'id': ingredient.id,
+        'name': ingredient.name,
+        'description': ingredient.description,
+        'price_per_gram': ingredient.price_per_gram,
+    } for ingredient in ingredients]
+
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def get_custom_meal_summary(request):
+    custom_meal, created = Product.objects.get_or_create(
+        name=f"Custom Meal - {request.user.username}",
+        is_official=False,
+        defaults={'description': 'Custom meal created by user'}
+    )
+
+    if created or not custom_meal.productingredient_set.exists():
+        return JsonResponse({
+            'total_price': 0,
+            'total_kcal': 0,
+            'total_fat': 0,
+            'total_saturated_fat': 0,
+            'total_carbs': 0,
+            'total_sugar': 0,
+            'total_fiber': 0,
+            'total_protein': 0,
+            'ingredients': [],
+        })
+
+    nutritional_value = custom_meal.nutritional_value
+
+    ingredients = [
+        {
+            'name': pi.ingredient.name,
+            'weight': pi.weight_grams
+        }
+        for pi in custom_meal.productingredient_set.all()
+    ]
+
+    return JsonResponse({
+        'total_price': custom_meal.get_selling_price(),
+        'total_kcal': float(nutritional_value.calories),
+        'total_fat': float(nutritional_value.fats),
+        'total_saturated_fat': float(nutritional_value.saturated_fats),
+        'total_carbs': float(nutritional_value.carbohydrates),
+        'total_sugar': float(nutritional_value.sugars),
+        'total_fiber': float(nutritional_value.fiber),
+        'total_protein': float(nutritional_value.proteins),
+        'ingredients': ingredients,
+    })
+
+
+@login_required
+@require_POST
+def add_ingredient_to_custom_meal(request):
+    data = json.loads(request.body)
+    ingredient_id = data.get('ingredient_id')
+    amount = int(data.get('amount'))
+
+    ingredient = get_object_or_404(Ingredient, id=ingredient_id)
+
+    custom_meal, created = Product.objects.get_or_create(
+        name=f"Custom Meal - {request.user.username}",
+        is_official=False,
+        defaults={'description': 'Custom meal created by user'}
+    )
+
+    existing_ingredient = custom_meal.productingredient_set.filter(ingredient=ingredient).first()
+
+    if existing_ingredient:
+        existing_ingredient.weight_grams += amount
+        existing_ingredient.save()
+    else:
+        ProductIngredient.objects.create(
+            product=custom_meal,
+            ingredient=ingredient,
+            weight_grams=amount
+        )
+
+    custom_meal.save()
+
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def remove_ingredient_from_custom_meal(request):
+    logger.info("Starting remove_ingredient_from_custom_meal")
+    data = json.loads(request.body)
+    ingredient_id = data.get('ingredient_id')
+
+    logger.info(f"Attempting to remove ingredient: {ingredient_id}")
+
+    custom_meal = Product.objects.filter(
+        name=f"Custom Meal - {request.user.username}",
+        is_official=False
+    ).first()
+
+    if custom_meal:
+        logger.info(f"Custom meal found: {custom_meal.id}")
+        deleted, _ = ProductIngredient.objects.filter(product=custom_meal, ingredient_id=ingredient_id).delete()
+        logger.info(f"Deleted {deleted} ProductIngredient(s)")
+        custom_meal.save()  # This will trigger recalculation of nutritional values
+        logger.info("Custom meal saved")
+    else:
+        logger.error("Custom meal not found")
+
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def add_custom_meal_to_order(request):
+    logger.info("Starting add_custom_meal_to_order")
+    custom_meal = Product.objects.filter(
+        name=f"Custom Meal - {request.user.username}",
+        is_official=False
+    ).first()
+
+    if not custom_meal or not custom_meal.productingredient_set.exists():
+        logger.error("No custom meal found or it is empty")
+        return JsonResponse({'success': False, 'error': 'No custom meal found or it is empty'})
+
+    logger.info(f"Custom meal found: {custom_meal.id}")
+
+    # Create a new order or get the current pending order
+    order, created = Order.objects.get_or_create(
+        table=request.user,
+        order_status='pending',
+        defaults={'price': 0, 'total_price': 0}
+    )
+
+    logger.info(f"Order {'created' if created else 'found'}: {order.id}")
+
+    # Create a new Product for the custom meal
+    new_product = Product.objects.create(
+        name=f"Custom Meal - {request.user.username}",
+        description="Custom meal created by user",
+        is_official=False,
+        price=custom_meal.price,
+    )
+
+    logger.info(f"New product created: {new_product.id}")
+
+    # Copy ingredients from custom meal to new product
+    for pi in custom_meal.productingredient_set.all():
+        ProductIngredient.objects.create(
+            product=new_product,
+            ingredient=pi.ingredient,
+            weight_grams=pi.weight_grams
+        )
+
+    logger.info("Ingredients copied to new product")
+
+    # Add the new product to the order
+    order_product = OrderProduct.objects.create(
+        order=order,
+        product=new_product,
+        quantity=1
+    )
+
+    logger.info(f"OrderProduct created: {order_product.id}")
+
+    # Update order total price
+    order.total_price = order.dishes.aggregate(
+        total=Sum(F('product__price') * F('quantity'))
+    )['total'] or 0
+    order.price = order.total_price
+    order.save()
+
+    logger.info(f"Order updated. New total price: {order.total_price}")
+
+    # Clear the custom meal
+    custom_meal.delete()
+
+    logger.info("Custom meal deleted")
+
+    return JsonResponse({'success': True})
 
 
 @login_required
