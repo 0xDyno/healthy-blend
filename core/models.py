@@ -201,6 +201,7 @@ class ProductIngredient(models.Model):
 
 class Order(models.Model):
     STATUS_CHOICES = (
+        ('waiting', 'Waiting'),
         ('pending', 'Pending'),
         ('processing', 'Processing'),
         ('ready', 'Ready'),
@@ -215,13 +216,13 @@ class Order(models.Model):
         ('card', 'Card'),
         ('qr', 'QR'),
     )
-    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
+    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='waiting')
     order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='offline')
     payment_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='card')
 
     table = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'table'})
-    price = models.IntegerField()
-    total_price = models.IntegerField()
+    price = models.IntegerField(default=0)
+    total_price = models.IntegerField(default=0)
     payment_id = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

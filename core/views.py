@@ -1,3 +1,4 @@
+from django.db.models import Sum, F
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -54,7 +55,6 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def nutritional_info(self, request, pk=None):
         product = self.get_object()
         nutritional_value = product.nutritional_value
@@ -92,6 +92,73 @@ class ProductViewSet(viewsets.ModelViewSet):
         }
 
         return Response(data)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def add_to_cart(self, request, pk=None):
+        product = self.get_object()
+        calories = int(request.data.get('calories', 600))
+        quantity = int(request.data.get('quantity', 1))
+
+        # Получаем или создаем текущий заказ пользователя
+        order, created = Order.objects.get_or_create(
+            table=request.user,
+            order_status='pending',
+            defaults={'price': 0, 'total_price': 0}  # Устанавливаем начальные значения
+        )
+
+        # Добавляем продукт в заказ
+        order_product, created = OrderProduct.objects.get_or_create(
+            order=order,
+            product=product,
+            defaults={'quantity': 0}
+        )
+        order_product.quantity = F('quantity') + quantity
+        order_product.save()
+
+        # Обновляем общую стоимость заказа
+        order.total_price = order.dishes.aggregate(
+            total=Sum(F('product__price') * F('quantity'))
+        )['total'] or 0
+        order.price = order.total_price  # Устанавливаем price равным total_price
+        order.save()
+
+        # Рассчитываем суммарную информацию о заказе
+        order_summary = self.calculate_order_summary(order)
+
+        return Response({
+            'success': True,
+            'item_count': order.dishes.count(),
+            'total_price': order.total_price,
+            'order_summary': order_summary
+        })
+
+    def calculate_order_summary(self, order):
+        summary = {
+            'total_price': 0,
+            'total_kcal': 0,
+            'total_fat': 0,
+            'total_saturated_fat': 0,
+            'total_carbs': 0,
+            'total_sugar': 0,
+            'total_fiber': 0,
+            'total_protein': 0,
+        }
+
+        for order_product in order.dishes.all():
+            product = order_product.product
+            quantity = order_product.quantity
+            nutritional_value = product.nutritional_value
+
+            summary['total_price'] += product.get_selling_price() * quantity
+            summary['total_kcal'] += float(nutritional_value.calories) * quantity
+            summary['total_fat'] += float(nutritional_value.fats) * quantity
+            summary['total_saturated_fat'] += float(nutritional_value.saturated_fats) * quantity
+            summary['total_carbs'] += float(nutritional_value.carbohydrates) * quantity
+            summary['total_sugar'] += float(nutritional_value.sugars) * quantity
+            summary['total_fiber'] += float(nutritional_value.fiber) * quantity
+            summary['total_protein'] += float(nutritional_value.proteins) * quantity
+
+        return summary
 
     @action(detail=True, methods=['patch'], permission_classes=[permissions.IsAdminUser])
     def update_price(self, request, pk=None):

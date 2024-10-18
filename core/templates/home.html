@@ -23,6 +23,15 @@
                 </div>
             {% endif %}
 
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <!-- ... (остальной код навигационной панели) -->
+                <div class="navbar-text ml-auto">
+                    Cart: <span id="cartItemCount">0</span> items |
+                    Total: <span id="cartTotal">0 IDR</span>
+                </div>
+            </nav>
+            <br>
+
             <div id="menuView">
                 <div class="row mb-4">
                     <div class="col">
@@ -280,8 +289,8 @@
                 .then(data => {
                     if (data.success) {
                         console.log(`Added to cart. Price: ${data.price}, Total: ${data.total_price}`);
-                        // Обновите UI корзины
                         updateCartUI(data);
+                        updateOrderSummary(data.order_summary);
                     } else {
                         console.error('Failed to add to cart');
                     }
@@ -322,11 +331,10 @@
         }
 
         function getCsrfToken() {
-            return document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
         }
 
         function updateCartUI(cartData) {
-            // Здесь вы можете обновить UI корзины, например:
             const cartItemCount = document.getElementById('cartItemCount');
             const cartTotal = document.getElementById('cartTotal');
 
@@ -334,8 +342,19 @@
                 cartItemCount.textContent = cartData.item_count;
             }
             if (cartTotal) {
-                cartTotal.textContent = `$${cartData.total_price.toFixed(2)}`;
+                cartTotal.textContent = `${cartData.total_price.toFixed(0)} IDR`;
             }
+        }
+
+        function updateOrderSummary(summary) {
+            document.getElementById('totalPrice').textContent = summary.total_price.toFixed(0);
+            document.getElementById('totalKcal').textContent = summary.total_kcal.toFixed(0);
+            document.getElementById('totalFat').textContent = summary.total_fat.toFixed(1);
+            document.getElementById('totalSaturatedFat').textContent = summary.total_saturated_fat.toFixed(1);
+            document.getElementById('totalCarbs').textContent = summary.total_carbs.toFixed(1);
+            document.getElementById('totalSugar').textContent = summary.total_sugar.toFixed(1);
+            document.getElementById('totalFiber').textContent = summary.total_fiber.toFixed(1);
+            document.getElementById('totalProtein').textContent = summary.total_protein.toFixed(1);
         }
     </script>
 {% endblock %}

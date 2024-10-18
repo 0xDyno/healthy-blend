@@ -34,6 +34,9 @@ router.register(r'products', ProductViewSet)
 router.register(r'orders', OrderViewSet)
 router.register(r'history', HistoryViewSet)
 
+router = DefaultRouter()
+router.register(r'products', ProductViewSet)
+
 urlpatterns = [
     # Административная панель Django
     path('admin/', admin.site.urls),
