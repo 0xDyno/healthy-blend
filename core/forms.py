@@ -24,11 +24,11 @@ class LoginForm(forms.Form):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'description', 'price', 'type_']
+        fields = ['name', 'description', 'price', 'product_type', 'is_official']
         labels = {
-            'type_': 'Type',
+            'product_type': 'Type',
+            'is_official': 'Official Product',
         }
-
 
 
 class IngredientForm(forms.ModelForm):
@@ -38,13 +38,9 @@ class IngredientForm(forms.ModelForm):
 
 
 class OrderStatusForm(forms.ModelForm):
-    # STATUS_CHOICES = Order.STATUS_CHOICES
-    # status = forms.ChoiceField(choices=STATUS_CHOICES)
-
     class Meta:
         model = Order
         fields = ['order_status']
-
 
 
 class CustomProductForm(forms.Form):

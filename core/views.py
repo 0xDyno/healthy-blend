@@ -1,35 +1,32 @@
-# core/views.py
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
-from django.views import View
-from django.utils.decorators import method_decorator
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import User, Ingredient, Product, Order, OrderProduct, History
 from .serializers import UserSerializer, IngredientSerializer, ProductSerializer, OrderSerializer, HistorySerializer
+from .forms import LoginForm
 
 
 class IsAdminUser(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user and request.user.role == 'admin'
+        return request.user.is_authenticated and request.user.role == 'admin'
 
 
 class IsManagerUser(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user and request.user.role == 'manager'
+        return request.user.is_authenticated and request.user.role == 'manager'
 
 
 class IsTableUser(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user and request.user.role == 'table'
+        return request.user.is_authenticated and request.user.role == 'table'
+
 
 # API ViewSets
-
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -40,18 +37,13 @@ class UserViewSet(viewsets.ModelViewSet):
 class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser | IsManagerUser]
 
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAdminUser]
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [permissions.IsAuthenticated()]
-        return super().get_permissions()
+    permission_classes = [IsAdminUser | IsManagerUser]
 
     @action(detail=False, methods=['post'], permission_classes=[IsTableUser])
     def custom(self, request):
@@ -95,27 +87,43 @@ class HistoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 # Web Views
 
-def home(request):
-    return render(request, 'home.html')
-
-
 def user_login(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('home')
-        else:
-            return render(request, 'login.html', {'error': 'Invalid credentials'})
-    return render(request, 'login.html')
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('home')
+    else:
+        form = LoginForm()
+    return render(request, 'login.html', {'form': form})
 
 
 @login_required
 def user_logout(request):
     logout(request)
-    return redirect('home')
+    return redirect('login')
+
+
+@login_required
+def home(request):
+    products = Product.objects.filter(is_official=True)
+    context = {
+        'products': products,
+    }
+    return render(request, 'home.html', context)
+
+
+@login_required
+def custom_meal(request):
+    # Implement custom meal creation logic here
+    return render(request, 'custom_meal.html')
 
 
 @login_required
@@ -125,11 +133,43 @@ def menu(request):
 
 
 @login_required
+def user_management(request):
+    if request.user.role != 'admin':
+        return redirect('home')
+    # Implement user management logic here
+    return render(request, 'user_management.html')
+
+
+@login_required
+def product_management(request):
+    if request.user.role not in ['admin', 'manager']:
+        return redirect('home')
+    # Implement product management logic here
+    return render(request, 'product_management.html')
+
+
+@login_required
+def ingredient_management(request):
+    if request.user.role not in ['admin', 'manager']:
+        return redirect('home')
+    # Implement ingredient management logic here
+    return render(request, 'ingredient_management.html')
+
+
+@login_required
 def cart(request):
     # В будущем здесь будет логика получения корзины пользователя
     cart_items = []
     total_price = 0
     return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
+
+
+@login_required
+def order_list(request):
+    if request.user.role not in ['admin', 'manager']:
+        return redirect('home')
+    orders = Order.objects.all().order_by('-created_at')
+    return render(request, 'order_list.html', {'orders': orders})
 
 
 @login_required
@@ -155,22 +195,13 @@ def checkout(request):
 
 
 @login_required
-def orders(request):
-    if request.user.role != 'manager':
-        return redirect('home')
-    orders = Order.objects.all().order_by('-order_time')
-    order_statuses = Order.STATUS_CHOICES
-    return render(request, 'orders.html', {'orders': orders, 'order_statuses': order_statuses})
-
-
-@login_required
-@require_POST
 def update_order_status(request):
+    if request.user.role not in ['admin', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
     order_id = request.POST.get('order_id')
     new_status = request.POST.get('status')
     order = get_object_or_404(Order, id=order_id)
-    if request.user.role == 'manager':
-        order.order_status = new_status
-        order.save()
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False}, status=403)
+    order.order_status = new_status
+    order.save()
+    return JsonResponse({'success': True})

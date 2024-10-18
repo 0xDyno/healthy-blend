@@ -65,6 +65,8 @@ class Ingredient(models.Model):
     price_per_gram = models.DecimalField(max_digits=6, decimal_places=2)
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name='ingredient')
 
+    private_note = models.TextField(blank=True)
+
     def clean(self):
         if self.max_order < self.min_order:
             raise ValidationError("Max order must be greater than or equal to Min order.")
@@ -76,15 +78,19 @@ class Ingredient(models.Model):
 
 
 class Product(models.Model):
-    TYPES = (
+    PRODUCT_TYPES = (
         ('dish', 'Dish'),
         ('drink', 'Drink'),
     )
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    product_type = models.CharField(max_length=10, choices=TYPES)
+    is_official = models.BooleanField(default=False)
+    image = models.ImageField(upload_to='products/', null=True, blank=True)
+    product_type = models.CharField(max_length=10, choices=PRODUCT_TYPES)
     ingredients = models.ManyToManyField('Ingredient', through='ProductIngredient')
+
+    private_note = models.TextField(blank=True)
 
     total_calories = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     total_proteins = models.DecimalField(max_digits=8, decimal_places=2, default=0)
@@ -153,16 +159,26 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ('processing', 'Processing'),
         ('ready', 'Ready'),
-        ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     )
+    ORDER_TYPES = (
+        ('offline', 'Offline'),
+        ('online', "Online"),
+    )
+    PAYMENT_TYPES = (
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+        ('qr', 'QR'),
+    )
+    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
+    order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='offline')
+    payment_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='card')
+
     table = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'table'})
     price = models.IntegerField()
     total_price = models.IntegerField()
-    payment_type = models.CharField(max_length=50, blank=True)
     payment_id = models.CharField(max_length=100, blank=True)
-    order_time = models.DateTimeField(auto_now_add=True)
-    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class OrderProduct(models.Model):

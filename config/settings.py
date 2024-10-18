@@ -127,4 +127,6 @@ CORS_ALLOW_ALL_ORIGINS = True  # Только для разработки, в п
 
 # Настройки для работы с файлами (если потребуется)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
+
+LOGIN_URL = 'login'

@@ -14,25 +14,16 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from core.views import (
-    UserViewSet,
-    IngredientViewSet,
-    ProductViewSet,
-    OrderViewSet,
-    HistoryViewSet,
-    home,
-    user_login,
-    user_logout,
-    menu,
-    cart,
-    add_to_cart,
-    remove_from_cart,
-    checkout,
-    orders,
-    update_order_status
+    UserViewSet, IngredientViewSet, ProductViewSet, OrderViewSet, HistoryViewSet,
+    home, user_login, user_logout, custom_meal, user_management,
+    product_management, ingredient_management, order_list, menu, cart,
+    checkout, add_to_cart, remove_from_cart, update_order_status
 )
 
 # Создаем роутер для API
@@ -47,33 +38,33 @@ urlpatterns = [
     # Административная панель Django
     path('admin/', admin.site.urls),
 
-    # Подключаем URL-пути API
-    path('api/', include(router.urls)),
-
-    # Аутентификация API
-    path('api-auth/', include('rest_framework.urls')),
-
     # Основные страницы веб-приложения
     path('', home, name='home'),
     path('login/', user_login, name='login'),
     path('logout/', user_logout, name='logout'),
+    path('custom-meal/', custom_meal, name='custom_meal'),
+    path('user-management/', user_management, name='user_management'),
+    path('product-management/', product_management, name='product_management'),
+    path('ingredient-management/', ingredient_management, name='ingredient_management'),
+    path('orders/', order_list, name='order_list'),
     path('menu/', menu, name='menu'),
     path('cart/', cart, name='cart'),
     path('checkout/', checkout, name='checkout'),
-    path('orders/', orders, name='orders'),
 
     # Функции для работы с корзиной
     path('add-to-cart/', add_to_cart, name='add_to_cart'),
     path('remove-from-cart/', remove_from_cart, name='remove_from_cart'),
 
-    # Дополнительные URL-пути для API
+    # AJAX-запрос для обновления статуса заказа
+    path('update-order-status/', update_order_status, name='update_order_status'),
+
+    # API URLs
+    path('api/', include(router.urls)),
+    path('api-auth/', include('rest_framework.urls')),
     path('api/products/custom/', ProductViewSet.as_view({'post': 'custom'}), name='custom_product'),
     path('api/orders/current/', OrderViewSet.as_view({'get': 'current'}), name='current_order'),
     path('api/orders/<int:pk>/update-status/', OrderViewSet.as_view({'post': 'update_status'}), name='update_order_status'),
-
-    # AJAX-запрос для обновления статуса заказа
-    path('update-order-status/', update_order_status, name='update_order_status'),
 ]
 
-# Добавляем URL-паттерны API к основным URL-паттернам
-urlpatterns += router.urls
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

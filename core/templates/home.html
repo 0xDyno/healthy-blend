@@ -1,20 +1,144 @@
-<!-- core/templates/home.html -->
 {% extends 'base.html' %}
 
 {% block title %}Home - Restaurant System{% endblock %}
 
 {% block content %}
-    <h1>Welcome to Restaurant System</h1>
+<div class="container">
     {% if user.is_authenticated %}
-        <p>Hello, {{ user.username }}!</p>
-        {% if user.role == 'table' %}
-            <p>You can browse our <a href="{% url 'menu' %}">menu</a> and place orders.</p>
-        {% elif user.role == 'manager' %}
-            <p>You can manage <a href="{% url 'orders' %}">orders</a>.</p>
-        {% elif user.role == 'admin' %}
-            <p>You have access to the <a href="{% url 'admin:index' %}">admin panel</a>.</p>
+        <div class="row mb-4">
+            <div class="col">
+                <h2>Welcome, {{ user.username }}!</h2>
+                <p>Role: {{ user.get_role_display }}</p>
+            </div>
+        </div>
+
+        {% if user.role == 'admin' or user.role == 'manager' %}
+        <div class="row mb-4">
+            <div class="col">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary" id="showMenu">Menu View</button>
+                    <button type="button" class="btn btn-secondary" id="showDashboard">Dashboard</button>
+                </div>
+            </div>
+        </div>
         {% endif %}
+
+        <div id="menuView">
+            <div class="row mb-4">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Order Summary</h5>
+                            <p class="card-text">Total: $<span id="totalPrice">0.00</span></p>
+                            <p class="card-text">kCal: <span id="totalKcal">0</span></p>
+                            <p class="card-text">Fat: <span id="totalFat">0</span>g</p>
+                            <p class="card-text">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
+                            <p class="card-text">Carbs: <span id="totalCarbs">0</span>g</p>
+                            <p class="card-text">Sugar: <span id="totalSugar">0</span>g</p>
+                            <p class="card-text">Fiber: <span id="totalFiber">0</span>g</p>
+                            <p class="card-text">Protein: <span id="totalProtein">0</span>g</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col">
+                    <a href="{% url 'custom_meal' %}" class="btn btn-primary btn-lg btn-block">Create Custom Meal</a>
+                </div>
+            </div>
+
+            <div id="productList" class="row">
+                {% for product in products %}
+                    {% if product.is_official %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ product.name }}</h5>
+                                    <p class="card-text">{{ product.description }}</p>
+                                    <button class="btn btn-primary add-to-cart" data-product-id="{{ product.id }}">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if user.role == 'admin' or user.role == 'manager' %}
+        <div id="dashboardView" style="display: none;">
+            <h3>Dashboard</h3>
+            {% if user.role == 'admin' %}
+                <div class="row mb-4">
+                    <div class="col">
+                        <h4>Admin Controls</h4>
+                        <ul>
+                            <li><a href="{% url 'admin:index' %}">Django Admin</a></li>
+                            <li><a href="{% url 'user_management' %}">User Management</a></li>
+                            <li><a href="{% url 'product_management' %}">Product Management</a></li>
+                            <li><a href="{% url 'ingredient_management' %}">Ingredient Management</a></li>
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="row mb-4">
+                <div class="col">
+                    <h4>Order Management</h4>
+                    <a href="{% url 'order_list' %}" class="btn btn-primary">View Orders</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
     {% else %}
-        <p>Please <a href="{% url 'login' %}">login</a> to access the system.</p>
+        <div class="row">
+            <div class="col">
+                <h2>Welcome to Restaurant System</h2>
+                <p>Please <a href="{% url 'login' %}">login</a> to access the system.</p>
+            </div>
+        </div>
     {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const showMenu = document.getElementById('showMenu');
+        const showDashboard = document.getElementById('showDashboard');
+        const menuView = document.getElementById('menuView');
+        const dashboardView = document.getElementById('dashboardView');
+
+        if (showMenu && showDashboard) {
+            showMenu.addEventListener('click', function() {
+                menuView.style.display = 'block';
+                dashboardView.style.display = 'none';
+                showMenu.classList.add('btn-primary');
+                showMenu.classList.remove('btn-secondary');
+                showDashboard.classList.add('btn-secondary');
+                showDashboard.classList.remove('btn-primary');
+            });
+
+            showDashboard.addEventListener('click', function() {
+                menuView.style.display = 'none';
+                dashboardView.style.display = 'block';
+                showDashboard.classList.add('btn-primary');
+                showDashboard.classList.remove('btn-secondary');
+                showMenu.classList.add('btn-secondary');
+                showMenu.classList.remove('btn-primary');
+            });
+        }
+
+        // Add to cart functionality
+        const addToCartButtons = document.querySelectorAll('.add-to-cart');
+        addToCartButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+                // Here you would typically make an AJAX call to add the product to the cart
+                console.log('Adding product ' + productId + ' to cart');
+                // Update the order summary (this is just a placeholder, you'd need to implement the actual logic)
+                document.getElementById('totalPrice').textContent = (parseFloat(document.getElementById('totalPrice').textContent) + 10).toFixed(2);
+            });
+        });
+    });
+</script>
 {% endblock %}
