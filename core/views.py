@@ -165,11 +165,11 @@ def cart(request):
 
 
 @login_required
-def order_list(request):
+def orders(request):
     if request.user.role not in ['admin', 'manager']:
         return redirect('home')
     orders = Order.objects.all().order_by('-created_at')
-    return render(request, 'order_list.html', {'orders': orders})
+    return render(request, 'orders.html', {'orders': orders})
 
 
 @login_required

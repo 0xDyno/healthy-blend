@@ -1,7 +1,10 @@
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import Sum
 
 
 class User(AbstractUser):
@@ -19,13 +22,13 @@ class NutritionalValue(models.Model):
     # Per 100 gram
 
     # Основные нутриенты
-    calories = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
-    proteins = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
-    fats = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
-    saturated_fats = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
-    carbohydrates = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
-    sugars = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
-    fiber = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)])
+    calories = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    proteins = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    fats = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    saturated_fats = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    carbohydrates = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    sugars = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    fiber = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
 
     # Витамины (значения по умолчанию 0)
     vitamin_a = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
@@ -84,74 +87,82 @@ class Product(models.Model):
     )
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.IntegerField()
     is_official = models.BooleanField(default=False)
     image = models.ImageField(upload_to='products/', null=True, blank=True)
-    product_type = models.CharField(max_length=10, choices=PRODUCT_TYPES)
+    product_type = models.CharField(max_length=10, choices=PRODUCT_TYPES, default="dish")
     ingredients = models.ManyToManyField('Ingredient', through='ProductIngredient')
+    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name='product', null=True, blank=True)
 
     private_note = models.TextField(blank=True)
 
-    total_calories = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    total_proteins = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    total_fats = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    total_saturated_fats = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    total_carbohydrates = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    total_sugars = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    total_fiber = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    total_vitamins = models.JSONField(default=dict)
-    total_microelements = models.JSONField(default=dict)
+    def clean(self):
+        super().clean()
+        if self.is_official and not self.image:
+            raise ValidationError("Official products must have an image.")
 
     def calculate_nutritional_value(self):
-        nutritional_values = {
-            'calories': 0, 'proteins': 0, 'fats': 0, 'saturated_fats': 0,
-            'carbohydrates': 0, 'sugars': 0, 'fiber': 0
-        }
-        vitamins = {}
-        minerals = {}
+        nutritional_value = NutritionalValue()
+        product_ingredients = self.productingredient_set.all()
+        total_weight = Decimal(product_ingredients.aggregate(total=Sum('weight_grams'))['total'] or 0)
 
-        for dish_ingredient in self.ingredients.all():
-            weight_ratio = dish_ingredient.weight_grams / 100
-            nv = dish_ingredient.ingredient.nutritional_value
+        for product_ingredient in product_ingredients:
+            ingredient = product_ingredient.ingredient
+            weight_ratio = Decimal(product_ingredient.weight_grams) / Decimal('100')
 
-            for field in nutritional_values.keys():
-                nutritional_values[field] += getattr(nv, field) * weight_ratio
+            for field in NutritionalValue._meta.fields:
+                if field.name != 'id':
+                    current_value = getattr(nutritional_value, field.name) or Decimal('0')
+                    ingredient_value = getattr(ingredient.nutritional_value, field.name) or Decimal('0')
+                    new_value = current_value + (ingredient_value * weight_ratio)
+                    setattr(nutritional_value, field.name, new_value)
 
-            for vitamin in ['vitamin_a', 'vitamin_c', 'vitamin_d', 'vitamin_e', 'vitamin_k',
-                            'thiamin', 'riboflavin', 'niacin', 'vitamin_b6', 'folate', 'vitamin_b12']:
-                vitamins[vitamin] = vitamins.get(vitamin, 0) + getattr(nv, vitamin) * weight_ratio
+        # Округляем значения до двух знаков после запятой
+        for field in NutritionalValue._meta.fields:
+            if field.name != 'id':
+                current_value = getattr(nutritional_value, field.name) or Decimal('0')
+                setattr(nutritional_value, field.name, round(current_value, 2))
 
-            for mineral in ['calcium', 'iron', 'magnesium', 'phosphorus', 'potassium',
-                            'sodium', 'zinc', 'copper', 'manganese', 'selenium']:
-                minerals[mineral] = minerals.get(mineral, 0) + getattr(nv, mineral) * weight_ratio
-
-        for field, value in nutritional_values.items():
-            setattr(self, f'total_{field}', round(value, 2))
-
-        self.total_vitamins = {k: round(v, 2) for k, v in vitamins.items()}
-        self.total_microelements = {k: round(v, 2) for k, v in minerals.items()}
+        return nutritional_value, total_weight
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)  # Сначала сохраняем, чтобы получить id если это новый объект
-        self.calculate_nutritional_value()
-        super().save(*args, **kwargs)  # Сохраняем еще раз с обновленными значениями
+        self.full_clean()
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+
+        if is_new:
+            self.nutritional_value = NutritionalValue.objects.create()
+            super().save(update_fields=['nutritional_value'])
+        else:
+            new_nutritional_value, total_weight = self.calculate_nutritional_value()
+
+            if self.nutritional_value:
+                for field in NutritionalValue._meta.fields:
+                    if field.name != 'id':
+                        setattr(self.nutritional_value, field.name, getattr(new_nutritional_value, field.name))
+                self.nutritional_value.save()
+            else:
+                new_nutritional_value.save()
+                self.nutritional_value = new_nutritional_value
+                super().save(update_fields=['nutritional_value'])
+
+    def __str__(self):
+        return self.name
 
 
 class ProductIngredient(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     ingredient = models.ForeignKey('Ingredient', on_delete=models.CASCADE)
-    weight_grams = models.IntegerField(validators=[MinValueValidator(0)])
+    weight_grams = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.product.calculate_nutritional_value()
-        self.product.save()
+        self.product.save()  # Это вызовет пересчет пищевой ценности
 
     def delete(self, *args, **kwargs):
         product = self.product
         super().delete(*args, **kwargs)
-        product.calculate_nutritional_value()
-        product.save()
+        product.save()  # Это вызовет пересчет пищевой ценности
 
 
 class Order(models.Model):
