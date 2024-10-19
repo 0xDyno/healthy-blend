@@ -1,413 +1,71 @@
-{% extends 'base.html' %}
+{# home.html #}
 
-{% block title %}Home - Restaurant System{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-
     <div class="container">
-        {% if user.is_authenticated %}
-            <div class="row mb-4">
-                <div class="col">
-                    <p>Role: {{ user.get_role_display }}</p>
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Order Summary</h5>
+                        <div class="d-flex justify-content-between">
+                            <p class="mb-0">Total: <span id="totalPrice">0</span> IDR</p>
+                            <p class="mb-0">kCal: <span id="totalKcal">0</span></p>
+                            <p class="mb-0">Fat: <span id="totalFat">0</span>g</p>
+                            <p class="mb-0">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
+                            <p class="mb-0">Carbs: <span id="totalCarbs">0</span>g</p>
+                            <p class="mb-0">Sugar: <span id="totalSugar">0</span>g</p>
+                            <p class="mb-0">Fiber: <span id="totalFiber">0</span>g</p>
+                            <p class="mb-0">Protein: <span id="totalProtein">0</span>g</p>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            {% if user.role == 'admin' or user.role == 'manager' %}
-                <div class="row mb-4">
-                    <div class="col">
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-primary" id="showMenu">Menu View</button>
-                            <button type="button" class="btn btn-secondary" id="showDashboard">Dashboard</button>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                <!-- ... (остальной код навигационной панели) -->
-                <div class="navbar-text ml-auto">
-                    Cart: <span id="cartItemCount">0</span> items |
-                    Total: <span id="cartTotal">0 IDR</span>
-                </div>
-            </nav>
-            <br>
-
-            <div id="menuView">
-                <div class="row mb-4">
-                    <div class="col">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Order Summary</h5>
-                                <p class="card-text">Total: <span id="totalPrice">0.00</span> IDR</p>
-                                <p class="card-text">kCal: <span id="totalKcal">0</span></p>
-                                <p class="card-text">Fat: <span id="totalFat">0</span>g</p>
-                                <p class="card-text">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
-                                <p class="card-text">Carbs: <span id="totalCarbs">0</span>g</p>
-                                <p class="card-text">Sugar: <span id="totalSugar">0</span>g</p>
-                                <p class="card-text">Fiber: <span id="totalFiber">0</span>g</p>
-                                <p class="card-text">Protein: <span id="totalProtein">0</span>g</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mb-4">
-                    <div class="col">
-                        <a href="{% url 'custom_meal' %}" class="btn btn-primary btn-lg btn-block">Create Custom Meal</a>
-                    </div>
-                </div>
-
-                <div id="productList" class="row">
-                    {% for product in products %}
-                        {% if product.is_official %}
-                            <div class="col-md-6 mb-4">
-                                <div class="card product-card"
-                                     data-product-id="{{ product.id }}"
-                                     data-product-name="{{ product.name }}"
-                                     data-product-description="{{ product.description }}"
-                                     data-product-price="{{ product.price }}"
-                                     data-product-image="{{ product.image.url }}">
-                                    <div class="row g-0">
-                                        <div class="col-md-4">
-                                            <img src="{{ product.image.url }}" class="img-fluid rounded-start" alt="{{ product.name }}">
-                                        </div>
-                                        <div class="col-md-8">
-                                            <div class="card-body">
-                                                <h5 class="card-title fw-bold">{{ product.name }}</h5>
-                                                <p class="card-text">{{ product.description }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
+        <div class="row mb-4">
+            <div class="col">
+                <ul class="nav nav-pills nav-justified">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="dishes-tab" data-bs-toggle="pill" href="#dishes" role="tab">Dishes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="drinks-tab" data-bs-toggle="pill" href="#drinks" role="tab">Drinks</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'custom_meal' %}">Create Custom Meal</a>
+                    </li>
+                </ul>
             </div>
+        </div>
 
-            {% if user.role == 'admin' or user.role == 'manager' %}
-                <div id="dashboardView" style="display: none;">
-                    <h3>Dashboard</h3>
-                    {% if user.role == 'admin' %}
-                        <div class="row mb-4">
-                            <div class="col">
-                                <h4>Admin Controls</h4>
-                                <ul>
-                                    <li><a href="{% url 'admin:index' %}">Django Admin</a></li>
-                                    <li><a href="{% url 'user_management' %}">User Management</a></li>
-                                    <li><a href="{% url 'product_management' %}">Product Management</a></li>
-                                    <li><a href="{% url 'ingredient_management' %}">Ingredient Management</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    {% endif %}
-                    <div class="row mb-4">
-                        <div class="col">
-                            <h4>Order Management</h4>
-                            <a href="{% url 'orders' %}" class="btn btn-primary">View Orders</a>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-        {% else %}
-            <div class="row">
-                <div class="col">
-                    <h2>Welcome to Restaurant System</h2>
-                    <p>Please <a href="{% url 'login' %}">login</a> to access the system.</p>
-                </div>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="dishes" role="tabpanel">
+                <h2>Dishes</h2>
+                <div id="dishesList" class="row"></div>
             </div>
-        {% endif %}
-    </div>
-
-    <!-- Product Modal -->
-    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="productModalLabel">Product Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <h3 id="modalProductName" class="fw-bold mb-3"></h3>
-                            <p id="modalProductDescription"></p>
-                        </div>
-                        <div class="col-md-4">
-                            <img id="modalProductImage" src="" class="img-fluid" alt="Product Image">
-                        </div>
-                    </div>
-                    <div class="row mt-4">
-                        <div class="col">
-                            <table class="table table-bordered" id="nutritionalTable">
-                                <!-- Содержимое таблицы будет добавлено динамически -->
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="modalAddToCart">Add to Cart</button>
-                </div>
+            <div class="tab-pane fade" id="drinks" role="tabpanel">
+                <h2>Drinks</h2>
+                <div id="drinksList" class="row"></div>
             </div>
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            updateCartUI();
+    <div id="productModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Product Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
 
-            const showMenu = document.getElementById('showMenu');
-            const showDashboard = document.getElementById('showDashboard');
-            const menuView = document.getElementById('menuView');
-            const dashboardView = document.getElementById('dashboardView');
-
-            if (showMenu && showDashboard) {
-                showMenu.addEventListener('click', function () {
-                    menuView.style.display = 'block';
-                    dashboardView.style.display = 'none';
-                    showMenu.classList.add('btn-primary');
-                    showMenu.classList.remove('btn-secondary');
-                    showDashboard.classList.add('btn-secondary');
-                    showDashboard.classList.remove('btn-primary');
-                });
-
-                showDashboard.addEventListener('click', function () {
-                    menuView.style.display = 'none';
-                    dashboardView.style.display = 'block';
-                    showDashboard.classList.add('btn-primary');
-                    showDashboard.classList.remove('btn-secondary');
-                    showMenu.classList.add('btn-secondary');
-                    showMenu.classList.remove('btn-primary');
-                });
-            }
-
-            // Product modal functionality
-            const productCards = document.querySelectorAll('.product-card');
-            const productModal = new bootstrap.Modal(document.getElementById('productModal'));
-
-            productCards.forEach(card => {
-                card.addEventListener('click', function () {
-                    const productId = this.getAttribute('data-product-id');
-                    const productName = this.getAttribute('data-product-name');
-                    const productDescription = this.getAttribute('data-product-description');
-                    const productImage = this.getAttribute('data-product-image');
-
-                    document.getElementById('modalProductName').textContent = productName;
-                    document.getElementById('modalProductDescription').textContent = productDescription;
-                    document.getElementById('modalProductImage').src = productImage;
-
-                    document.getElementById('modalAddToCart').setAttribute('data-product-id', productId);
-
-                    // Fetch nutritional data from the server
-                    fetchNutritionalInfo(productId);
-
-                    productModal.show();
-                });
-            });
-
-            // Modal Add to Cart button
-            document.getElementById('modalAddToCart').addEventListener('click', function () {
-                const productId = this.getAttribute('data-product-id');
-                addToCart(productId, 1);
-                productModal.hide();
-            });
-
-            // Close modal when clicking outside or pressing Esc key
-            document.getElementById('productModal').addEventListener('hidden.bs.modal', function () {
-                productModal.hide();
-            });
-        });
-
-        function fetchNutritionalInfo(productId) {
-            console.log('Fetching nutritional info for product:', productId);
-            fetch(`/api/products/${productId}/nutritional_info/`)
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Received data:', JSON.stringify(data, null, 2));
-
-                    const nutritionalTable = document.getElementById('nutritionalTable');
-                    nutritionalTable.innerHTML = '';
-
-                    if (!data.variants) {
-                        console.error('No variants data received');
-                        return;
-                    }
-
-                    // Создаем заголовок таблицы
-                    const headerRow = nutritionalTable.insertRow();
-                    ['kCal', 'Grams', 'Fat', 'Saturated Fats', 'Carbs', 'Sugar', 'Fiber', 'Protein', 'Price', ''].forEach(header => {
-                        const th = document.createElement('th');
-                        th.textContent = header;
-                        headerRow.appendChild(th);
-                    });
-
-                    ['400', '600', '800'].forEach((calories, index) => {
-                        const variant = data.variants[calories];
-                        if (!variant) {
-                            console.error(`No data for ${calories} calories`);
-                            return;
-                        }
-
-                        const row = nutritionalTable.insertRow();
-                        row.insertCell().textContent = variant.calories;
-                        row.insertCell().textContent = variant.grams;
-                        row.insertCell().textContent = variant.fats;
-                        row.insertCell().textContent = variant.saturated_fats;
-                        row.insertCell().textContent = variant.carbohydrates;
-                        row.insertCell().textContent = variant.sugars;
-                        row.insertCell().textContent = variant.fiber;
-                        row.insertCell().textContent = variant.proteins;
-                        row.insertCell().textContent = `${variant.price.toFixed(0)} IDR`;
-
-                        // Добавляем radio-кнопку в последнюю ячейку
-                        const radioCell = row.insertCell();
-                        const radioBtn = document.createElement('input');
-                        radioBtn.type = 'radio';
-                        radioBtn.name = 'calorieOptions';
-                        radioBtn.value = calories;
-                        if (index === 0) radioBtn.checked = true;
-                        radioCell.appendChild(radioBtn);
-                    });
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function addToCart(productId, quantity) {
-            const selectedCalories = document.querySelector('input[name="calorieOptions"]:checked').value;
-            fetch(`/api/products/${productId}/nutritional_info/`)
-                .then(response => response.json())
-                .then(data => {
-                    const variant = data.variants[selectedCalories];
-                    const cartItem = {
-                        productId: productId,
-                        name: document.getElementById('modalProductName').textContent,
-                        calories: parseInt(selectedCalories),
-                        quantity: quantity,
-                        price: variant.price,
-                        grams: variant.grams,
-                        fats: variant.fats,
-                        saturatedFats: variant.saturated_fats,
-                        carbs: variant.carbohydrates,
-                        sugar: variant.sugars,
-                        fiber: variant.fiber,
-                        protein: variant.proteins
-                    };
-
-                    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-                    const existingItemIndex = cart.findIndex(item => item.productId === productId && item.calories === parseInt(selectedCalories));
-
-                    if (existingItemIndex !== -1) {
-                        cart[existingItemIndex].quantity += quantity;
-                    } else {
-                        cart.push(cartItem);
-                    }
-
-                    localStorage.setItem('cart', JSON.stringify(cart));
-                    updateCartUI();
-                    productModal.hide();
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function updateProductPrice(productId, customPrice, priceMultiplier) {
-            const data = {};
-            if (customPrice !== null) {
-                data.custom_price = customPrice;
-            } else if (priceMultiplier !== null) {
-                data.price_multiplier = priceMultiplier;
-            } else {
-                console.error('Either customPrice or priceMultiplier must be provided');
-                return;
-            }
-
-            fetch(`/api/products/${productId}/update_price/`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCsrfToken(),
-                },
-                body: JSON.stringify(data),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        console.log(`Price updated. New selling price: $${data.selling_price}`);
-                        // Обновите UI с новой ценой
-                        fetchNutritionalInfo(productId);
-                    } else {
-                        console.error('Failed to update price');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function getCsrfToken() {
-            return document.querySelector('[name=csrfmiddlewaretoken]').value;
-        }
-
-        function updateCartUI() {
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
-            const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
-            const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-
-            // Обновление количества товаров в корзине
-            const cartItemCountElement = document.getElementById('cartItemCount');
-            if (cartItemCountElement) {
-                cartItemCountElement.textContent = cartItemCount;
-            }
-
-            // Обновление общей стоимости
-            const cartTotalElement = document.getElementById('cartTotal');
-            if (cartTotalElement) {
-                cartTotalElement.textContent = `${cartTotal.toFixed(0)} IDR`;
-            }
-
-            // Обновление информации о питательной ценности
-            const nutritionalInfo = cart.reduce((total, item) => {
-                const factor = item.quantity * (item.calories / 100);  // Предполагаем, что калории указаны на 100г
-                return {
-                    calories: total.calories + (item.calories * item.quantity),
-                    fats: total.fats + (item.fats * factor),
-                    saturatedFats: total.saturatedFats + (item.saturatedFats * factor),
-                    carbs: total.carbs + (item.carbs * factor),
-                    sugar: total.sugar + (item.sugar * factor),
-                    fiber: total.fiber + (item.fiber * factor),
-                    protein: total.protein + (item.protein * factor),
-                };
-            }, {
-                calories: 0,
-                fats: 0,
-                saturatedFats: 0,
-                carbs: 0,
-                sugar: 0,
-                fiber: 0,
-                protein: 0,
-            });
-
-            document.getElementById('totalPrice').textContent = cartTotal.toFixed(2);
-            document.getElementById('totalKcal').textContent = nutritionalInfo.calories.toFixed(0);
-            document.getElementById('totalFat').textContent = nutritionalInfo.fats.toFixed(1);
-            document.getElementById('totalSaturatedFat').textContent = nutritionalInfo.saturatedFats.toFixed(1);
-            document.getElementById('totalCarbs').textContent = nutritionalInfo.carbs.toFixed(1);
-            document.getElementById('totalSugar').textContent = nutritionalInfo.sugar.toFixed(1);
-            document.getElementById('totalFiber').textContent = nutritionalInfo.fiber.toFixed(1);
-            document.getElementById('totalProtein').textContent = nutritionalInfo.protein.toFixed(1);
-        }
-
-        function updateOrderSummary(summary) {
-            document.getElementById('totalPrice').textContent = summary.total_price.toFixed(0);
-            document.getElementById('totalKcal').textContent = summary.total_kcal.toFixed(0);
-            document.getElementById('totalFat').textContent = summary.total_fat.toFixed(1);
-            document.getElementById('totalSaturatedFat').textContent = summary.total_saturated_fat.toFixed(1);
-            document.getElementById('totalCarbs').textContent = summary.total_carbs.toFixed(1);
-            document.getElementById('totalSugar').textContent = summary.total_sugar.toFixed(1);
-            document.getElementById('totalFiber').textContent = summary.total_fiber.toFixed(1);
-            document.getElementById('totalProtein').textContent = summary.total_protein.toFixed(1);
-        }
-    </script>
+{% block scripts %}
+    <script type="module" src="{% static 'js/menu.js' %}"></script>
 {% endblock %}

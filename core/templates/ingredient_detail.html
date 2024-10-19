@@ -1,12 +1,23 @@
-{% extends 'base.html' %}
+{# ingredient_detail.html #}
 
-{% block title %}{{ ingredient.name }} - Restaurant System{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ingredient Detail - Restaurant System{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2>{{ ingredient.name }}</h2>
-    <p>{{ ingredient.description }}</p>
-    <p>Price: {{ ingredient.price_per_gram }} IDR/g</p>
+    <div class="row">
+        <div class="col-md-8">
+            <h2 id="ingredientName"></h2>
+            <p id="ingredientDescription"></p>
+            <p>Price: <span id="ingredientPrice"></span> IDR/g</p>
+        </div>
+        <div class="col-md-4">
+            <!-- Placeholder for future image -->
+            <div id="ingredientImage"></div>
+        </div>
+    </div>
 
     <!-- Custom Meal Summary -->
     <div class="card mb-4">
@@ -44,78 +55,43 @@
     <form id="addIngredientForm">
         <div class="mb-3">
             <label for="ingredientAmount" class="form-label">Amount (g)</label>
-            <input type="range" class="form-range" id="ingredientAmount"
-                   min="{{ ingredient.min_order }}" max="{{ ingredient.max_order }}" step="1" value="{{ ingredient.min_order }}">
-            <output for="ingredientAmount" id="amountOutput">{{ ingredient.min_order }}</output>g
+            <input type="range" class="form-range" id="ingredientAmount" min="1" max="300" step="1" value="1">
+            <output for="ingredientAmount" id="amountOutput">1</output>g
         </div>
+
+        <!-- Nutritional Information for Selected Amount -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Nutritional Information for Selected Amount</h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <p class="card-text">Total: <span id="dynamicTotal">0.00</span> IDR</p>
+                        <p class="card-text">kCal: <span id="dynamicKcal">0</span></p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="card-text">Fat: <span id="dynamicFat">0</span>g</p>
+                        <p class="card-text">Saturated Fat: <span id="dynamicSaturatedFat">0</span>g</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="card-text">Carbs: <span id="dynamicCarbs">0</span>g</p>
+                        <p class="card-text">Sugar: <span id="dynamicSugar">0</span>g</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="card-text">Fiber: <span id="dynamicFiber">0</span>g</p>
+                        <p class="card-text">Protein: <span id="dynamicProtein">0</span>g</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-primary">Add to Custom Meal</button>
     </form>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const amountSlider = document.getElementById('ingredientAmount');
-    const amountOutput = document.getElementById('amountOutput');
-
-    updateCustomMealSummary();
-
-    amountSlider.addEventListener('input', function() {
-        amountOutput.textContent = this.value;
-    });
-
-    document.getElementById('addIngredientForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const amount = amountSlider.value;
-
-        fetch('/api/add-ingredient-to-custom-meal/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken(),
-            },
-            body: JSON.stringify({
-                ingredient_id: {{ ingredient.id }},
-                amount: amount
-            }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.href = '{% url "custom_meal" %}';
-            } else {
-                console.error('Failed to add ingredient:', data.error);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
-});
-
-function getCsrfToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
-}
-
-function updateCustomMealSummary() {
-    fetch('/api/custom-meal-summary/')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('totalPrice').textContent = data.total_price.toFixed(2);
-            document.getElementById('totalKcal').textContent = data.total_kcal.toFixed(0);
-            document.getElementById('totalFat').textContent = data.total_fat.toFixed(1);
-            document.getElementById('totalSaturatedFat').textContent = data.total_saturated_fat.toFixed(1);
-            document.getElementById('totalCarbs').textContent = data.total_carbs.toFixed(1);
-            document.getElementById('totalSugar').textContent = data.total_sugar.toFixed(1);
-            document.getElementById('totalFiber').textContent = data.total_fiber.toFixed(1);
-            document.getElementById('totalProtein').textContent = data.total_protein.toFixed(1);
-
-            // Update selected ingredients list
-            const selectedIngredientsList = document.getElementById('selectedIngredients');
-            selectedIngredientsList.innerHTML = '';
-            data.ingredients.forEach(ingredient => {
-                const li = document.createElement('li');
-                li.textContent = `${ingredient.name}: ${ingredient.weight}g`;
-                selectedIngredientsList.appendChild(li);
-            });
-        });
-}
+    const ingredientId = {{ ingredient_id }};
 </script>
+<script type="module" src="{% static 'js/ingredient_detail.js' %}"></script>
 {% endblock %}

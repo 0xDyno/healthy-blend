@@ -1,3 +1,5 @@
+# models.py
+
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -15,6 +17,7 @@ class User(AbstractUser):
         ('table', 'Table'),
         ('other', 'Other'),
     )
+    nickname = models.CharField(max_length=50, blank=True, default="")
     role = models.CharField(max_length=10, choices=ROLES, default='other')
 
 
@@ -55,6 +58,15 @@ class NutritionalValue(models.Model):
     manganese = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
     selenium = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
 
+    def to_dict(self, exclude_fields=None):
+        if exclude_fields is None:
+            exclude_fields = ['id']
+        return {
+            field.name: float(getattr(self, field.name)) if isinstance(getattr(self, field.name), Decimal) else getattr(self, field.name)
+            for field in self._meta.fields
+            if field.name not in exclude_fields
+        }
+
     def __str__(self):
         return f"Nutritional Value (ID: {self.id})"
 
@@ -82,6 +94,9 @@ class Ingredient(models.Model):
         if not self.nutritional_value:
             self.nutritional_value = NutritionalValue.objects.create()
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Ingredient ({self.id}): {self.name}"
 
 
 class Product(models.Model):

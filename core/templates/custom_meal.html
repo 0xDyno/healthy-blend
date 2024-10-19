@@ -1,175 +1,64 @@
+{# custom_meal.html #}
+
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Create Custom Meal - Restaurant System{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>Create Custom Meal</h2>
+    <div class="container">
+        <h2>Create Custom Meal</h2>
 
-    <!-- Nutritional summary for the current custom meal -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Custom Meal Summary</h5>
-            <div class="row">
-                <div class="col-md-3">
-                    <p class="card-text">Total: <span id="totalPrice">0.00</span> IDR</p>
-                    <p class="card-text">kCal: <span id="totalKcal">0</span></p>
-                </div>
-                <div class="col-md-3">
-                    <p class="card-text">Fat: <span id="totalFat">0</span>g</p>
-                    <p class="card-text">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
-                </div>
-                <div class="col-md-3">
-                    <p class="card-text">Carbs: <span id="totalCarbs">0</span>g</p>
-                    <p class="card-text">Sugar: <span id="totalSugar">0</span>g</p>
-                </div>
-                <div class="col-md-3">
-                    <p class="card-text">Fiber: <span id="totalFiber">0</span>g</p>
-                    <p class="card-text">Protein: <span id="totalProtein">0</span>g</p>
+        <!-- Order Summary for custom meal -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Custom Meal Summary</h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <p class="card-text">Total: <span id="totalPrice">0.00</span> IDR</p>
+                        <p class="card-text">kCal: <span id="totalKcal">0</span></p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="card-text">Fat: <span id="totalFat">0</span>g</p>
+                        <p class="card-text">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="card-text">Carbs: <span id="totalCarbs">0</span>g</p>
+                        <p class="card-text">Sugar: <span id="totalSugar">0</span>g</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="card-text">Fiber: <span id="totalFiber">0</span>g</p>
+                        <p class="card-text">Protein: <span id="totalProtein">0</span>g</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Selected ingredients list -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Selected Ingredients</h5>
-            <ul id="selectedIngredients"></ul>
-            <button id="addToOrderBtn" class="btn btn-success mt-3" disabled>Add to Order</button>
+        <!-- Selected ingredients list -->
+        <ul id="selectedIngredients"></ul>
+        <button id="addToOrderBtn" class="btn btn-success mt-3" disabled>Add to Order</button>
+        <br>
+        <br>
+
+        <!-- Sorting options -->
+        <div class="mb-4">
+            <h5>Sort ingredients by:</h5>
+            <select id="sortIngredients" class="form-select">
+                <option value="protein">Highest Protein</option>
+                <option value="fat">Highest Fat</option>
+                <option value="carbs">Highest Carbs</option>
+                <option value="sugar">Highest Sugar</option>
+                <option value="fiber">Highest Fiber</option>
+            </select>
+        </div>
+
+        <!-- List of ingredients -->
+        <div id="ingredientList" class="row">
+            <!-- Ingredients will be dynamically inserted here -->
         </div>
     </div>
+{% endblock %}
 
-    <!-- Sorting options -->
-    <div class="mb-4">
-        <h5>Sort ingredients by:</h5>
-        <select id="sortIngredients" class="form-select">
-            <option value="protein">Highest Protein</option>
-            <option value="fat">Highest Fat</option>
-            <option value="fiber">Highest Fiber</option>
-            <option value="carbs">Highest Carbs</option>
-            <option value="sugar">Highest Sugar</option>
-        </select>
-    </div>
-
-    <!-- List of ingredients -->
-    <div id="ingredientList" class="row">
-        <!-- Ingredients will be dynamically inserted here -->
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    loadIngredients();
-    updateCustomMealSummary();
-
-    document.getElementById('sortIngredients').addEventListener('change', function() {
-        loadIngredients(this.value);
-    });
-
-    document.getElementById('addToOrderBtn').addEventListener('click', addToOrder);
-});
-
-function loadIngredients(sortBy = 'protein') {
-    fetch(`/api/ingredients/?sort=${sortBy}`)
-        .then(response => response.json())
-        .then(data => {
-            const ingredientList = document.getElementById('ingredientList');
-            ingredientList.innerHTML = '';
-
-            data.forEach(ingredient => {
-                const card = document.createElement('div');
-                card.className = 'col-md-4 mb-4';
-                card.innerHTML = `
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <a href="/ingredient/${ingredient.id}" class="text-decoration-none">
-                                <h5 class="card-title">${ingredient.name}</h5>
-                            </a>
-                            <p class="card-text">${ingredient.description}</p>
-                            <p class="card-text">Price: ${ingredient.price_per_gram} IDR/g</p>
-                        </div>
-                    </div>
-                `;
-                ingredientList.appendChild(card);
-            });
-        });
-}
-
-function updateCustomMealSummary() {
-    fetch('/api/custom-meal-summary/')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('totalPrice').textContent = data.total_price.toFixed(2);
-            document.getElementById('totalKcal').textContent = data.total_kcal.toFixed(0);
-            document.getElementById('totalFat').textContent = data.total_fat.toFixed(1);
-            document.getElementById('totalSaturatedFat').textContent = data.total_saturated_fat.toFixed(1);
-            document.getElementById('totalCarbs').textContent = data.total_carbs.toFixed(1);
-            document.getElementById('totalSugar').textContent = data.total_sugar.toFixed(1);
-            document.getElementById('totalFiber').textContent = data.total_fiber.toFixed(1);
-            document.getElementById('totalProtein').textContent = data.total_protein.toFixed(1);
-
-            // Update selected ingredients list
-            const selectedIngredientsList = document.getElementById('selectedIngredients');
-            selectedIngredientsList.innerHTML = '';
-            data.ingredients.forEach(ingredient => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    ${ingredient.name}: ${ingredient.weight}g
-                    <button class="btn btn-sm btn-danger ml-2" onclick="removeIngredient(${ingredient.id})">Remove</button>
-                `;
-                selectedIngredientsList.appendChild(li);
-            });
-
-            // Enable/disable "Add to Order" button
-            document.getElementById('addToOrderBtn').disabled = data.ingredients.length === 0;
-        });
-}
-
-function removeIngredient(ingredientId) {
-    console.log('Removing ingredient:', ingredientId);  // Добавьте эту строку для отладки
-    fetch('/api/remove-ingredient-from-custom-meal/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCsrfToken(),
-        },
-        body: JSON.stringify({ ingredient_id: ingredientId }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('Ingredient removed successfully');
-            updateCustomMealSummary();
-        } else {
-            console.error('Failed to remove ingredient:', data.error);
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function addToOrder() {
-    fetch('/api/add-custom-meal-to-order/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCsrfToken(),
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('Custom meal added to order successfully');
-            window.location.href = '{% url "home" %}';
-        } else {
-            console.error('Failed to add custom meal to order:', data.error);
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function getCsrfToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
-}
-</script>
+{% block scripts %}
+    <script type="module" src="{% static 'js/custom_meal.js' %}"></script>
 {% endblock %}
