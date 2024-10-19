@@ -1,8 +1,12 @@
 // storage.js
+
 class Storage {
     constructor() {
         this.storageKey = 'restaurantStorage';
         this.data = this.loadFromLocalStorage();
+        if (!this.data.customMealDraft) {
+            this.data.customMealDraft = null;
+        }
     }
 
     loadFromLocalStorage() {
@@ -28,7 +32,7 @@ class Storage {
         if (existingItem) {
             existingItem.quantity += quantity;
         } else {
-            this.data.officialMeals.push({ product, quantity });
+            this.data.officialMeals.push({product, quantity});
         }
         this.saveToLocalStorage();
     }
@@ -37,11 +41,6 @@ class Storage {
         this.data.officialMeals = this.data.officialMeals.filter(item =>
             !(item.product.id === productId && item.product.selectedCalories === selectedCalories)
         );
-        this.saveToLocalStorage();
-    }
-
-    addCustomMeal(customMeal) {
-        this.data.customMeals.push(customMeal);
         this.saveToLocalStorage();
     }
 
@@ -64,7 +63,12 @@ class Storage {
     }
 
     getCustomMeals() {
-        return this.data.customMeals;
+        return this.data.customMeals || [];
+    }
+
+    setCustomMeals(customMeals) {
+        this.data.customMeals = customMeals;
+        this.saveToLocalStorage();
     }
 
     updateCartInfo() {
@@ -79,6 +83,20 @@ class Storage {
             cartItemCountElement.textContent = itemCount;
             cartTotalElement.textContent = `${totalPrice.toFixed(0)} IDR`;
         }
+    }
+
+    getCustomMealDraft() {
+        return this.data.customMealDraft;
+    }
+
+    setCustomMealDraft(draft) {
+        this.data.customMealDraft = draft;
+        this.saveToLocalStorage();
+    }
+
+    clearCustomMealDraft() {
+        this.data.customMealDraft = null;
+        this.saveToLocalStorage();
     }
 }
 

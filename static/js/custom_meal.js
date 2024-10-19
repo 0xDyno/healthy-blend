@@ -3,17 +3,15 @@
 import storage from './storage.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Загружаем информацию о корзине и ингредиентах при загрузке страницы
     storage.updateCartInfo();
     loadIngredients();
     updateCustomMealSummary();
+    updateAddToOrderButton();
 
-    // Отслеживаем изменения в селекторе сортировки
     document.getElementById('sortIngredients').addEventListener('change', function () {
-        loadIngredients(this.value);  // Передаем выбранный параметр сортировки
+        loadIngredients(this.value);
     });
 
-    // Добавляем обработчик для кнопки добавления заказа
     document.getElementById('addToOrderBtn').addEventListener('click', addToOrder);
 });
 
@@ -29,18 +27,12 @@ function loadIngredients(sortBy = 'protein') {
 
     const nutrientKey = validSortOptions[sortBy] || 'proteins';
 
-    // Выполняем запрос к серверу для получения всех ингредиентов
     fetch(`/api/ingredients/all_ingredients/`)
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Ошибка сети при запросе ингредиентов');
-            }
             return response.json();
         })
         .then(data => {
-            console.log('Данные ингредиентов получены: ', data); // Отладочная информация
 
-            // Сортируем ингредиенты по выбранному показателю
             data.sort((a, b) => {
                 const aValue = a.nutritional_value[nutrientKey] || 0;
                 const bValue = b.nutritional_value[nutrientKey] || 0;
@@ -50,7 +42,6 @@ function loadIngredients(sortBy = 'protein') {
             const ingredientList = document.getElementById('ingredientList');
             ingredientList.innerHTML = '';
 
-            // Добавляем ингредиенты на страницу
             data.forEach(ingredient => {
                 const card = document.createElement('div');
                 card.className = 'col-md-4 mb-4';
@@ -66,7 +57,6 @@ function loadIngredients(sortBy = 'protein') {
                 ingredientList.appendChild(card);
             });
 
-            // Добавляем обработчик нажатия на карточки ингредиентов
             document.querySelectorAll('.ingredient-card').forEach(card => {
                 card.addEventListener('click', function () {
                     const ingredientId = this.dataset.ingredientId;
@@ -81,24 +71,24 @@ function loadIngredients(sortBy = 'protein') {
 }
 
 function updateCustomMealSummary() {
-    const customMeals = storage.getCustomMeals();
-    const lastCustomMeal = customMeals[customMeals.length - 1];
+    const customMealDraft = storage.getCustomMealDraft();
 
-    if (lastCustomMeal && lastCustomMeal.product && lastCustomMeal.product.nutritional_value) {
-        const summaryElements = {
-            totalPrice: document.getElementById('totalPrice'),
-            totalKcal: document.getElementById('totalKcal'),
-            totalFat: document.getElementById('totalFat'),
-            totalSaturatedFat: document.getElementById('totalSaturatedFat'),
-            totalCarbs: document.getElementById('totalCarbs'),
-            totalSugar: document.getElementById('totalSugar'),
-            totalFiber: document.getElementById('totalFiber'),
-            totalProtein: document.getElementById('totalProtein')
-        };
+    const summaryElements = {
+        totalPrice: document.getElementById('totalPrice'),
+        totalKcal: document.getElementById('totalKcal'),
+        totalFat: document.getElementById('totalFat'),
+        totalSaturatedFat: document.getElementById('totalSaturatedFat'),
+        totalCarbs: document.getElementById('totalCarbs'),
+        totalSugar: document.getElementById('totalSugar'),
+        totalFiber: document.getElementById('totalFiber'),
+        totalProtein: document.getElementById('totalProtein')
+    };
 
-        const nutritionalInfo = lastCustomMeal.product.nutritional_value;
+    const selectedIngredientsList = document.getElementById('selectedIngredients');
 
-        // Обновляем соответствие ключей
+    if (customMealDraft && customMealDraft.product && customMealDraft.product.nutritional_value) {
+        const nutritionalInfo = customMealDraft.product.nutritional_value;
+
         const keyMapping = {
             totalPrice: 'price',
             totalKcal: 'calories',
@@ -120,29 +110,24 @@ function updateCustomMealSummary() {
             }
         }
 
-        const selectedIngredientsList = document.getElementById('selectedIngredients');
         if (selectedIngredientsList) {
-            // Очищаем текущее содержимое
             selectedIngredientsList.innerHTML = '';
 
-            // Создаем таблицу
             const table = document.createElement('table');
             table.className = 'table table-striped';
 
-            // Создаем заголовок таблицы
             const thead = document.createElement('thead');
             thead.innerHTML = `
                 <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
+                    <th>Ingredient</th>
+                    <th>Weight</th>
+                    <th>Action</th>
                 </tr>
             `;
             table.appendChild(thead);
 
-            // Создаем тело таблицы
             const tbody = document.createElement('tbody');
-            lastCustomMeal.product.ingredients.forEach(ingredient => {
+            customMealDraft.product.ingredients.forEach(ingredient => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${ingredient.name}</td>
@@ -155,10 +140,8 @@ function updateCustomMealSummary() {
             });
             table.appendChild(tbody);
 
-            // Добавляем таблицу в DOM
             selectedIngredientsList.appendChild(table);
 
-            // Добавляем обработчики событий для кнопок удаления
             document.querySelectorAll('.remove-ingredient').forEach(button => {
                 button.addEventListener('click', function () {
                     removeIngredient(this.dataset.id);
@@ -166,31 +149,43 @@ function updateCustomMealSummary() {
             });
         }
     } else {
-        console.warn("No custom meal or invalid structure");
+        for (let key in summaryElements) {
+            if (summaryElements[key]) {
+                summaryElements[key].textContent = '0';
+            }
+        }
+        if (selectedIngredientsList) {
+            selectedIngredientsList.innerHTML = '';
+        }
     }
+    updateAddToOrderButton();
 }
 
-function removeIngredient(ingredientId) {
-    const customMeals = storage.getCustomMeals();
-    const lastCustomMeal = customMeals[customMeals.length - 1];
+function updateAddToOrderButton() {
+    const addToOrderBtn = document.getElementById('addToOrderBtn');
+    const customMealDraft = storage.getCustomMealDraft();
 
-    if (lastCustomMeal && lastCustomMeal.product && lastCustomMeal.product.ingredients) {
-        const removedIngredientIndex = lastCustomMeal.product.ingredients.findIndex(i => i.id === parseInt(ingredientId));
+    addToOrderBtn.disabled = !(customMealDraft && customMealDraft.product && customMealDraft.product.ingredients.length > 0);
+}
+
+
+function removeIngredient(ingredientId) {
+    const customMealDraft = storage.getCustomMealDraft();
+
+    if (customMealDraft && customMealDraft.product && customMealDraft.product.ingredients) {
+        const removedIngredientIndex = customMealDraft.product.ingredients.findIndex(i => i.id === parseInt(ingredientId));
 
         if (removedIngredientIndex !== -1) {
-            const removedIngredient = lastCustomMeal.product.ingredients.splice(removedIngredientIndex, 1)[0];
+            const removedIngredient = customMealDraft.product.ingredients.splice(removedIngredientIndex, 1)[0];
 
-            recalculateNutritionalValue(lastCustomMeal.product);
-            storage.saveToLocalStorage();
+            recalculateNutritionalValue(customMealDraft.product);
+            storage.setCustomMealDraft(customMealDraft);
             updateCustomMealSummary();
-
-            console.log('Removed ingredient:', removedIngredient);
         }
     }
 }
 
 function recalculateNutritionalValue(product) {
-    // Сбрасываем текущие значения
     product.nutritional_value = {
         calories: 0,
         proteins: 0,
@@ -202,9 +197,8 @@ function recalculateNutritionalValue(product) {
         price: 0
     };
 
-    // Пересчитываем на основе оставшихся ингредиентов
     product.ingredients.forEach(ingredient => {
-        const factor = ingredient.weight_grams / 100; // так как nutritional_value на 100г
+        const factor = ingredient.weight_grams / 100;
 
         product.nutritional_value.calories += ingredient.nutritional_value.calories * factor;
         product.nutritional_value.proteins += ingredient.nutritional_value.proteins * factor;
@@ -216,21 +210,31 @@ function recalculateNutritionalValue(product) {
         product.nutritional_value.price += ingredient.price * ingredient.weight_grams;
     });
 
-    // Округляем значения для удобства отображения
     for (let key in product.nutritional_value) {
         product.nutritional_value[key] = Math.round(product.nutritional_value[key] * 100) / 100;
     }
 }
 
 function addToOrder() {
-    const customMeals = storage.getCustomMeals();
-    const lastCustomMeal = customMeals[customMeals.length - 1];
+    const customMealDraft = storage.getCustomMealDraft();
 
-    if (lastCustomMeal) {
-        storage.addItem(lastCustomMeal.product, 1);
-        storage.clearCustomMeals();
+    if (customMealDraft) {
+
+        const newCustomMeal = {
+            product: {...customMealDraft.product},
+            quantity: customMealDraft.quantity // Устанавливаем начальное количество
+        };
+
+        const customMeals = storage.getCustomMeals();
+        customMeals.push(newCustomMeal);
+        storage.setCustomMeals(customMeals);
+
+        storage.clearCustomMealDraft();
         updateCustomMealSummary();
         storage.updateCartInfo();
-        alert('Custom meal added to order!');
+
+        window.location.href = '/';
+    } else {
+        alert('No custom meal to add to order!');
     }
 }

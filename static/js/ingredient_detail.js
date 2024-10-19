@@ -72,11 +72,9 @@ function updateDynamicData(amount) {
 }
 
 function updateCustomMealSummary() {
+    const customMealDraft = storage.getCustomMealDraft();
 
-    const customMeals = storage.getCustomMeals();
-    const lastCustomMeal = customMeals[customMeals.length - 1];
-
-    if (lastCustomMeal && lastCustomMeal.product && lastCustomMeal.product.nutritional_value) {
+    if (customMealDraft && customMealDraft.product && customMealDraft.product.nutritional_value) {
         const summaryElements = {
             totalPrice: document.getElementById('totalPrice'),
             totalKcal: document.getElementById('totalKcal'),
@@ -88,9 +86,8 @@ function updateCustomMealSummary() {
             totalProtein: document.getElementById('totalProtein')
         };
 
-        const nutritionalInfo = lastCustomMeal.product.nutritional_value;
+        const nutritional_value = customMealDraft.product.nutritional_value;
 
-        // Обновляем соответствие ключей
         const keyMapping = {
             totalPrice: 'price',
             totalKcal: 'calories',
@@ -104,7 +101,7 @@ function updateCustomMealSummary() {
 
         for (let key in summaryElements) {
             const nutritionalKey = keyMapping[key];
-            const value = nutritionalInfo[nutritionalKey];
+            const value = nutritional_value[nutritionalKey];
             if (value !== undefined && summaryElements[key]) {
                 summaryElements[key].textContent = value.toFixed(2);
             } else {
@@ -115,23 +112,23 @@ function updateCustomMealSummary() {
         const selectedIngredientsList = document.getElementById('selectedIngredients');
         if (selectedIngredientsList) {
             selectedIngredientsList.innerHTML = '';
-            lastCustomMeal.product.ingredients.forEach(ingredient => {
+            customMealDraft.product.ingredients.forEach(ingredient => {
                 const li = document.createElement('li');
                 li.textContent = `${ingredient.name}: ${ingredient.weight_grams}g`;
                 selectedIngredientsList.appendChild(li);
             });
         }
     } else {
-        console.warn("No custom meal or invalid structure");
+        console.warn("No custom meal draft or invalid structure");
     }
 }
 
 function addIngredientToCustomMeal(amount) {
-    const customMeals = storage.getCustomMeals();
-    let lastCustomMeal = customMeals[customMeals.length - 1];
+    // Изменяем эту функцию для работы с customMealDraft
+    let customMealDraft = storage.getCustomMealDraft();
 
-    if (!lastCustomMeal) {
-        lastCustomMeal = {
+    if (!customMealDraft) {
+        customMealDraft = {
             product: {
                 id: Date.now(),
                 name: "Custom Meal",
@@ -154,28 +151,25 @@ function addIngredientToCustomMeal(amount) {
             },
             quantity: 1
         };
-        storage.addCustomMeal(lastCustomMeal);
     }
 
-    const existingIngredient = lastCustomMeal.product.ingredients.find(ing => ing.id === ingredientData.id);
+    const existingIngredient = customMealDraft.product.ingredients.find(ing => ing.id === ingredientData.id);
 
     if (existingIngredient) {
-        // Если ингредиент уже существует, увеличиваем его вес
         existingIngredient.weight_grams += amount;
     } else {
-        // Если ингредиент новый, добавляем его
         const newIngredient = {
             id: ingredientData.id,
             name: ingredientData.name,
             weight_grams: amount,
-            nutritional_value: { ... ingredientData.nutritional_value },
+            nutritional_value: {...ingredientData.nutritional_value},
             price: ingredientData.price
         };
-        lastCustomMeal.product.ingredients.push(newIngredient);
+        customMealDraft.product.ingredients.push(newIngredient);
     }
 
-    recalculateCustomMealSummary(lastCustomMeal);
-    storage.saveToLocalStorage();
+    recalculateCustomMealSummary(customMealDraft);
+    storage.setCustomMealDraft(customMealDraft);
     storage.updateCartInfo();
 }
 
