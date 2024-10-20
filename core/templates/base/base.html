@@ -39,9 +39,6 @@
                             <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'user_management' %}">Users</a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link" href="{% url 'product_management' %}">Products</a>
                         </li>
                         <li class="nav-item">
@@ -60,14 +57,12 @@
                             <a class="nav-link" href="{% url 'logout' %}">Logout</a>
                         </li>
                     {% endif %}
-                    {% if user.role == 'table' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'cart' %}">
-                                Cart: <span id="cartItemCount">0</span> items |
-                                Total: <span id="cartTotal">0 IDR</span>
-                            </a>
-                        </li>
-                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'cart' %}">
+                            Cart: <span id="cartItemCount">0</span> items |
+                            Total: <span id="cartTotal">0 IDR</span>
+                        </a>
+                    </li>
                 {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'login' %}">Login</a>

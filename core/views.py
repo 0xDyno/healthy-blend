@@ -159,7 +159,7 @@ def user_login(request):
                 return redirect('home')
     else:
         form = LoginForm()
-    return render(request, 'login.html', {'form': form})
+    return render(request, 'base/login.html', {'form': form})
 
 
 @login_required
@@ -170,30 +170,32 @@ def user_logout(request):
 
 @login_required
 def home(request):
-    return render(request, 'home.html')
+    return render(request, 'base/home.html')
 
 
 @login_required
 def custom_meal(request):
-    return render(request, 'custom_meal.html')
+    return render(request, 'orders/custom_meal.html')
 
 
 @login_required
 def custom_add(request, ingredient_id):
-    return render(request, 'custom_add.html', {'ingredient_id': ingredient_id})
+    return render(request, 'orders/custom_add.html', {'ingredient_id': ingredient_id})
 
 
 @login_required
 def cart(request):
-    return render(request, 'cart.html')
+    context = {
+        'is_manager': request.user.role == 'manager'
+    }
+    return render(request, 'orders/cart.html', context)
 
 
 @login_required
 def orders(request):
     if request.user.role not in ['admin', 'manager']:
         return redirect('home')
-    orders = Order.objects.all().order_by('-created_at')
-    return render(request, 'orders.html', {'orders': orders})
+    return render(request, 'manage/orders.html')
 
 
 @login_required
@@ -223,7 +225,7 @@ def product_management(request):
     if request.user.role not in ['admin', 'manager']:
         return redirect('home')
     # Implement product management logic here
-    return render(request, 'product_management.html')
+    return render(request, 'manage/product_management.html')
 
 
 @login_required
@@ -231,7 +233,7 @@ def ingredient_management(request):
     if request.user.role not in ['admin', 'manager']:
         return redirect('home')
     # Implement ingredient management logic here
-    return render(request, 'ingredient_management.html')
+    return render(request, 'manage/ingredient_management.html')
 
 
 @login_required

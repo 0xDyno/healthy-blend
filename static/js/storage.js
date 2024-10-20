@@ -74,10 +74,6 @@ class Storage {
         };
     }
 
-    getCartItems() {
-        return [...this.data.officialMeals, ...this.data.customMeals]
-    }
-
     getCustomMeals() {
         return this.data.customMeals || [];
     }

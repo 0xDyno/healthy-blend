@@ -86,13 +86,15 @@ function showDishDetails(product, modalBody, modal) {
                 <!-- Nutritional info will be inserted here -->
             </tbody>
         </table>
-        <div class="mt-3">
+        <div class="mt-3 d-flex justify-content-between">
             <button id="addToCart" class="btn btn-primary">Add to Cart</button>
+<!--            <button id="editMeal" class="btn btn-success">Edit</button>-->
         </div>
     `;
 
     const nutritionalValueBody = modalBody.querySelector('#nutritional_value');
     const addToCartButton = modalBody.querySelector('#addToCart');
+    // const editMealButton = modalBody.querySelector('#editMeal');
 
     const nutritional_value = product.nutritional_value;
     if (nutritional_value) {
