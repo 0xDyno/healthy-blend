@@ -180,14 +180,13 @@ function handleCheckout() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // storage.clearCart();
-            // storage.clearCustomMeals();
+            storage.clearCart();
             updateCartUI();
             updateOrderSummary();
             window.location.href = data.redirect_url;
         } else {
             console.error('Checkout failed:', data.error);
-            // Здесь можно добавить отображение ошибки для пользователя
+            // PLACE TO SHOW MISTAKEs
         }
     })
     .catch(error => console.error('Error:', error));
