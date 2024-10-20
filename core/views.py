@@ -1,7 +1,7 @@
 # views.py
 
 import json
-from audioop import reverse
+import logging
 
 from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
@@ -12,11 +12,10 @@ from django.views.decorators.http import require_POST
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import User, Ingredient, Product, Order, OrderProduct, History, ProductIngredient
+from .models import User, Ingredient, Product, Order, History
 from .serializers import UserSerializer, IngredientSerializer, ProductSerializer, OrderSerializer, HistorySerializer
 from .forms import LoginForm
 from . import utils
-import logging
 
 
 logger = logging.getLogger(__name__)
@@ -180,40 +179,13 @@ def custom_meal(request):
 
 
 @login_required
-def ingredient_detail(request, ingredient_id):
-    return render(request, 'ingredient_detail.html', {'ingredient_id': ingredient_id})
-
-
-@login_required
-def user_management(request):
-    if request.user.role != 'admin':
-        return redirect('home')
-    # Implement user management logic here
-    return render(request, 'user_management.html')
-
-
-@login_required
-def product_management(request):
-    if request.user.role not in ['admin', 'manager']:
-        return redirect('home')
-    # Implement product management logic here
-    return render(request, 'product_management.html')
-
-
-@login_required
-def ingredient_management(request):
-    if request.user.role not in ['admin', 'manager']:
-        return redirect('home')
-    # Implement ingredient management logic here
-    return render(request, 'ingredient_management.html')
+def custom_add(request, ingredient_id):
+    return render(request, 'custom_add.html', {'ingredient_id': ingredient_id})
 
 
 @login_required
 def cart(request):
-    # В будущем здесь будет логика получения корзины пользователя
-    cart_items = []
-    total_price = 0
-    return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
+    return render(request, 'cart.html')
 
 
 @login_required
@@ -222,62 +194,6 @@ def orders(request):
         return redirect('home')
     orders = Order.objects.all().order_by('-created_at')
     return render(request, 'orders.html', {'orders': orders})
-
-
-
-@login_required
-def checkout(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        cart_data = data.get('cart', [])
-        payment_type = data.get('payment_type')
-
-        if not cart_data:
-            return JsonResponse({'success': False, 'error': 'Cart is empty'})
-
-        if not payment_type:
-            return JsonResponse({'success': False, 'error': 'Payment type is required'})
-
-        total_price = sum(item['price'] * item['quantity'] for item in cart_data)
-
-        order = Order.objects.create(
-            table=request.user,
-            price=total_price,
-            total_price=total_price,
-            order_status='pending',
-            payment_type=payment_type
-        )
-
-        for item in cart_data:
-            product = get_object_or_404(Product, id=item['productId'])
-            OrderProduct.objects.create(
-                order=order,
-                product=product,
-                quantity=item['quantity']
-            )
-
-        return JsonResponse({'success': True, 'redirect_url': reverse('order_confirmation', args=[order.id])})
-
-    return render(request, 'checkout.html')
-
-
-@login_required
-def order_confirmation(request, order_id):
-    order = get_object_or_404(Order, id=order_id, table=request.user)
-    return render(request, 'order_confirmation.html', {'order': order})
-
-
-@login_required
-def update_order_status(request):
-    if request.user.role not in ['admin', 'manager']:
-        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
-
-    order_id = request.POST.get('order_id')
-    new_status = request.POST.get('status')
-    order = get_object_or_404(Order, id=order_id)
-    order.order_status = new_status
-    order.save()
-    return JsonResponse({'success': True})
 
 
 @login_required
@@ -300,3 +216,32 @@ def checkout(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required
+def product_management(request):
+    if request.user.role not in ['admin', 'manager']:
+        return redirect('home')
+    # Implement product management logic here
+    return render(request, 'product_management.html')
+
+
+@login_required
+def ingredient_management(request):
+    if request.user.role not in ['admin', 'manager']:
+        return redirect('home')
+    # Implement ingredient management logic here
+    return render(request, 'ingredient_management.html')
+
+
+@login_required
+def update_order_status(request):
+    if request.user.role not in ['admin', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    order_id = request.POST.get('order_id')
+    new_status = request.POST.get('status')
+    order = get_object_or_404(Order, id=order_id)
+    order.order_status = new_status
+    order.save()
+    return JsonResponse({'success': True})

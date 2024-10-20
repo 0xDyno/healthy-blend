@@ -74,6 +74,7 @@ class NutritionalValue(models.Model):
 class Ingredient(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
+    image = models.ImageField(upload_to='ingredients/', null=True, blank=True)
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(300)])
     available = models.BooleanField(default=True)

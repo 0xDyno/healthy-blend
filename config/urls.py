@@ -21,10 +21,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from core.views import (
     UserViewSet, IngredientViewSet, ProductViewSet, OrderViewSet, HistoryViewSet,
-    home, user_login, user_logout, custom_meal, user_management,
-    product_management, ingredient_management, orders, cart,
-    order_confirmation, ingredient_detail, checkout
-)
+    home, user_login, user_logout, custom_meal, product_management, ingredient_management, orders, custom_add, checkout, cart)
 
 # Создаем роутер для API
 router = DefaultRouter()
@@ -43,14 +40,12 @@ urlpatterns = [
     path('login/', user_login, name='login'),
     path('logout/', user_logout, name='logout'),
     path('custom-meal/', custom_meal, name='custom_meal'),
-    path('user-management/', user_management, name='user_management'),
     path('product-management/', product_management, name='product_management'),
     path('ingredient-management/', ingredient_management, name='ingredient_management'),
     path('orders/', orders, name='orders'),
     path('cart/', cart, name='cart'),
     path('checkout/', checkout, name='checkout'),
-    path('order-confirmation/<int:order_id>/', order_confirmation, name='order_confirmation'),
-    path('ingredient/<int:ingredient_id>/', ingredient_detail, name='ingredient_detail'),
+    path('ingredient/<int:ingredient_id>/', custom_add, name='ingredient_detail'),
     path('checkout/', checkout, name='checkout'),
     # API URLs
     path('api/', include(router.urls)),

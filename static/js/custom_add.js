@@ -1,4 +1,4 @@
-// ingredient_detail.js
+// custom_add.js
 
 import storage from './storage.js';
 
