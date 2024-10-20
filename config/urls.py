@@ -23,7 +23,7 @@ from core.views import (
     UserViewSet, IngredientViewSet, ProductViewSet, OrderViewSet, HistoryViewSet,
     home, user_login, user_logout, custom_meal, user_management,
     product_management, ingredient_management, orders, cart,
-    checkout, order_confirmation, ingredient_detail
+    order_confirmation, ingredient_detail, checkout
 )
 
 # Создаем роутер для API
@@ -51,6 +51,7 @@ urlpatterns = [
     path('checkout/', checkout, name='checkout'),
     path('order-confirmation/<int:order_id>/', order_confirmation, name='order_confirmation'),
     path('ingredient/<int:ingredient_id>/', ingredient_detail, name='ingredient_detail'),
+    path('checkout/', checkout, name='checkout'),
     # API URLs
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),

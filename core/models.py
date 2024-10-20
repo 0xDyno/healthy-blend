@@ -95,6 +95,15 @@ class Ingredient(models.Model):
             self.nutritional_value = NutritionalValue.objects.create()
         super().save(*args, **kwargs)
 
+    def get_selling_price_for_weight(self, weight):
+        price = self.get_selling_price() * weight
+        return round(price)
+
+    def get_selling_price(self):
+        if self.custom_price is not None and self.custom_price > 0:
+            return self.custom_price
+        return round(self.price_per_gram * self.price_multiplier)
+
     def __str__(self):
         return f"Ingredient ({self.id}): {self.name}"
 
@@ -130,17 +139,17 @@ class Product(models.Model):
         total_price = self.productingredient_set.aggregate(
             total=Sum(F('ingredient__price_per_gram') * F('weight_grams'))
         )['total'] or 0
-        return int(total_price)
+        return round(total_price)
 
     def get_selling_price(self):
         if self.custom_price is not None and self.custom_price > 0:
             return self.custom_price
-        return int(self.price * self.price_multiplier)
+        return self.price * self.price_multiplier
 
     def get_price_for_calories(self, calories):
         base_calories = self.nutritional_value.calories
         price_factor = calories / base_calories
-        return int(self.get_selling_price() * price_factor)
+        return self.get_selling_price() * price_factor
 
     def calculate_nutritional_value(self):
         nutritional_value = NutritionalValue()
@@ -159,6 +168,9 @@ class Product(models.Model):
                     setattr(nutritional_value, field.name, round(new_value, 2))
 
         return nutritional_value, total_weight
+
+    def is_dish(self):
+        return self.product_type == 'dish'
 
     @transaction.atomic
     def save(self, *args, **kwargs):

@@ -212,7 +212,8 @@ function addToCart(product, quantity) {
 }
 
 function updateOrderSummary() {
-    const cartItems = storage.getCartItems();
+    const {officialMeals, customMeals} = storage.getCartItemsSet();
+    const cartItems = [...officialMeals, ...customMeals];
     const summary = cartItems.reduce((acc, item) => {
         const nutritional_value = item.product.nutritional_value;
         acc.total += nutritional_value.price * item.quantity;

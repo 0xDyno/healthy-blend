@@ -7,12 +7,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import User, Ingredient, Product, Order, OrderProduct, History, ProductIngredient
 from .serializers import UserSerializer, IngredientSerializer, ProductSerializer, OrderSerializer, HistorySerializer
 from .forms import LoginForm
+from . import utils
 import logging
 
 
@@ -177,8 +179,7 @@ def home(request):
 
 @login_required
 def custom_meal(request):
-    ingredients = Ingredient.objects.filter(available=True)
-    return render(request, 'custom_meal.html', {'ingredients': ingredients})
+    return render(request, 'custom_meal.html')
 
 
 @login_required
@@ -288,3 +289,64 @@ def update_order_status(request):
     order.order_status = new_status
     order.save()
     return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def checkout(request):
+    try:
+        data = json.loads(request.body)
+        print(data)
+        official_meals = data.get('officialMeals', [])
+        custom_meals = data.get('customMeals', [])
+
+        total_price = utils.big_validator(data)
+
+        order = Order.objects.create(table=request.user, payment_type=data["payment_type"], price=total_price)
+
+        utils.process_official_meal(official_meals, order)
+        utils.process_custom_meal(custom_meals, order)
+
+        if data:
+            return JsonResponse({'success': False, 'error': 'Working, all good', 'status': 400})
+
+        # Обрабатываем официальные блюда
+        for meal in official_meals:
+            product = Product.objects.get(id=meal['id'])
+            OrderProduct.objects.create(
+                order=order,
+                product=product,
+                quantity=meal['quantity'],
+                calories=meal['calories']
+            )
+
+        # Обрабатываем кастомные блюда
+        for meal in custom_meals:
+            custom_product = Product.objects.create(
+                name="Custom Meal",
+                is_official=False,
+                # Другие поля продукта...
+            )
+            for ing in meal['ingredients']:
+                ingredient = Ingredient.objects.get(id=ing['id'])
+                custom_product.ingredients.add(ingredient, through_defaults={'weight_grams': ing['weight']})
+
+            OrderProduct.objects.create(
+                order=order,
+                product=custom_product,
+                quantity=meal['quantity']
+            )
+
+        # Пересчитываем общую стоимость заказа
+        order.calculate_total_price()
+        order.save()
+
+        return JsonResponse({
+            'success': True,
+            'redirect_url': f'/order-confirmation/{order.id}/'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)

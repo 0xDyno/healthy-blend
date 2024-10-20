@@ -24,42 +24,58 @@ class Storage {
         localStorage.setItem(this.storageKey, JSON.stringify(this.data));
     }
 
-    addItem(product, quantity) {
-        const existingItem = this.data.officialMeals.find(item =>
+    addItem(product, quantity, isCustom = false) {
+        const targetArray = isCustom ? this.data.customMeals : this.data.officialMeals;
+        const existingItem = targetArray.find(item =>
             item.product.id === product.id &&
-            item.product.selectedCalories === product.selectedCalories
+            item.product.nutritional_value.calories === product.nutritional_value.calories
         );
         if (existingItem) {
             existingItem.quantity += quantity;
         } else {
-            this.data.officialMeals.push({product, quantity});
+            targetArray.push({product, quantity});
         }
         this.saveToLocalStorage();
     }
 
-    removeItem(productId, selectedCalories) {
-        this.data.officialMeals = this.data.officialMeals.filter(item =>
-            !(item.product.id === productId && item.product.selectedCalories === selectedCalories)
-        );
+    removeItem(id, calories, isOfficial) {
+        id = parseInt(id)
+        calories = parseInt(calories)
+        if (isOfficial) {
+            this.data.officialMeals = this.data.officialMeals.filter(item =>
+                !(item.product.id === id && item.product.nutritional_value.calories === calories)
+            );
+        } else {
+            this.data.customMeals = this.data.customMeals.filter(item =>
+                !(item.product.id === id)
+            );
+        }
+
         this.saveToLocalStorage();
     }
 
     getTotalPrice() {
-        return this.data.officialMeals.reduce((total, item) => total + item.product.nutritional_value.price * item.quantity, 0);
+        const {officialMeals, customMeals} = this.getCartItemsSet();
+        const officialTotal = officialMeals.reduce((sum, item) => sum + item.product.nutritional_value.price * item.quantity, 0);
+        const customTotal = customMeals.reduce((sum, item) => sum + item.product.nutritional_value.price * item.quantity, 0);
+        return officialTotal + customTotal;
     }
 
     clearCart() {
         this.data.officialMeals = [];
-        this.saveToLocalStorage();
-    }
-
-    clearCustomMeals() {
         this.data.customMeals = [];
         this.saveToLocalStorage();
     }
 
+    getCartItemsSet() {
+        return {
+            officialMeals: this.data.officialMeals,
+            customMeals: this.data.customMeals
+        };
+    }
+
     getCartItems() {
-        return this.data.officialMeals;
+        return [...this.data.officialMeals, ...this.data.customMeals]
     }
 
     getCustomMeals() {
@@ -72,12 +88,13 @@ class Storage {
     }
 
     updateCartInfo() {
-        const cartItems = this.getCartItems();
+        const {officialMeals, customMeals} = this.getCartItemsSet();
+        const allItems = [...officialMeals, ...customMeals];
         const cartItemCountElement = document.getElementById('cartItemCount');
         const cartTotalElement = document.getElementById('cartTotal');
 
         if (cartItemCountElement && cartTotalElement) {
-            const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+            const itemCount = allItems.reduce((total, item) => total + item.quantity, 0);
             const totalPrice = this.getTotalPrice();
 
             cartItemCountElement.textContent = itemCount;
