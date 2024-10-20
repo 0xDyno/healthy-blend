@@ -2,7 +2,8 @@
 .idea/
 *__pycache__/
 venv/
-test.py
 
 # Files
 .DS_Store
+test.py
+hints.py

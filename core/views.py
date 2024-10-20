@@ -103,8 +103,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 'name': pi.ingredient.name,
                 'weight_grams': pi.weight_grams,
                 'nutritional_value': pi.ingredient.nutritional_value.to_dict() if pi.ingredient.nutritional_value else None,
-                'min_order': pi.ingredient.min_order,
-                'max_order': pi.ingredient.max_order,
+                'price': pi.ingredient.get_selling_price(),
             } for pi in product.productingredient_set.all()],
             'nutritional_value': product.nutritional_value.to_dict() if product.nutritional_value else None,
         } for product in products]

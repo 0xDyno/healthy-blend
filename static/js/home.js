@@ -56,6 +56,37 @@ function showProductDetails(product) {
     modal.show();
 }
 
+function editMeal(product) {
+    // 1. Очистить текущий customMealDraft
+    storage.clearCustomMealDraft();
+
+    // 2. Создать новый customMealDraft на основе выбранного продукта
+    const customMealDraft = {
+        product: {
+            id: Date.now(),
+            name: `Custom ${product.name}`,
+            description: `Customized version of ${product.name}`,
+            image: product.image,
+            product_type: "custom",
+            selectedCalories: product.nutritional_value.calories,
+            nutritional_value: {...product.nutritional_value},
+            ingredients: product.ingredients.map(ing => ({
+                id: ing.id,
+                name: ing.name,
+                weight_grams: ing.weight_grams,
+                nutritional_value: {...ing.nutritional_value},
+                price: ing.price
+            }))
+        },
+        quantity: 1
+    };
+    // Сохранить новый customMealDraft
+    storage.setCustomMealDraft(customMealDraft);
+
+    // 3. Перейти на страницу создания custom meal
+    window.location.href = '/custom-meal/';
+}
+
 function showDishDetails(product, modalBody, modal) {
     modalBody.innerHTML = `
         <div class="row mb-3">
@@ -88,13 +119,20 @@ function showDishDetails(product, modalBody, modal) {
         </table>
         <div class="mt-3 d-flex justify-content-between">
             <button id="addToCart" class="btn btn-primary">Add to Cart</button>
-<!--            <button id="editMeal" class="btn btn-success">Edit</button>-->
         </div>
     `;
 
     const nutritionalValueBody = modalBody.querySelector('#nutritional_value');
     const addToCartButton = modalBody.querySelector('#addToCart');
-    // const editMealButton = modalBody.querySelector('#editMeal');
+
+    const editButton = document.createElement('button');
+    editButton.className = 'btn btn-success ms-2';
+    editButton.textContent = 'Edit';
+    editButton.addEventListener('click', () => {
+        const selectedCalories = parseInt(modalBody.querySelector('input[name="calorieOption"]:checked').value);
+        editDish(product, selectedCalories);
+    });
+    addToCartButton.parentNode.insertBefore(editButton, addToCartButton.nextSibling);
 
     const nutritional_value = product.nutritional_value;
     if (nutritional_value) {
@@ -144,6 +182,42 @@ function showDishDetails(product, modalBody, modal) {
         modal.hide();
     });
 }
+
+function editDish(product, selectedCalories) {
+    storage.clearCustomMealDraft();
+
+    const baseCalories = product.nutritional_value.calories;
+    const multiplier = selectedCalories / baseCalories;
+
+    const customMealDraft = {
+        product: {
+            ...product,
+            id: Date.now(),
+            product_type: "custom",
+            selectedCalories: selectedCalories,
+            nutritional_value: {
+                calories: selectedCalories,
+                grams: Math.round(product.weight * multiplier),
+                fats: Math.round(product.nutritional_value.fats * multiplier * 10) / 10,
+                saturated_fats: Math.round(product.nutritional_value.saturated_fats * multiplier * 10) / 10,
+                carbohydrates: Math.round(product.nutritional_value.carbohydrates * multiplier * 10) / 10,
+                sugars: Math.round(product.nutritional_value.sugars * multiplier * 10) / 10,
+                fiber: Math.round(product.nutritional_value.fiber * multiplier * 10) / 10,
+                proteins: Math.round(product.nutritional_value.proteins * multiplier * 10) / 10,
+                price: Math.round(product.price * multiplier)
+            },
+            ingredients: product.ingredients.map(ingredient => ({
+                ...ingredient,
+                weight_grams: Math.round(ingredient.weight_grams * multiplier)
+            }))
+        },
+        quantity: 1
+    };
+
+    storage.setCustomMealDraft(customMealDraft);
+    window.location.href = '/custom-meal/';
+}
+
 
 function showDrinkDetails(product, modalBody, modal) {
     modalBody.innerHTML = `
