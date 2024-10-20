@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function loadIngredients(sortBy = 'protein') {
-
     const validSortOptions = {
         protein: 'proteins',
         fat: 'fats',
@@ -28,11 +27,8 @@ function loadIngredients(sortBy = 'protein') {
     const nutrientKey = validSortOptions[sortBy] || 'proteins';
 
     fetch(`/api/ingredients/all_ingredients/`)
-        .then(response => {
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-
             data.sort((a, b) => {
                 const aValue = a.nutritional_value[nutrientKey] || 0;
                 const bValue = b.nutritional_value[nutrientKey] || 0;
@@ -66,7 +62,7 @@ function loadIngredients(sortBy = 'protein') {
             updateCustomMealSummary();
         })
         .catch(error => {
-            console.error('Ошибка загрузки ингредиентов: ', error); // Отладочная информация
+            console.error('Ошибка загрузки ингредиентов: ', error);
         });
 }
 
@@ -102,7 +98,12 @@ function updateCustomMealSummary() {
 
         for (let key in summaryElements) {
             const nutritionalKey = keyMapping[key];
-            const value = nutritionalInfo[nutritionalKey];
+            let value;
+            if (nutritionalKey === 'price') {
+                value = customMealDraft.product.price;
+            } else {
+                value = nutritionalInfo[nutritionalKey];
+            }
             if (value !== undefined && summaryElements[key]) {
                 summaryElements[key].textContent = value.toFixed(2);
             } else {
@@ -168,7 +169,6 @@ function updateAddToOrderButton() {
     addToOrderBtn.disabled = !(customMealDraft && customMealDraft.product && customMealDraft.product.ingredients.length > 0);
 }
 
-
 function removeIngredient(ingredientId) {
     const customMealDraft = storage.getCustomMealDraft();
 
@@ -176,7 +176,7 @@ function removeIngredient(ingredientId) {
         const removedIngredientIndex = customMealDraft.product.ingredients.findIndex(i => i.id === parseInt(ingredientId));
 
         if (removedIngredientIndex !== -1) {
-            const removedIngredient = customMealDraft.product.ingredients.splice(removedIngredientIndex, 1)[0];
+            customMealDraft.product.ingredients.splice(removedIngredientIndex, 1);
 
             recalculateNutritionalValue(customMealDraft.product);
             storage.setCustomMealDraft(customMealDraft);
@@ -193,36 +193,35 @@ function recalculateNutritionalValue(product) {
         saturated_fats: 0,
         carbohydrates: 0,
         sugars: 0,
-        fiber: 0,
-        price: 0
+        fiber: 0
     };
+
+    product.price = 0;
 
     product.ingredients.forEach(ingredient => {
         const factor = ingredient.weight_grams / 100;
 
-        product.nutritional_value.calories += ingredient.nutritional_value.calories * factor;
-        product.nutritional_value.proteins += ingredient.nutritional_value.proteins * factor;
-        product.nutritional_value.fats += ingredient.nutritional_value.fats * factor;
-        product.nutritional_value.saturated_fats += ingredient.nutritional_value.saturated_fats * factor;
-        product.nutritional_value.carbohydrates += ingredient.nutritional_value.carbohydrates * factor;
-        product.nutritional_value.sugars += ingredient.nutritional_value.sugars * factor;
-        product.nutritional_value.fiber += ingredient.nutritional_value.fiber * factor;
-        product.nutritional_value.price += ingredient.price * ingredient.weight_grams;
+        for (let key in product.nutritional_value) {
+            product.nutritional_value[key] += ingredient.nutritional_value[key] * factor;
+        }
+
+        product.price += ingredient.price * ingredient.weight_grams;
     });
 
     for (let key in product.nutritional_value) {
         product.nutritional_value[key] = Math.round(product.nutritional_value[key] * 100) / 100;
     }
+
+    product.price = Math.round(product.price);
 }
 
 function addToOrder() {
     const customMealDraft = storage.getCustomMealDraft();
 
     if (customMealDraft) {
-
         const newCustomMeal = {
             product: {...customMealDraft.product},
-            quantity: customMealDraft.quantity // Устанавливаем начальное количество
+            quantity: customMealDraft.quantity
         };
 
         const customMeals = storage.getCustomMeals();

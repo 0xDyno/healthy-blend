@@ -27,17 +27,16 @@ function createProductElement(product) {
     const productDiv = document.createElement('div');
     productDiv.className = 'col-md-4 mb-4';
     productDiv.innerHTML = `
-        <div class="card">
-            <img src="${product.image}" class="card-img-top" alt="${product.name}">
+        <div class="card h-100 product-card" data-product-id="${product.id}">
+            <img src="${product.image}" class="card-img-top product-image" alt="${product.name}">
             <div class="card-body">
                 <h5 class="card-title">${product.name}</h5>
                 <p class="card-text">${product.description}</p>
-                <button class="btn btn-primary view-details" data-product-id="${product.id}">View Details</button>
             </div>
         </div>
     `;
 
-    productDiv.querySelector('.view-details').addEventListener('click', () => showProductDetails(product));
+    productDiv.querySelector('.product-card').addEventListener('click', () => showProductDetails(product));
 
     return productDiv;
 }
@@ -54,37 +53,6 @@ function showProductDetails(product) {
     }
 
     modal.show();
-}
-
-function editMeal(product) {
-    // 1. Очистить текущий customMealDraft
-    storage.clearCustomMealDraft();
-
-    // 2. Создать новый customMealDraft на основе выбранного продукта
-    const customMealDraft = {
-        product: {
-            id: Date.now(),
-            name: `Custom ${product.name}`,
-            description: `Customized version of ${product.name}`,
-            image: product.image,
-            product_type: "custom",
-            selectedCalories: product.nutritional_value.calories,
-            nutritional_value: {...product.nutritional_value},
-            ingredients: product.ingredients.map(ing => ({
-                id: ing.id,
-                name: ing.name,
-                weight_grams: ing.weight_grams,
-                nutritional_value: {...ing.nutritional_value},
-                price: ing.price
-            }))
-        },
-        quantity: 1
-    };
-    // Сохранить новый customMealDraft
-    storage.setCustomMealDraft(customMealDraft);
-
-    // 3. Перейти на страницу создания custom meal
-    window.location.href = '/custom-meal/';
 }
 
 function showDishDetails(product, modalBody, modal) {
@@ -165,17 +133,11 @@ function showDishDetails(product, modalBody, modal) {
         const customProduct = {
             ...product,
             selectedCalories: selectedCalories,
-            nutritional_value: {
-                calories: selectedCalories,
-                grams: product.weight * multiplier,
-                fats: nutritional_value.fats * multiplier,
-                saturated_fats: nutritional_value.saturated_fats * multiplier,
-                carbohydrates: nutritional_value.carbohydrates * multiplier,
-                sugars: nutritional_value.sugars * multiplier,
-                fiber: nutritional_value.fiber * multiplier,
-                proteins: nutritional_value.proteins * multiplier,
-                price: product.price * multiplier
-            }
+            nutritional_value: Object.fromEntries(
+                Object.entries(nutritional_value).map(([key, value]) => [key, typeof value === 'number' ? value * multiplier : value])
+            ),
+            price: product.price * multiplier,
+            weight: product.weight * multiplier
         };
         addToCart(customProduct, 1);
         updateOrderSummary();
@@ -196,6 +158,7 @@ function editDish(product, selectedCalories) {
             product_type: "custom",
             selectedCalories: selectedCalories,
             nutritional_value: {
+                ...product.nutritional_value,
                 calories: selectedCalories,
                 grams: Math.round(product.weight * multiplier),
                 fats: Math.round(product.nutritional_value.fats * multiplier * 10) / 10,
@@ -204,8 +167,8 @@ function editDish(product, selectedCalories) {
                 sugars: Math.round(product.nutritional_value.sugars * multiplier * 10) / 10,
                 fiber: Math.round(product.nutritional_value.fiber * multiplier * 10) / 10,
                 proteins: Math.round(product.nutritional_value.proteins * multiplier * 10) / 10,
-                price: Math.round(product.price * multiplier)
             },
+            price: Math.round(product.price * multiplier),
             ingredients: product.ingredients.map(ingredient => ({
                 ...ingredient,
                 weight_grams: Math.round(ingredient.weight_grams * multiplier)
@@ -217,7 +180,6 @@ function editDish(product, selectedCalories) {
     storage.setCustomMealDraft(customMealDraft);
     window.location.href = '/custom-meal/';
 }
-
 
 function showDrinkDetails(product, modalBody, modal) {
     modalBody.innerHTML = `
@@ -264,27 +226,21 @@ function showDrinkDetails(product, modalBody, modal) {
     const addToCartButton = modalBody.querySelector('#addToCart');
 
     addToCartButton.addEventListener('click', () => {
-        const drinkProduct = {
-            ...product,
-            nutritional_value: {
-                calories: product.nutritional_value.calories,
-                fats: product.nutritional_value.fats,
-                saturated_fats: product.nutritional_value.saturated_fats,
-                carbohydrates: product.nutritional_value.carbohydrates,
-                sugars: product.nutritional_value.sugars,
-                fiber: product.nutritional_value.fiber,
-                proteins: product.nutritional_value.proteins,
-                price: product.price
-            }
-        };
-        addToCart(drinkProduct, 1);
+        addToCart(product, 1);
         updateOrderSummary();
         modal.hide();
     });
 }
 
 function addToCart(product, quantity) {
-    storage.addItem(product, quantity);
+    const customProduct = {
+        ...product,
+        selectedCalories: product.nutritional_value.calories,
+        nutritional_value: { ...product.nutritional_value },
+        price: product.price
+    };
+
+    storage.addItem(customProduct, quantity);
     updateOrderSummary();
 }
 
@@ -293,25 +249,25 @@ function updateOrderSummary() {
     const cartItems = [...officialMeals, ...customMeals];
     const summary = cartItems.reduce((acc, item) => {
         const nutritional_value = item.product.nutritional_value;
-        acc.total += nutritional_value.price * item.quantity;
-        acc.kcal += nutritional_value.calories * item.quantity;
-        acc.fat += nutritional_value.fats * item.quantity;
-        acc.saturatedFat += nutritional_value.saturated_fats * item.quantity;
-        acc.carbs += nutritional_value.carbohydrates * item.quantity;
-        acc.sugar += nutritional_value.sugars * item.quantity;
-        acc.fiber += nutritional_value.fiber * item.quantity;
-        acc.protein += nutritional_value.proteins * item.quantity;
-        return acc;
-    }, {total: 0, kcal: 0, fat: 0, saturatedFat: 0, carbs: 0, sugar: 0, fiber: 0, protein: 0});
+        acc.total += item.product.price * item.quantity;
 
-    document.getElementById('totalPrice').textContent = summary.total.toFixed(0);
-    document.getElementById('totalKcal').textContent = summary.kcal.toFixed(0);
-    document.getElementById('totalFat').textContent = summary.fat.toFixed(1);
-    document.getElementById('totalSaturatedFat').textContent = summary.saturatedFat.toFixed(1);
-    document.getElementById('totalCarbs').textContent = summary.carbs.toFixed(1);
-    document.getElementById('totalSugar').textContent = summary.sugar.toFixed(1);
-    document.getElementById('totalFiber').textContent = summary.fiber.toFixed(1);
-    document.getElementById('totalProtein').textContent = summary.protein.toFixed(1);
+        for (let nutrient in nutritional_value) {
+            if (typeof nutritional_value[nutrient] === 'number') {
+                if (!acc[nutrient]) acc[nutrient] = 0;
+                acc[nutrient] += nutritional_value[nutrient] * item.quantity;
+            }
+        }
+
+        return acc;
+    }, {total: 0});
+
+    // Обновление отображения суммарной информации
+    for (let nutrient in summary) {
+        const element = document.getElementById(`total${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}`);
+        if (element) {
+            element.textContent = summary[nutrient].toFixed(nutrient === 'total' ? 0 : 1);
+        }
+    }
 
     // Обновление количества товаров в корзине в навигационной панели
     const cartItemCountElement = document.getElementById('cartItemCount');

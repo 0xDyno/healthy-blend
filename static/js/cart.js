@@ -1,4 +1,5 @@
 // cart.js
+
 import storage from './storage.js';
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -15,7 +16,7 @@ function updateCartUI() {
     cartItemsContainer.innerHTML = '';
     let total = 0;
 
-    const { officialMeals, customMeals } = storage.getCartItemsSet();
+    const {officialMeals, customMeals} = storage.getCartItemsSet();
 
     if (officialMeals.length === 0 && customMeals.length === 0) {
         cartItemsContainer.innerHTML = '<p>Your cart is empty.</p>';
@@ -42,13 +43,13 @@ function updateCartUI() {
         officialMeals.forEach((item, index) => {
             const row = createTableRow(item, index, 'official');
             tableBody.appendChild(row);
-            total += item.product.nutritional_value.price * item.quantity;
+            total += item.product.price * item.quantity;
         });
 
         customMeals.forEach((item, index) => {
             const row = createTableRow(item, index, 'custom');
             tableBody.appendChild(row);
-            total += item.product.nutritional_value.price * item.quantity;
+            total += item.product.price * item.quantity;
         });
 
         addRemoveEventListeners();
@@ -66,8 +67,8 @@ function createTableRow(item, index, type) {
         </td>
         <td>${(item.product.nutritional_value.calories).toFixed(0)}</td>
         <td>${item.quantity}</td>
-        <td>${item.product.nutritional_value.price.toFixed(0)} IDR</td>
-        <td>${(item.product.nutritional_value.price * item.quantity).toFixed(0)} IDR</td>
+        <td>${item.product.price.toFixed(0)} IDR</td>
+        <td>${(item.product.price * item.quantity).toFixed(0)} IDR</td>
         <td><button class="btn btn-sm btn-danger remove-from-cart" data-type="${type}" data-id="${item.product.id}" 
         data-calories="${item.product.nutritional_value.calories}">Remove</button></td>
     `;
@@ -94,7 +95,7 @@ function addRemoveEventListeners() {
             const type = this.getAttribute('data-type');
             const id = this.getAttribute('data-id');
             const calories = this.getAttribute('data-calories');
-            storage.removeItem(id, calories, type === 'official');
+            storage.removeItem(id, calories, type === 'custom');
             updateCartUI();
             updateOrderSummary();
         });
@@ -102,12 +103,12 @@ function addRemoveEventListeners() {
 }
 
 function updateOrderSummary() {
-    const { officialMeals, customMeals } = storage.getCartItemsSet();
+    const {officialMeals, customMeals} = storage.getCartItemsSet();
     const allItems = [...officialMeals, ...customMeals];
 
     const summary = allItems.reduce((acc, item) => {
         const nutritionalInfo = item.product.nutritional_value;
-        acc.total += nutritionalInfo.price * item.quantity;
+        acc.total += item.product.price * item.quantity;
         acc.kcal += nutritionalInfo.calories * item.quantity;
         acc.fat += nutritionalInfo.fats * item.quantity;
         acc.saturatedFat += nutritionalInfo.saturated_fats * item.quantity;
@@ -147,7 +148,7 @@ function handleCheckout() {
         return;
     }
 
-    const { officialMeals, customMeals } = storage.getCartItemsSet();
+    const {officialMeals, customMeals} = storage.getCartItemsSet();
     const totalPrice = storage.getTotalPrice();
 
     const cartData = {
@@ -157,7 +158,7 @@ function handleCheckout() {
             id: item.product.id,
             calories: item.product.nutritional_value.calories,
             quantity: item.quantity,
-            price: item.product.nutritional_value.price,
+            price: item.product.price,
         })),
         customMeals: customMeals.map(item => ({
             ingredients: item.product.ingredients.map(ing => ({
@@ -165,7 +166,7 @@ function handleCheckout() {
                 weight: ing.weight_grams,
             })),
             quantity: item.quantity,
-            price: item.product.nutritional_value.price,
+            price: item.product.price,
         }))
     };
 
@@ -177,17 +178,17 @@ function handleCheckout() {
         },
         body: JSON.stringify(cartData),
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            storage.clearCart();
-            updateCartUI();
-            updateOrderSummary();
-            window.location.href = data.redirect_url;
-        } else {
-            console.error('Checkout failed:', data.error);
-            // PLACE TO SHOW MISTAKEs
-        }
-    })
-    .catch(error => console.error('Error:', error));
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                storage.clearCart();
+                updateCartUI();
+                updateOrderSummary();
+                window.location.href = data.redirect_url;
+            } else {
+                console.error('Checkout failed:', data.error);
+                // PLACE TO SHOW MISTAKEs
+            }
+        })
+        .catch(error => console.error('Error:', error));
 }

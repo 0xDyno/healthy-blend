@@ -1,0 +1,49 @@
+.card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-img-top.product-image {
+    width: 100%;
+    height: 200px; /* Фиксированная высота */
+    object-fit: cover; /* Сохраняет пропорции изображения */
+}
+
+@media (min-width: 768px) {
+    .card-img-top.product-image {
+        height: 250px; /* Увеличиваем высоту на больших экранах */
+    }
+}
+
+@media (min-width: 992px) {
+    .card-img-top.product-image {
+        height: 300px; /* Еще больше увеличиваем высоту на очень больших экранах */
+    }
+}
+
+.product-card {
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.card-text {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* количество строк */
+    -webkit-box-orient: vertical;
+}

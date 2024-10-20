@@ -35,7 +35,7 @@ function initializeForm() {
 
     amountSlider.addEventListener('input', function () {
         amountOutput.textContent = this.value;
-        updateDynamicData(this.value);
+        updateDynamicData(parseInt(this.value));
     });
 
     document.getElementById('addIngredientForm').addEventListener('submit', function (e) {
@@ -52,23 +52,22 @@ function updateDynamicData(amount) {
     const factor = amount / 100;
     const dynamicElements = {
         total: document.getElementById('dynamicTotal'),
-        kcal: document.getElementById('dynamicKcal'),
-        fat: document.getElementById('dynamicFat'),
-        saturatedFat: document.getElementById('dynamicSaturatedFat'),
-        carbs: document.getElementById('dynamicCarbs'),
-        sugar: document.getElementById('dynamicSugar'),
+        calories: document.getElementById('dynamicCalories'),
+        fats: document.getElementById('dynamicFats'),
+        saturated_fats: document.getElementById('dynamicSaturated_fats'),
+        carbohydrates: document.getElementById('dynamicCarbohydrates'),
+        sugars: document.getElementById('dynamicSugars'),
         fiber: document.getElementById('dynamicFiber'),
-        protein: document.getElementById('dynamicProtein')
+        proteins: document.getElementById('dynamicProteins')
     };
 
     dynamicElements.total.textContent = (ingredientData.price * amount).toFixed(2);
-    dynamicElements.kcal.textContent = (ingredientData.nutritional_value.calories * factor).toFixed(0);
-    dynamicElements.fat.textContent = (ingredientData.nutritional_value.fats * factor).toFixed(1);
-    dynamicElements.saturatedFat.textContent = (ingredientData.nutritional_value.saturated_fats * factor).toFixed(1);
-    dynamicElements.carbs.textContent = (ingredientData.nutritional_value.carbohydrates * factor).toFixed(1);
-    dynamicElements.sugar.textContent = (ingredientData.nutritional_value.sugars * factor).toFixed(1);
-    dynamicElements.fiber.textContent = (ingredientData.nutritional_value.fiber * factor).toFixed(1);
-    dynamicElements.protein.textContent = (ingredientData.nutritional_value.proteins * factor).toFixed(1);
+
+    for (let key in dynamicElements) {
+        if (key !== 'total' && ingredientData.nutritional_value[key] !== undefined) {
+            dynamicElements[key].textContent = (ingredientData.nutritional_value[key] * factor).toFixed(1);
+        }
+    }
 }
 
 function updateCustomMealSummary() {
@@ -77,35 +76,22 @@ function updateCustomMealSummary() {
     if (customMealDraft && customMealDraft.product && customMealDraft.product.nutritional_value) {
         const summaryElements = {
             totalPrice: document.getElementById('totalPrice'),
-            totalKcal: document.getElementById('totalKcal'),
-            totalFat: document.getElementById('totalFat'),
-            totalSaturatedFat: document.getElementById('totalSaturatedFat'),
-            totalCarbs: document.getElementById('totalCarbs'),
-            totalSugar: document.getElementById('totalSugar'),
-            totalFiber: document.getElementById('totalFiber'),
-            totalProtein: document.getElementById('totalProtein')
+            calories: document.getElementById('totalKcal'),
+            fats: document.getElementById('totalFat'),
+            saturated_fats: document.getElementById('totalSaturatedFat'),
+            carbohydrates: document.getElementById('totalCarbs'),
+            sugars: document.getElementById('totalSugar'),
+            fiber: document.getElementById('totalFiber'),
+            proteins: document.getElementById('totalProtein')
         };
 
         const nutritional_value = customMealDraft.product.nutritional_value;
 
-        const keyMapping = {
-            totalPrice: 'price',
-            totalKcal: 'calories',
-            totalFat: 'fats',
-            totalSaturatedFat: 'saturated_fats',
-            totalCarbs: 'carbohydrates',
-            totalSugar: 'sugars',
-            totalFiber: 'fiber',
-            totalProtein: 'proteins'
-        };
-
         for (let key in summaryElements) {
-            const nutritionalKey = keyMapping[key];
-            const value = nutritional_value[nutritionalKey];
-            if (value !== undefined && summaryElements[key]) {
-                summaryElements[key].textContent = value.toFixed(2);
-            } else {
-                console.warn(`Missing or invalid value for ${key}`);
+            if (key === 'totalPrice') {
+                summaryElements[key].textContent = customMealDraft.product.price.toFixed(2);
+            } else if (nutritional_value[key] !== undefined && summaryElements[key]) {
+                summaryElements[key].textContent = nutritional_value[key].toFixed(2);
             }
         }
 
@@ -124,7 +110,6 @@ function updateCustomMealSummary() {
 }
 
 function addIngredientToCustomMeal(amount) {
-    // Изменяем эту функцию для работы с customMealDraft
     let customMealDraft = storage.getCustomMealDraft();
 
     if (!customMealDraft) {
@@ -136,17 +121,8 @@ function addIngredientToCustomMeal(amount) {
                 image: "",
                 product_type: "custom",
                 selectedCalories: 0,
-                nutritional_value: {
-                    calories: 0,
-                    grams: 0,
-                    fats: 0,
-                    saturated_fats: 0,
-                    carbohydrates: 0,
-                    sugars: 0,
-                    fiber: 0,
-                    proteins: 0,
-                    price: 0
-                },
+                nutritional_value: {},
+                price: 0,
                 ingredients: []
             },
             quantity: 1
@@ -174,28 +150,25 @@ function addIngredientToCustomMeal(amount) {
 }
 
 function recalculateCustomMealSummary(customMeal) {
-    customMeal.product.nutritional_value = customMeal.product.ingredients.reduce((sum, ingredient) => {
+    customMeal.product.nutritional_value = {};
+    customMeal.product.price = 0;
+
+    customMeal.product.ingredients.forEach(ingredient => {
         const factor = ingredient.weight_grams / 100;
 
-        sum.calories += ingredient.nutritional_value.calories * factor;
-        sum.grams += ingredient.weight_grams;
-        sum.fats += ingredient.nutritional_value.fats * factor;
-        sum.saturated_fats += ingredient.nutritional_value.saturated_fats * factor;
-        sum.carbohydrates += ingredient.nutritional_value.carbohydrates * factor;
-        sum.sugars += ingredient.nutritional_value.sugars * factor;
-        sum.fiber += ingredient.nutritional_value.fiber * factor;
-        sum.proteins += ingredient.nutritional_value.proteins * factor;
-        sum.price += ingredient.price * ingredient.weight_grams;
-        return sum;
-    }, {
-        calories: 0,
-        grams: 0,
-        fats: 0,
-        saturated_fats: 0,
-        carbohydrates: 0,
-        sugars: 0,
-        fiber: 0,
-        proteins: 0,
-        price: 0
+        for (let key in ingredient.nutritional_value) {
+            if (customMeal.product.nutritional_value[key] === undefined) {
+                customMeal.product.nutritional_value[key] = 0;
+            }
+            customMeal.product.nutritional_value[key] += ingredient.nutritional_value[key] * factor;
+        }
+
+        customMeal.product.price += ingredient.price * ingredient.weight_grams;
     });
+
+    for (let key in customMeal.product.nutritional_value) {
+        customMeal.product.nutritional_value[key] = Math.round(customMeal.product.nutritional_value[key] * 100) / 100;
+    }
+
+    customMeal.product.price = Math.round(customMeal.product.price);
 }

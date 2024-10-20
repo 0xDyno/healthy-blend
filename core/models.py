@@ -217,6 +217,16 @@ class ProductIngredient(models.Model):
     ingredient = models.ForeignKey('Ingredient', on_delete=models.CASCADE)
     weight_grams = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
+    def clean(self):
+        if self.weight_grams > self.ingredient.max_order:
+            raise ValidationError(
+                f"Weight is too big for ingredient \"{self.ingredient.name}\", "
+                f"allowed {self.ingredient.max_order}g max, you have {self.weight_grams}")
+        if self.weight_grams < self.ingredient.min_order:
+            raise ValidationError(
+                f"Weight is too small for ingredient \"{self.ingredient.name}\", "
+                f"allowed {self.ingredient.min_order}g min, you have {self.weight_grams}")
+
 
 class Order(models.Model):
     STATUS_CHOICES = (

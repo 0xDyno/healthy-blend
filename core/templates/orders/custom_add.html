@@ -6,92 +6,93 @@
 {% block title %}Ingredient Detail - Restaurant System{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-md-8">
-            <h2 id="ingredientName"></h2>
-            <p id="ingredientDescription"></p>
-            <p>Price: <span id="ingredientPrice"></span> IDR/g</p>
-        </div>
-        <div class="col-md-4">
-            <!-- Placeholder for future image -->
-            <div id="ingredientImage"></div>
-        </div>
-    </div>
-
-    <!-- Custom Meal Summary -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Custom Meal Summary</h5>
-            <div class="row">
-                <div class="col-md-3">
-                    <p class="card-text">Total: <span id="totalPrice">0.00</span> IDR</p>
-                    <p class="card-text">kCal: <span id="totalKcal">0</span></p>
-                </div>
-                <div class="col-md-3">
-                    <p class="card-text">Fat: <span id="totalFat">0</span>g</p>
-                    <p class="card-text">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
-                </div>
-                <div class="col-md-3">
-                    <p class="card-text">Carbs: <span id="totalCarbs">0</span>g</p>
-                    <p class="card-text">Sugar: <span id="totalSugar">0</span>g</p>
-                </div>
-                <div class="col-md-3">
-                    <p class="card-text">Fiber: <span id="totalFiber">0</span>g</p>
-                    <p class="card-text">Protein: <span id="totalProtein">0</span>g</p>
-                </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <h2 id="ingredientName"></h2>
+                <p id="ingredientDescription"></p>
+                <p>Price: <span id="ingredientPrice"></span> IDR/g</p>
+            </div>
+            <div class="col-md-4">
+                <!-- Placeholder for future image -->
+                <div id="ingredientImage"></div>
             </div>
         </div>
-    </div>
 
-    <!-- Selected ingredients list -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Selected Ingredients</h5>
-            <ul id="selectedIngredients"></ul>
-        </div>
-    </div>
-
-    <form id="addIngredientForm">
-        <div class="mb-3">
-            <label for="ingredientAmount" class="form-label">Amount (g)</label>
-            <input type="range" class="form-range" id="ingredientAmount" min="1" max="300" step="1" value="1">
-            <output for="ingredientAmount" id="amountOutput">1</output>g
-        </div>
-
-        <!-- Nutritional Information for Selected Amount -->
+        <!-- Custom Meal Summary -->
         <div class="card mb-4">
             <div class="card-body">
-                <h5 class="card-title">Nutritional Information for Selected Amount</h5>
+                <h5 class="card-title">Custom Meal Summary</h5>
                 <div class="row">
                     <div class="col-md-3">
-                        <p class="card-text">Total: <span id="dynamicTotal">0.00</span> IDR</p>
-                        <p class="card-text">kCal: <span id="dynamicKcal">0</span></p>
+                        <p class="card-text">Total: <span id="totalPrice">0.00</span> IDR</p>
+                        <p class="card-text">kCal: <span id="totalKcal">0</span></p>
                     </div>
                     <div class="col-md-3">
-                        <p class="card-text">Fat: <span id="dynamicFat">0</span>g</p>
-                        <p class="card-text">Saturated Fat: <span id="dynamicSaturatedFat">0</span>g</p>
+                        <p class="card-text">Fat: <span id="totalFat">0</span>g</p>
+                        <p class="card-text">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
                     </div>
                     <div class="col-md-3">
-                        <p class="card-text">Carbs: <span id="dynamicCarbs">0</span>g</p>
-                        <p class="card-text">Sugar: <span id="dynamicSugar">0</span>g</p>
+                        <p class="card-text">Carbs: <span id="totalCarbs">0</span>g</p>
+                        <p class="card-text">Sugar: <span id="totalSugar">0</span>g</p>
                     </div>
                     <div class="col-md-3">
-                        <p class="card-text">Fiber: <span id="dynamicFiber">0</span>g</p>
-                        <p class="card-text">Protein: <span id="dynamicProtein">0</span>g</p>
+                        <p class="card-text">Fiber: <span id="totalFiber">0</span>g</p>
+                        <p class="card-text">Protein: <span id="totalProtein">0</span>g</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Add to Custom Meal</button>
-    </form>
-</div>
+        <!-- Selected ingredients list -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Selected Ingredients</h5>
+                <ul id="selectedIngredients"></ul>
+            </div>
+        </div>
+
+        <form id="addIngredientForm">
+            <div class="mb-3">
+                <label for="ingredientAmount" class="form-label">Amount (g)</label>
+                <input type="range" class="form-range" id="ingredientAmount" min="1" max="300" step="1" value="1">
+                <output for="ingredientAmount" id="amountOutput">1</output>
+                g
+            </div>
+
+            <!-- Nutritional Information for Selected Amount -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Nutritional Information for Selected Amount</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p class="card-text">Total: <span id="dynamicTotal">0.00</span> IDR</p>
+                            <p class="card-text">Calories: <span id="dynamicCalories">0</span></p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="card-text">Fats: <span id="dynamicFats">0</span>g</p>
+                            <p class="card-text">Saturated Fats: <span id="dynamicSaturated_fats">0</span>g</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="card-text">Carbohydrates: <span id="dynamicCarbohydrates">0</span>g</p>
+                            <p class="card-text">Sugars: <span id="dynamicSugars">0</span>g</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="card-text">Fiber: <span id="dynamicFiber">0</span>g</p>
+                            <p class="card-text">Proteins: <span id="dynamicProteins">0</span>g</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Add to Custom Meal</button>
+        </form>
+    </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-    const ingredientId = {{ ingredient_id }};
-</script>
-<script type="module" src="{% static 'js/custom_add.js' %}"></script>
+    <script>
+        const ingredientId = {{ ingredient_id }};
+    </script>
+    <script type="module" src="{% static 'js/custom_add.js' %}"></script>
 {% endblock %}

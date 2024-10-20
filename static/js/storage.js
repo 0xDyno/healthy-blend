@@ -1,117 +1,128 @@
 // storage.js
 
-class Storage {
-    constructor() {
-        this.storageKey = 'restaurantStorage';
-        this.data = this.loadFromLocalStorage();
-        if (!this.data.customMealDraft) {
-            this.data.customMealDraft = null;
-        }
-    }
+const OFFICIAL_MEALS_KEY = 'officialMeals';
+const CUSTOM_MEALS_KEY = 'customMeals';
+const CUSTOM_MEAL_DRAFT_KEY = 'customMealDraft';
 
-    loadFromLocalStorage() {
-        const savedData = localStorage.getItem(this.storageKey);
-        if (savedData) {
-            return JSON.parse(savedData);
-        }
-        return {
-            officialMeals: [],
-            customMeals: []
-        };
-    }
+export default {
+    getOfficialMeals() {
+        return JSON.parse(localStorage.getItem(OFFICIAL_MEALS_KEY)) || [];
+    },
 
-    saveToLocalStorage() {
-        localStorage.setItem(this.storageKey, JSON.stringify(this.data));
-    }
+    setOfficialMeals(meals) {
+        localStorage.setItem(OFFICIAL_MEALS_KEY, JSON.stringify(meals));
+    },
 
-    addItem(product, quantity, isCustom = false) {
-        const targetArray = isCustom ? this.data.customMeals : this.data.officialMeals;
-        const existingItem = targetArray.find(item =>
+    getCustomMeals() {
+        return JSON.parse(localStorage.getItem(CUSTOM_MEALS_KEY)) || [];
+    },
+
+    setCustomMeals(meals) {
+        localStorage.setItem(CUSTOM_MEALS_KEY, JSON.stringify(meals));
+    },
+
+    getCustomMealDraft() {
+        return JSON.parse(localStorage.getItem(CUSTOM_MEAL_DRAFT_KEY)) || null;
+    },
+
+    setCustomMealDraft(draft) {
+        localStorage.setItem(CUSTOM_MEAL_DRAFT_KEY, JSON.stringify(draft));
+    },
+
+    clearCustomMealDraft() {
+        localStorage.removeItem(CUSTOM_MEAL_DRAFT_KEY);
+    },
+
+    addItem(product, quantity) {
+        const isCustom = product.product_type === 'custom';
+        const storageKey = isCustom ? CUSTOM_MEALS_KEY : OFFICIAL_MEALS_KEY;
+        const meals = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+        const existingItemIndex = meals.findIndex(item =>
             item.product.id === product.id &&
-            item.product.nutritional_value.calories === product.nutritional_value.calories
+            item.product.selectedCalories === product.selectedCalories
         );
-        if (existingItem) {
-            existingItem.quantity += quantity;
+
+        if (existingItemIndex !== -1) {
+            meals[existingItemIndex].quantity += quantity;
         } else {
-            targetArray.push({product, quantity});
-        }
-        this.saveToLocalStorage();
-    }
-
-    removeItem(id, calories, isOfficial) {
-        id = parseInt(id)
-        calories = parseInt(calories)
-        if (isOfficial) {
-            this.data.officialMeals = this.data.officialMeals.filter(item =>
-                !(item.product.id === id && item.product.nutritional_value.calories === calories)
-            );
-        } else {
-            this.data.customMeals = this.data.customMeals.filter(item =>
-                !(item.product.id === id)
-            );
+            meals.push({
+                product: {
+                    id: product.id,
+                    name: product.name,
+                    description: product.description,
+                    image: product.image,
+                    product_type: product.product_type,
+                    selectedCalories: product.selectedCalories,
+                    nutritional_value: {...product.nutritional_value},
+                    price: product.price,
+                    ingredients: product.ingredients ? [...product.ingredients] : []
+                },
+                quantity
+            });
         }
 
-        this.saveToLocalStorage();
-    }
+        localStorage.setItem(storageKey, JSON.stringify(meals));
+    },
 
-    getTotalPrice() {
-        const {officialMeals, customMeals} = this.getCartItemsSet();
-        const officialTotal = officialMeals.reduce((sum, item) => sum + item.product.nutritional_value.price * item.quantity, 0);
-        const customTotal = customMeals.reduce((sum, item) => sum + item.product.nutritional_value.price * item.quantity, 0);
-        return officialTotal + customTotal;
-    }
 
-    clearCart() {
-        this.data.officialMeals = [];
-        this.data.customMeals = [];
-        this.saveToLocalStorage();
-    }
+    removeItem(productId, calories, isCustom) {
+        const storageKey = isCustom ? CUSTOM_MEALS_KEY : OFFICIAL_MEALS_KEY;
+        const meals = JSON.parse(localStorage.getItem(storageKey)) || [];
+        const updatedMeals = meals.filter(item =>
+            !(item.product.id === parseInt(productId) &&
+                parseInt(item.product.nutritional_value.calories) === parseInt(calories))
+        );
+
+        localStorage.setItem(storageKey, JSON.stringify(updatedMeals));
+    },
+
+    updateItemQuantity(productId, quantity, isCustom) {
+        const storageKey = isCustom ? CUSTOM_MEALS_KEY : OFFICIAL_MEALS_KEY;
+        const meals = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+        const updatedMeals = meals.map(item => {
+            if (item.product.id === productId) {
+                return {...item, quantity};
+            }
+            return item;
+        });
+
+        localStorage.setItem(storageKey, JSON.stringify(updatedMeals));
+    },
 
     getCartItemsSet() {
         return {
-            officialMeals: this.data.officialMeals,
-            customMeals: this.data.customMeals
+            officialMeals: this.getOfficialMeals(),
+            customMeals: this.getCustomMeals()
         };
-    }
+    },
 
-    getCustomMeals() {
-        return this.data.customMeals || [];
-    }
+    getTotalPrice() {
+        const {officialMeals, customMeals} = this.getCartItemsSet();
+        const allMeals = [...officialMeals, ...customMeals];
 
-    setCustomMeals(customMeals) {
-        this.data.customMeals = customMeals;
-        this.saveToLocalStorage();
-    }
+        return allMeals.reduce((total, item) => {
+            return total + (item.product.price * item.quantity);
+        }, 0);
+    },
+
+    clearCart() {
+        localStorage.removeItem(OFFICIAL_MEALS_KEY);
+        localStorage.removeItem(CUSTOM_MEALS_KEY);
+    },
 
     updateCartInfo() {
-        const {officialMeals, customMeals} = this.getCartItemsSet();
-        const allItems = [...officialMeals, ...customMeals];
-        const cartItemCountElement = document.getElementById('cartItemCount');
-        const cartTotalElement = document.getElementById('cartTotal');
+        const cartItemCount = document.getElementById('cartItemCount');
+        const cartTotal = document.getElementById('cartTotal');
 
-        if (cartItemCountElement && cartTotalElement) {
-            const itemCount = allItems.reduce((total, item) => total + item.quantity, 0);
+        if (cartItemCount && cartTotal) {
+            const {officialMeals, customMeals} = this.getCartItemsSet();
+            const totalItems = [...officialMeals, ...customMeals].reduce((sum, item) => sum + item.quantity, 0);
             const totalPrice = this.getTotalPrice();
 
-            cartItemCountElement.textContent = itemCount;
-            cartTotalElement.textContent = `${totalPrice.toFixed(0)} IDR`;
+            cartItemCount.textContent = totalItems;
+            cartTotal.textContent = `${totalPrice.toFixed(0)} IDR`;
         }
     }
-
-    getCustomMealDraft() {
-        return this.data.customMealDraft;
-    }
-
-    setCustomMealDraft(draft) {
-        this.data.customMealDraft = draft;
-        this.saveToLocalStorage();
-    }
-
-    clearCustomMealDraft() {
-        this.data.customMealDraft = null;
-        this.saveToLocalStorage();
-    }
-}
-
-const storage = new Storage();
-export default storage;
+};
