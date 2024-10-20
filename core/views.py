@@ -3,6 +3,7 @@
 import json
 from audioop import reverse
 
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -97,7 +98,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             'description': product.description,
             'image': product.image.url if product.image else None,
             'weight': product.weight,
-            'price': product.custom_price if product.custom_price else product.price * product.price_multiplier,
+            'price': product.get_selling_price(),
             'ingredients': [{
                 'id': pi.ingredient.id,
                 'name': pi.ingredient.name,
@@ -170,11 +171,7 @@ def user_logout(request):
 
 @login_required
 def home(request):
-    products = Product.objects.filter(is_official=True)
-    context = {
-        'products': products,
-    }
-    return render(request, 'home.html', context)
+    return render(request, 'home.html')
 
 
 @login_required
@@ -184,15 +181,7 @@ def custom_meal(request):
 
 @login_required
 def ingredient_detail(request, ingredient_id):
-    # I don't want to share the object with all fields
-    # ingredient = get_object_or_404(Ingredient, id=ingredient_id)
     return render(request, 'ingredient_detail.html', {'ingredient_id': ingredient_id})
-
-
-@login_required
-def menu(request):
-    products = Product.objects.all()
-    return render(request, 'menu.html', {'products': products})
 
 
 @login_required
@@ -296,7 +285,6 @@ def update_order_status(request):
 def checkout(request):
     try:
         data = json.loads(request.body)
-        print(data)
         official_meals = data.get('officialMeals', [])
         custom_meals = data.get('customMeals', [])
 
@@ -307,46 +295,8 @@ def checkout(request):
         utils.process_official_meal(official_meals, order)
         utils.process_custom_meal(custom_meals, order)
 
-        if data:
-            return JsonResponse({'success': False, 'error': 'Working, all good', 'status': 400})
-
-        # Обрабатываем официальные блюда
-        for meal in official_meals:
-            product = Product.objects.get(id=meal['id'])
-            OrderProduct.objects.create(
-                order=order,
-                product=product,
-                quantity=meal['quantity'],
-                calories=meal['calories']
-            )
-
-        # Обрабатываем кастомные блюда
-        for meal in custom_meals:
-            custom_product = Product.objects.create(
-                name="Custom Meal",
-                is_official=False,
-                # Другие поля продукта...
-            )
-            for ing in meal['ingredients']:
-                ingredient = Ingredient.objects.get(id=ing['id'])
-                custom_product.ingredients.add(ingredient, through_defaults={'weight_grams': ing['weight']})
-
-            OrderProduct.objects.create(
-                order=order,
-                product=custom_product,
-                quantity=meal['quantity']
-            )
-
-        # Пересчитываем общую стоимость заказа
-        order.calculate_total_price()
-        order.save()
-
-        return JsonResponse({
-            'success': True,
-            'redirect_url': f'/order-confirmation/{order.id}/'
-        })
+        return JsonResponse({'success': True, 'redirect_url': f'/'})
+    except ValidationError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)

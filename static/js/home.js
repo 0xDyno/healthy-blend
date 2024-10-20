@@ -1,4 +1,5 @@
-// menu.js
+// home.js
+
 import storage from './storage.js';
 
 document.addEventListener('DOMContentLoaded', function () {

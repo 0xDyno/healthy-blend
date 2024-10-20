@@ -216,15 +216,6 @@ class ProductIngredient(models.Model):
     ingredient = models.ForeignKey('Ingredient', on_delete=models.CASCADE)
     weight_grams = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.product.save()  # Это вызовет пересчет пищевой ценности
-
-    def delete(self, *args, **kwargs):
-        product = self.product
-        super().delete(*args, **kwargs)
-        product.save()  # Это вызовет пересчет пищевой ценности
-
 
 class Order(models.Model):
     STATUS_CHOICES = (
@@ -255,7 +246,7 @@ class Order(models.Model):
 
 
 class OrderProduct(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='dishes')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='products')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(validators=[MinValueValidator(1)])
 

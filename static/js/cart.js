@@ -64,12 +64,12 @@ function createTableRow(item, index, type) {
             ${item.product.name}
             ${type === 'custom' ? createIngredientsList(item.product.ingredients) : ''}
         </td>
-        <td>${item.product.nutritional_value.calories}</td>
+        <td>${(item.product.nutritional_value.calories).toFixed(0)}</td>
         <td>${item.quantity}</td>
         <td>${item.product.nutritional_value.price.toFixed(0)} IDR</td>
         <td>${(item.product.nutritional_value.price * item.quantity).toFixed(0)} IDR</td>
         <td><button class="btn btn-sm btn-danger remove-from-cart" data-type="${type}" data-id="${item.product.id}" 
-        data-calories="${item.product.nutritional_value.calories || ''}">Remove</button></td>
+        data-calories="${item.product.nutritional_value.calories}">Remove</button></td>
     `;
     return row;
 }
