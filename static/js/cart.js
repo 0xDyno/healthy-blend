@@ -186,8 +186,7 @@ function handleCheckout() {
                 updateOrderSummary();
                 window.location.href = data.redirect_url;
             } else {
-                console.error('Checkout failed:', data.error);
-                // PLACE TO SHOW MISTAKEs
+                alert(data.error);
             }
         })
         .catch(error => console.error('Error:', error));

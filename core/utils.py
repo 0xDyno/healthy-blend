@@ -13,8 +13,6 @@ def big_validator(data: json):
     price = data.get("price")
     payment_type = data.get("payment_type")
 
-    print(official_meals)
-    print(custom_meals)
     if not official_meals and not custom_meals:
         raise ValidationError(message="The cart is empty")
 

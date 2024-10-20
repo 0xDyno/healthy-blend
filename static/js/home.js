@@ -1,6 +1,7 @@
 // home.js
 
 import storage from './storage.js';
+import { recalculateCustomMealSummary } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
     const dishesList = document.getElementById('dishesList');
@@ -157,18 +158,8 @@ function editDish(product, selectedCalories) {
             id: Date.now(),
             product_type: "custom",
             selectedCalories: selectedCalories,
-            nutritional_value: {
-                ...product.nutritional_value,
-                calories: selectedCalories,
-                grams: Math.round(product.weight * multiplier),
-                fats: Math.round(product.nutritional_value.fats * multiplier * 10) / 10,
-                saturated_fats: Math.round(product.nutritional_value.saturated_fats * multiplier * 10) / 10,
-                carbohydrates: Math.round(product.nutritional_value.carbohydrates * multiplier * 10) / 10,
-                sugars: Math.round(product.nutritional_value.sugars * multiplier * 10) / 10,
-                fiber: Math.round(product.nutritional_value.fiber * multiplier * 10) / 10,
-                proteins: Math.round(product.nutritional_value.proteins * multiplier * 10) / 10,
-            },
-            price: Math.round(product.price * multiplier),
+            nutritional_value: {},
+            price: 0,
             ingredients: product.ingredients.map(ingredient => ({
                 ...ingredient,
                 weight_grams: Math.round(ingredient.weight_grams * multiplier)
@@ -177,6 +168,7 @@ function editDish(product, selectedCalories) {
         quantity: 1
     };
 
+    recalculateCustomMealSummary(customMealDraft);
     storage.setCustomMealDraft(customMealDraft);
     window.location.href = '/custom-meal/';
 }
@@ -265,7 +257,11 @@ function updateOrderSummary() {
     for (let nutrient in summary) {
         const element = document.getElementById(`total${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}`);
         if (element) {
-            element.textContent = summary[nutrient].toFixed(nutrient === 'total' ? 0 : 1);
+            if (nutrient === 'total') {
+                element.textContent = `${summary[nutrient].toFixed(0)} IDR`;
+            } else {
+                element.textContent = summary[nutrient].toFixed(1);
+            }
         }
     }
 
@@ -277,8 +273,10 @@ function updateOrderSummary() {
 
     // Обновление общей стоимости в навигационной панели
     const cartTotalElement = document.getElementById('cartTotal');
+    const cartTotalElement2 = document.getElementById('totalPrice');
     if (cartTotalElement) {
-        cartTotalElement.textContent = `${storage.getTotalPrice().toFixed(0)} IDR`;
+        cartTotalElement.textContent = `${summary.total.toFixed(0)} IDR`;
+        cartTotalElement2.textContent = `${summary.total.toFixed(0)} IDR`;
     }
 }
 
