@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(response => response.json())
         .then(products => {
             products.forEach(product => {
+                console.log(JSON.stringify(products))
                 const productElement = createProductElement(product);
                 if (product.product_type === 'dish') {
                     dishesList.appendChild(productElement);

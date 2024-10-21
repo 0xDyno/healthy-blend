@@ -86,7 +86,7 @@ class Ingredient(models.Model):
     description = models.TextField()
     image = models.ImageField(upload_to='ingredients/')
     ingredient_type = models.CharField(max_length=10, choices=INGREDIENT_TYPES, default='other')
-    step = models.DecimalField(max_digits=2, decimal_places=1, default=1)
+    step = models.DecimalField(max_digits=2, decimal_places=1, default=1, validators=[MinValueValidator(0.05)])
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(500)])
     available = models.BooleanField(default=True)
@@ -97,8 +97,6 @@ class Ingredient(models.Model):
 
     # for 100g
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name='ingredient')
-
-    private_note = models.TextField(blank=True)
 
     def clean(self):
         if self.max_order < self.min_order:
@@ -135,7 +133,6 @@ class Product(models.Model):
     is_official = models.BooleanField(default=False)
 
     weight = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
-    private_note = models.TextField(blank=True)
 
     price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
     price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=3.00, validators=[MinValueValidator(0)])
@@ -243,11 +240,11 @@ class ProductIngredient(models.Model):
 
 class Order(models.Model):
     STATUS_CHOICES = (
-        ('waiting', 'Waiting'),
-        ('pending', 'Pending'),
-        ('processing', 'Processing'),
-        ('ready', 'Ready'),
-        ('cancelled', 'Cancelled'),
+        ('pending', 'Pending'),         # waiting for payment
+        ('processing', 'Processing'),   # paid - ready for Kitchen to cook
+        ('ready', 'Ready'),             # is ready for Manager to deliver
+        ('delivered', 'Delivered'),     # Done!
+        ('cancelled', 'Cancelled'),     # cancelled
     )
     ORDER_TYPES = (
         ('offline', 'Offline'),
@@ -258,13 +255,15 @@ class Order(models.Model):
         ('card', 'Card'),
         ('qr', 'QR'),
     )
-    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='waiting')
+    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='offline')
     payment_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='card')
 
     table = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'table'})
-    price = models.IntegerField(default=0)
-    total_price = models.IntegerField(default=0)
+    raw_price = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    fee = models.IntegerField(default=7, validators=[MinValueValidator(0), MaxValueValidator(15)])
+    service = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
+    total_price = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     payment_id = models.CharField(max_length=100, blank=True)
     is_refunded = models.BooleanField(default=False)
 
@@ -278,6 +277,7 @@ class OrderProduct(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='products')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(validators=[MinValueValidator(1)])
+    price = models.IntegerField(validators=[MinValueValidator(0)])
 
 
 class History(models.Model):

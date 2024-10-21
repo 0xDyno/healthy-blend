@@ -15,7 +15,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import User, Ingredient, Product, Order, History
-from .serializers import UserSerializer, IngredientSerializer, ProductSerializer, OrderSerializer, HistorySerializer
+# from .serializers import UserSerializer, IngredientSerializer, ProductSerializer, OrderSerializer, HistorySerializer
 from .forms import LoginForm
 from . import utils
 
@@ -46,14 +46,14 @@ class IsKitchenUser(permissions.BasePermission):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    # serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
-    permission_classes = [IsAdminUser | IsManagerUser]
+    # serializer_class = IngredientSerializer
+    permission_classes = [IsAdminUser]
 
     @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def get_ingredient(self, request, pk=None):
@@ -72,8 +72,8 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    permission_classes = [IsAdminUser | IsManagerUser]
+    # serializer_class = ProductSerializer
+    permission_classes = [IsAdminUser]
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def all_products(self, request):
@@ -101,53 +101,32 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-    """
-    GET /api/orders/ - List orders (filtered based on user role)
-    GET /api/orders/<id>/ - Retrieve a specific order (if the user has permission)
-    POST /api/orders/ - Create a new order (admin only)
-    PUT /api/orders/<id>/ - Update an order (admin only)
-    PATCH /api/orders/<id>/ - Partially update an order (admin only)
-    DELETE /api/orders/<id>/ - Delete an order (admin only)
-    """
     queryset = Order.objects.all()
-    serializer_class = OrderSerializer
+    permission_classes = [IsAdminUser]
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'admin':
-            return Order.objects.all()
-        elif user.role == 'manager':
-            return Order.objects.filter(created_at__date=timezone.now().date())
-        elif user.role == 'table':
-            return Order.objects.filter(table=user, created_at__gte=timezone.now() - timedelta(hours=3))
-        elif user.role == 'kitchen':
-            return Order.objects.filter(
-                order_status__in=['pending', 'processing'],
-                payment_type__in=['card', 'qr']
-            )
-        return Order.objects.none()
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            permission_classes = [permissions.IsAuthenticated]
-        else:
-            permission_classes = [permissions.IsAdminUser]
-        return [permission() for permission in permission_classes]
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def all_orders(self, request):
+        role = request.user.role
+        now = timezone.now()
+        data = []
+        if role == "admin":
+            orders_ = Order.objects.all().order_by("-created_at")
+            data = utils.get_order_data_full(orders_)
+        if role == "manager":
+            orders_ = Order.objects.filter(created_at__date=now.date()).order_by("-created_at")
+            data = utils.get_order_data_full(orders_)
+        if role == "table":
+            orders_ = Order.objects.filter(table=request.user, created_at__gte=now-timedelta(hours=3)).order_by("created_at")
+            data = utils.get_order_data_for_table(orders_)
+        if role == "kitchen":
+            orders_ = Order.objects.filter(created_at__date=timezone.now().date(), order_status__in=['processing']).order_by("created_at")
+            data = utils.get_order_data_for_kitchen(orders_)
+        return Response(data)
 
 
 class HistoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = History.objects.all()
-    serializer_class = HistorySerializer
+    # serializer_class = HistorySerializer
     permission_classes = [IsAdminUser | IsManagerUser]
 
     def get_queryset(self):
@@ -199,10 +178,7 @@ def custom_add(request, ingredient_id):
 
 @login_required
 def cart(request):
-    context = {
-        'is_manager': request.user.role == 'manager'
-    }
-    return render(request, 'client/cart.html', context)
+    return render(request, 'client/cart.html')
 
 
 @login_required

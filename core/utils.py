@@ -111,6 +111,7 @@ def validate_custom_meal(custom_meals):
 def process_official_meal(official_meals, order: Order):
     for official_meal in official_meals:
         meal_id = official_meal.get("id")
+        price = round(official_meal.get("price"))
         official_product = Product.objects.filter(id=meal_id).first()
 
         amount = official_meal.get("quantity")
@@ -119,9 +120,9 @@ def process_official_meal(official_meals, order: Order):
 
         if not official_product.is_dish():
             # if it's drink - just connect with Order
-            OrderProduct.objects.create(order=order, product=official_product, quantity=amount)
+            OrderProduct.objects.create(order=order, product=official_product, quantity=amount, price=price)
         else:
-            new_name = f"Copy for {calories} kCal for meal \"{official_product.name}\" (id {meal_id})"
+            new_name = f"{official_product.name} {calories}"
             new_desc = f"Copy for {calories} kCal for meal \"{official_product.description}\""
 
             # Check if we have SAME product
@@ -139,12 +140,12 @@ def process_official_meal(official_meals, order: Order):
                 product.save()
 
             # Connect with order
-            OrderProduct.objects.create(order=order, product=product, quantity=amount)
+            OrderProduct.objects.create(order=order, product=product, quantity=amount, price=price)
 
 
 def process_custom_meal(custom_meals, order: Order):
     for custom_meal in custom_meals:
-        name = f"Custom Meal, order {order.id}, table {order.table.id}"
+        name = "Custom Meal"
         description = f"{name} - {get_date_today()}"
 
         product = Product.objects.create(name=name, description=description, is_official=False, product_type="dish")
@@ -165,7 +166,7 @@ def process_custom_meal(custom_meals, order: Order):
             ProductIngredient.objects.create(product=product, ingredient=official_ingredient, weight_grams=weight)
 
         product.save()
-        OrderProduct.objects.create(order=order, product=product, quantity=amount)
+        OrderProduct.objects.create(order=order, product=product, quantity=amount, price=round(custom_meal.get("price")))
 
 
 def get_date_today():
@@ -198,3 +199,116 @@ def get_ingredient_data(ingredient: Ingredient):
         'nutritional_value': ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
     }
     return data
+
+
+def get_order_data_full(orders):
+    result = []
+
+    for order in orders:
+        data_to_send = {
+            "id": order.id,
+            "table_id": order.table.id,
+            "order_status": order.order_status,
+            "order_type": order.order_type,
+            "payment_type": order.payment_type,
+            "raw_price": order.raw_price,
+            "fee": order.fee,
+            "service": order.service,
+            "total_price": order.total_price,
+            "payment_id": order.payment_id,
+            "is_refunded": order.is_refunded,
+            "created_at": order.created_at,
+            "paid_at": order.paid_at,
+            "ready_at": order.ready_at,
+            "refunded_at": order.refunded_at,
+            "products": [],
+        }
+
+        for order_product in order.products.all():
+            product = order_product.product
+            product_data = {
+                "id": product.id,
+                "name": product.name,
+                "weight": product.weight,
+                "price": order_product.price,
+                "quantity": order_product.quantity,
+                "nutritional_value": product.nutritional_value.to_dict() if product.nutritional_value else None,
+                "ingredients": [],
+            }
+
+            for product_ingredient in product.productingredient_set.all():
+                ingredient = product_ingredient.ingredient
+                ingredient_data = {
+                    "id": ingredient.id,
+                    "name": ingredient.name,
+                    "weight_grams": float(product_ingredient.weight_grams),
+                    "price": ingredient.get_selling_price_for_weight(product_ingredient.weight_grams),
+                    "ingredient_type": ingredient.ingredient_type,
+                }
+                product_data["ingredients"].append(ingredient_data)
+
+            data_to_send["products"].append(product_data)
+
+        result.append(data_to_send)
+
+    return result
+
+
+def get_order_data_for_table(orders):
+    result = []
+    for order in orders:
+        data_to_send = {
+            "id": order.id,
+            "order_status": order.order_status,
+            "payment_type": order.payment_type,
+            "total_price": order.total_price,
+            "created_at": order.created_at,
+            "paid_at": order.paid_at if order.paid_at else None,
+            "products": [],
+        }
+        for product in order.products.all():
+            product_data = {
+                "product_name": product.product.name,
+                "price": product.price,
+                "quantity": product.quantity,
+            }
+            data_to_send["products"].append(product_data)
+
+        result.append(data_to_send)
+    return result
+
+
+def get_order_data_for_kitchen(orders):
+    result = []
+    for order in orders:
+        data_to_send = {
+            "id": order.id,
+            "table_id": order.table.id,
+            "order_status": order.order_status,
+            "paid_at": order.paid_at,
+            "products": [],
+        }
+
+        for order_product in order.products.all():
+            product = order_product.product
+            product_data = {
+                "product_name": product.name,
+                "quantity": order_product.quantity,
+                "ingredients": [],
+            }
+
+            for product_ingredient in product.productingredient_set.all():
+                ingredient = product_ingredient.ingredient
+                ingredient_data = {
+                    "id": ingredient.id,
+                    "name": ingredient.name,
+                    "weight_grams": float(product_ingredient.weight_grams),
+                    "ingredient_type": ingredient.ingredient_type,
+                }
+                product_data["ingredients"].append(ingredient_data)
+
+            data_to_send["products"].append(product_data)
+
+        result.append(data_to_send)
+
+    return result
