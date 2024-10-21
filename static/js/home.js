@@ -1,7 +1,7 @@
 // home.js
 
 import storage from './storage.js';
-import { recalculateCustomMealSummary } from './utils.js';
+import * as utils from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
     const dishesList = document.getElementById('dishesList');
@@ -21,10 +21,13 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-    updateOrderSummary();
+    utils.updateOrderSummary();
 });
 
 function createProductElement(product) {
+    if (product.product_type === 'drink') {
+        return createDrinkElement(product);
+    }
     const productDiv = document.createElement('div');
     productDiv.className = 'col-md-4 mb-4';
     productDiv.innerHTML = `
@@ -36,24 +39,74 @@ function createProductElement(product) {
             </div>
         </div>
     `;
-
     productDiv.querySelector('.product-card').addEventListener('click', () => showProductDetails(product));
-
     return productDiv;
 }
 
 function showProductDetails(product) {
-    const modalElement = document.getElementById('productModal');
-    const modal = new bootstrap.Modal(modalElement);
-    const modalBody = modalElement.querySelector('.modal-body');
-
     if (product.product_type === 'dish') {
+        const modalElement = document.getElementById('productModal');
+        const modal = new bootstrap.Modal(modalElement);
+        const modalBody = modalElement.querySelector('.modal-body');
         showDishDetails(product, modalBody, modal);
-    } else if (product.product_type === 'drink') {
-        showDrinkDetails(product, modalBody, modal);
+        modal.show();
     }
+}
 
-    modal.show();
+function createDrinkElement(product) {
+    const drinkDiv = document.createElement('div');
+    drinkDiv.className = 'row mb-4 drink-item';
+
+    // Shows ALL nutrition if they > 0
+    let nutrientsHtml = '';
+    for (const [key, value] of Object.entries(product.nutritional_value)) {
+        if (typeof value === 'number' && value !== 0) {
+            const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            nutrientsHtml += `<span>${formattedKey}: ${value.toFixed(1)}${key === 'calories' ? '' : 'g'}</span>`;
+        }
+    }
+    drinkDiv.innerHTML = `
+        <div class="col-md-3">
+            <img src="${product.image}" class="img-fluid" alt="${product.name}">
+        </div>
+        <div class="col-md-9">
+            <h5>${product.name}</h5>
+            <p>${product.description}</p>
+            <div class="nutrients">
+                ${nutrientsHtml}
+            </div>
+            <div class="mt-2">
+                <span class="price">${product.price} IDR</span>
+                <button class="btn btn-primary btn-sm add-to-cart" data-product-id="${product.id}">Add to Cart</button>
+            </div>
+        </div>
+    `;
+
+    // Shows only indicated nutrition
+
+    // drinkDiv.innerHTML = `
+    //     <div class="col-md-3">
+    //         <img src="${product.image}" class="img-fluid" alt="${product.name}">
+    //     </div>
+    //     <div class="col-md-9">
+    //         <h5>${product.name}</h5>
+    //         <p>${product.description}</p>
+    //         <div class="nutrients">
+    //             <span>Calories: ${product.nutritional_value.calories}</span>
+    //             <span>Fat: ${product.nutritional_value.fats}g</span>
+    //             <span>Carbs: ${product.nutritional_value.carbohydrates}g</span>
+    //             <span>Protein: ${product.nutritional_value.proteins}g</span>
+    //         </div>
+    //         <div class="mt-2">
+    //             <span class="price">${product.price} IDR</span>
+    //             <button class="btn btn-primary btn-sm add-to-cart" data-product-id="${product.id}">Add to Cart</button>
+    //         </div>
+    //     </div>
+    // `;
+
+    drinkDiv.querySelector('.add-to-cart').addEventListener('click', () => addToCart(product, 1));
+
+    return drinkDiv;
 }
 
 function showDishDetails(product, modalBody, modal) {
@@ -70,10 +123,10 @@ function showDishDetails(product, modalBody, modal) {
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>kCal</th>
+                    <th>Calories</th>
                     <th>Grams</th>
                     <th>Fat</th>
-                    <th>Saturated Fats</th>
+                    <th>Sat. Fats</th>
                     <th>Carbs</th>
                     <th>Sugar</th>
                     <th>Fiber</th>
@@ -86,22 +139,20 @@ function showDishDetails(product, modalBody, modal) {
                 <!-- Nutritional info will be inserted here -->
             </tbody>
         </table>
-        <div class="mt-3 d-flex justify-content-between">
+        <div class="mt-3 d-flex justify-content-end">
+            <button id="editButton" class="btn btn-success me-2">Customize</button>
             <button id="addToCart" class="btn btn-primary">Add to Cart</button>
         </div>
     `;
 
     const nutritionalValueBody = modalBody.querySelector('#nutritional_value');
     const addToCartButton = modalBody.querySelector('#addToCart');
+    const editButton = modalBody.querySelector('#editButton');
 
-    const editButton = document.createElement('button');
-    editButton.className = 'btn btn-success ms-2';
-    editButton.textContent = 'Edit';
     editButton.addEventListener('click', () => {
         const selectedCalories = parseInt(modalBody.querySelector('input[name="calorieOption"]:checked').value);
         editDish(product, selectedCalories);
     });
-    addToCartButton.parentNode.insertBefore(editButton, addToCartButton.nextSibling);
 
     const nutritional_value = product.nutritional_value;
     if (nutritional_value) {
@@ -141,7 +192,7 @@ function showDishDetails(product, modalBody, modal) {
             weight: product.weight * multiplier
         };
         addToCart(customProduct, 1);
-        updateOrderSummary();
+        utils.updateOrderSummary();
         modal.hide();
     });
 }
@@ -168,60 +219,9 @@ function editDish(product, selectedCalories) {
         quantity: 1
     };
 
-    recalculateCustomMealSummary(customMealDraft);
+    utils.recalculateCustomMealSummary(customMealDraft);
     storage.setCustomMealDraft(customMealDraft);
     window.location.href = '/custom-meal/';
-}
-
-function showDrinkDetails(product, modalBody, modal) {
-    modalBody.innerHTML = `
-        <div class="row mb-3">
-            <div class="col-md-8">
-                <h2>${product.name}</h2>
-                <p>${product.description}</p>
-            </div>
-            <div class="col-md-4">
-                <img src="${product.image}" class="img-fluid" alt="${product.name}">
-            </div>
-        </div>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>kCal</th>
-                    <th>Fat</th>
-                    <th>Saturated Fats</th>
-                    <th>Carbs</th>
-                    <th>Sugar</th>
-                    <th>Fiber</th>
-                    <th>Protein</th>
-                    <th>Price</th>
-                </tr>
-            </thead>
-            <tbody id="nutritional_value">
-                <tr>
-                    <td>${product.nutritional_value.calories}</td>
-                    <td>${product.nutritional_value.fats}</td>
-                    <td>${product.nutritional_value.saturated_fats}</td>
-                    <td>${product.nutritional_value.carbohydrates}</td>
-                    <td>${product.nutritional_value.sugars}</td>
-                    <td>${product.nutritional_value.fiber}</td>
-                    <td>${product.nutritional_value.proteins}</td>
-                    <td>${product.price} IDR</td>
-                </tr>
-            </tbody>
-        </table>
-        <div class="mt-3">
-            <button id="addToCart" class="btn btn-primary">Add to Cart</button>
-        </div>
-    `;
-
-    const addToCartButton = modalBody.querySelector('#addToCart');
-
-    addToCartButton.addEventListener('click', () => {
-        addToCart(product, 1);
-        updateOrderSummary();
-        modal.hide();
-    });
 }
 
 function addToCart(product, quantity) {
@@ -233,52 +233,8 @@ function addToCart(product, quantity) {
     };
 
     storage.addItem(customProduct, quantity);
-    updateOrderSummary();
-}
-
-function updateOrderSummary() {
-    const {officialMeals, customMeals} = storage.getCartItemsSet();
-    const cartItems = [...officialMeals, ...customMeals];
-    const summary = cartItems.reduce((acc, item) => {
-        const nutritional_value = item.product.nutritional_value;
-        acc.total += item.product.price * item.quantity;
-
-        for (let nutrient in nutritional_value) {
-            if (typeof nutritional_value[nutrient] === 'number') {
-                if (!acc[nutrient]) acc[nutrient] = 0;
-                acc[nutrient] += nutritional_value[nutrient] * item.quantity;
-            }
-        }
-
-        return acc;
-    }, {total: 0});
-
-    // Обновление отображения суммарной информации
-    for (let nutrient in summary) {
-        const element = document.getElementById(`total${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}`);
-        if (element) {
-            if (nutrient === 'total') {
-                element.textContent = `${summary[nutrient].toFixed(0)} IDR`;
-            } else {
-                element.textContent = summary[nutrient].toFixed(1);
-            }
-        }
-    }
-
-    // Обновление количества товаров в корзине в навигационной панели
-    const cartItemCountElement = document.getElementById('cartItemCount');
-    if (cartItemCountElement) {
-        cartItemCountElement.textContent = cartItems.reduce((total, item) => total + item.quantity, 0);
-    }
-
-    // Обновление общей стоимости в навигационной панели
-    const cartTotalElement = document.getElementById('cartTotal');
-    const cartTotalElement2 = document.getElementById('totalPrice');
-    if (cartTotalElement) {
-        cartTotalElement.textContent = `${summary.total.toFixed(0)} IDR`;
-        cartTotalElement2.textContent = `${summary.total.toFixed(0)} IDR`;
-    }
+    utils.updateOrderSummary();
 }
 
 // Экспорт функций, если нужно использовать их в других модулях
-export {addToCart, updateOrderSummary};
+export {addToCart};

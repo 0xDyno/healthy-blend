@@ -53,32 +53,14 @@ class IngredientViewSet(viewsets.ModelViewSet):
     def get_ingredient(self, request, pk=None):
         ingredient = self.get_object()
 
-        data = {
-            'id': ingredient.id,
-            'name': ingredient.name,
-            'description': ingredient.description,
-            'min_order': ingredient.min_order,
-            'max_order': ingredient.max_order,
-            'available': ingredient.available,
-            'price': ingredient.custom_price if ingredient.custom_price else ingredient.price_per_gram * ingredient.price_multiplier,
-            'nutritional_value': ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
-        }
+        data = utils.get_ingredient_data(ingredient)
 
         return Response(data)
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def all_ingredients(self, request):
         ingredients = Ingredient.objects.filter()
-        data = [{
-            'id': ingredient.id,
-            'name': ingredient.name,
-            'description': ingredient.description,
-            'min_order': ingredient.min_order,
-            'max_order': ingredient.max_order,
-            'available': ingredient.available,
-            'price': ingredient.custom_price if ingredient.custom_price else ingredient.price_per_gram * ingredient.price_multiplier,
-            'nutritional_value': ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
-        } for ingredient in ingredients]
+        data = [utils.get_ingredient_data(ingredient) for ingredient in ingredients]
         return Response(data)
 
 

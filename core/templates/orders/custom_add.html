@@ -6,51 +6,23 @@
 {% block title %}Ingredient Detail - Restaurant System{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <div class="row">
+        <div class="container">
+        <div class="row custom-add-container">
             <div class="col-md-8">
-                <h2 id="ingredientName"></h2>
-                <p id="ingredientDescription"></p>
-                <p>Price: <span id="ingredientPrice"></span> IDR/g</p>
+                <div class="custom-add-info">
+                    <h2 id="ingredientName"></h2>
+                    <p id="ingredientDescription"></p>
+                    <p>Price: <span id="ingredientPrice"></span> IDR/g</p>
+                </div>
             </div>
             <div class="col-md-4">
-                <!-- Placeholder for future image -->
-                <div id="ingredientImage"></div>
-            </div>
-        </div>
-
-        <!-- Custom Meal Summary -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Custom Meal Summary</h5>
-                <div class="row">
-                    <div class="col-md-3">
-                        <p class="card-text">Total: <span id="totalPrice">0.00</span> IDR</p>
-                        <p class="card-text">kCal: <span id="totalKcal">0</span></p>
-                    </div>
-                    <div class="col-md-3">
-                        <p class="card-text">Fat: <span id="totalFat">0</span>g</p>
-                        <p class="card-text">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
-                    </div>
-                    <div class="col-md-3">
-                        <p class="card-text">Carbs: <span id="totalCarbs">0</span>g</p>
-                        <p class="card-text">Sugar: <span id="totalSugar">0</span>g</p>
-                    </div>
-                    <div class="col-md-3">
-                        <p class="card-text">Fiber: <span id="totalFiber">0</span>g</p>
-                        <p class="card-text">Protein: <span id="totalProtein">0</span>g</p>
-                    </div>
+                <div class="custom-add-image-container">
+                    <img id="ingredientImage" src="" alt="Ingredient Image" class="custom-add-image">
                 </div>
             </div>
         </div>
 
-        <!-- Selected ingredients list -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Selected Ingredients</h5>
-                <ul id="selectedIngredients"></ul>
-            </div>
-        </div>
+        {% include 'base/nutritions.html' %}
 
         <form id="addIngredientForm">
             <div class="mb-3">
@@ -84,8 +56,10 @@
                     </div>
                 </div>
             </div>
-
-            <button type="submit" class="btn btn-primary">Add to Custom Meal</button>
+            <div class="text-center">
+                <a href="javascript:history.back()" class="btn btn-secondary">Back</a>
+                <button type="submit" class="btn btn-primary text-center">Save</button>
+            </div>
         </form>
     </div>
 {% endblock %}

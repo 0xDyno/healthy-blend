@@ -9,36 +9,30 @@
     <div class="container">
         <h2>Create Custom Meal</h2>
 
-        <!-- Order Summary for custom meal -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Custom Meal Summary</h5>
-                <div class="row">
-                    <div class="col-md-3">
-                        <p class="card-text">Total: <span id="totalPrice">0.00</span> IDR</p>
-                        <p class="card-text">kCal: <span id="totalKcal">0</span></p>
-                    </div>
-                    <div class="col-md-3">
-                        <p class="card-text">Fat: <span id="totalFat">0</span>g</p>
-                        <p class="card-text">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
-                    </div>
-                    <div class="col-md-3">
-                        <p class="card-text">Carbs: <span id="totalCarbs">0</span>g</p>
-                        <p class="card-text">Sugar: <span id="totalSugar">0</span>g</p>
-                    </div>
-                    <div class="col-md-3">
-                        <p class="card-text">Fiber: <span id="totalFiber">0</span>g</p>
-                        <p class="card-text">Protein: <span id="totalProtein">0</span>g</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% include 'base/nutritions.html' %}
 
         <!-- Selected ingredients list -->
-        <ul id="selectedIngredients"></ul>
-        <button id="addToOrderBtn" class="btn btn-success mt-3" disabled>Add to Order</button>
-        <br>
-        <br>
+        <div id="selectedIngredientsContainer">
+            <table id="selectedIngredientsTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Ingredient</th>
+                        <th>Price</th>
+                        <th>Weight</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="selectedIngredientsBody">
+                    <!-- Ingredients will be dynamically inserted here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="text-center">
+            <a href="{% url 'home' %}" class="btn btn-secondary mt-3">Back</a>
+            <button id="addToOrderBtn" class="btn btn-success mt-3" disabled>Add to Order</button>
+        </div>
 
         <!-- Sorting options -->
         <div class="mb-4">

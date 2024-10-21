@@ -1,12 +1,14 @@
 // custom_meal.js
 
 import storage from './storage.js';
+import * as utils from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-    storage.updateCartInfo();
-    loadIngredients();
-    updateCustomMealSummary();
-    updateAddToOrderButton();
+    storage.updateCartInfo();           // update common CartItems & CartPrice
+    utils.updateCustomMealSummary();    // update nutrition stat
+    showChosenIngredients();            // show ingredients we chose
+    updateAddToOrderButton();           // turn off button if no ingredients
+    loadIngredients();                  // load all ingredients
 
     document.getElementById('sortIngredients').addEventListener('change', function () {
         loadIngredients(this.value);
@@ -44,9 +46,16 @@ function loadIngredients(sortBy = 'protein') {
                 card.innerHTML = `
                     <div class="card h-100 ingredient-card" data-ingredient-id="${ingredient.id}">
                         <div class="card-body">
-                            <h5 class="card-title">${ingredient.name}</h5>
-                            <p class="card-text">${ingredient.description}</p>
-                            <p class="card-text">Цена: ${ingredient.price} IDR / g</p>
+                            <div class="row">
+                                <div class="col-8">
+                                    <h5 class="card-title">${ingredient.name}</h5>
+                                    <p class="card-text">${ingredient.description}</p>
+                                    <p class="card-text">${ingredient.price} IDR / g</p>
+                                </div>
+                                <div class="col-4 d-flex align-items-center justify-content-center">
+                                    <img src="${ingredient.image}" alt="${ingredient.name}" class="img-fluid" style="max-height: 100px; object-fit: cover;">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -59,181 +68,96 @@ function loadIngredients(sortBy = 'protein') {
                     window.location.href = `/ingredient/${ingredientId}`;
                 });
             });
-            updateCustomMealSummary();
+            utils.updateCustomMealSummary();
         })
         .catch(error => {
             console.error('Ошибка загрузки ингредиентов: ', error);
         });
 }
 
-function updateCustomMealSummary() {
-    const customMealDraft = storage.getCustomMealDraft();
-
-    const summaryElements = {
-        totalPrice: document.getElementById('totalPrice'),
-        totalKcal: document.getElementById('totalKcal'),
-        totalFat: document.getElementById('totalFat'),
-        totalSaturatedFat: document.getElementById('totalSaturatedFat'),
-        totalCarbs: document.getElementById('totalCarbs'),
-        totalSugar: document.getElementById('totalSugar'),
-        totalFiber: document.getElementById('totalFiber'),
-        totalProtein: document.getElementById('totalProtein')
-    };
-
-    const selectedIngredientsList = document.getElementById('selectedIngredients');
-
-    if (customMealDraft && customMealDraft.product && customMealDraft.product.nutritional_value) {
-        const nutritionalInfo = customMealDraft.product.nutritional_value;
-
-        const keyMapping = {
-            totalPrice: 'price',
-            totalKcal: 'calories',
-            totalFat: 'fats',
-            totalSaturatedFat: 'saturated_fats',
-            totalCarbs: 'carbohydrates',
-            totalSugar: 'sugars',
-            totalFiber: 'fiber',
-            totalProtein: 'proteins'
-        };
-
-        for (let key in summaryElements) {
-            const nutritionalKey = keyMapping[key];
-            let value;
-            if (nutritionalKey === 'price') {
-                value = customMealDraft.product.price;
-            } else {
-                value = nutritionalInfo[nutritionalKey];
-            }
-            if (value !== undefined && summaryElements[key]) {
-                summaryElements[key].textContent = value.toFixed(2);
-            } else {
-                console.warn(`Missing or invalid value for ${key}`);
-            }
-        }
-
-        if (selectedIngredientsList) {
-            selectedIngredientsList.innerHTML = '';
-
-            const table = document.createElement('table');
-            table.className = 'table table-striped';
-
-            const thead = document.createElement('thead');
-            thead.innerHTML = `
-                <tr>
-                    <th>Ingredient</th>
-                    <th>Weight</th>
-                    <th>Action</th>
-                </tr>
-            `;
-            table.appendChild(thead);
-
-            const tbody = document.createElement('tbody');
-            customMealDraft.product.ingredients.forEach(ingredient => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${ingredient.name}</td>
-                    <td>${ingredient.weight_grams}g</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger remove-ingredient" data-id="${ingredient.id}">Remove</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            table.appendChild(tbody);
-
-            selectedIngredientsList.appendChild(table);
-
-            document.querySelectorAll('.remove-ingredient').forEach(button => {
-                button.addEventListener('click', function () {
-                    removeIngredient(this.dataset.id);
-                });
-            });
-        }
-    } else {
-        for (let key in summaryElements) {
-            if (summaryElements[key]) {
-                summaryElements[key].textContent = '0';
-            }
-        }
-        if (selectedIngredientsList) {
-            selectedIngredientsList.innerHTML = '';
-        }
-    }
-    updateAddToOrderButton();
-}
-
 function updateAddToOrderButton() {
     const addToOrderBtn = document.getElementById('addToOrderBtn');
-    const customMealDraft = storage.getCustomMealDraft();
+    const customMealDraft = utils.getCustomMealDraft()
 
     addToOrderBtn.disabled = !(customMealDraft && customMealDraft.product && customMealDraft.product.ingredients.length > 0);
 }
 
-function removeIngredient(ingredientId) {
-    const customMealDraft = storage.getCustomMealDraft();
+function addToOrder() {
+    let customMealDraft = utils.getCustomMealDraft();
 
-    if (customMealDraft && customMealDraft.product && customMealDraft.product.ingredients) {
-        const removedIngredientIndex = customMealDraft.product.ingredients.findIndex(i => i.id === parseInt(ingredientId));
-
-        if (removedIngredientIndex !== -1) {
-            customMealDraft.product.ingredients.splice(removedIngredientIndex, 1);
-
-            recalculateNutritionalValue(customMealDraft.product);
-            storage.setCustomMealDraft(customMealDraft);
-            updateCustomMealSummary();
-        }
-    }
-}
-
-function recalculateNutritionalValue(product) {
-    product.nutritional_value = {
-        calories: 0,
-        proteins: 0,
-        fats: 0,
-        saturated_fats: 0,
-        carbohydrates: 0,
-        sugars: 0,
-        fiber: 0
+    const newCustomMeal = {
+        product: {...customMealDraft.product},
+        quantity: customMealDraft.quantity
     };
 
-    product.price = 0;
+    const customMeals = storage.getCustomMeals();
+    customMeals.push(newCustomMeal);
+    storage.setCustomMeals(customMeals);
 
-    product.ingredients.forEach(ingredient => {
-        const factor = ingredient.weight_grams / 100;
+    storage.clearCustomMealDraft();
+    utils.updateCustomMealSummary();
+    storage.updateCartInfo();
 
-        for (let key in product.nutritional_value) {
-            product.nutritional_value[key] += ingredient.nutritional_value[key] * factor;
-        }
-
-        product.price += ingredient.price * ingredient.weight_grams;
-    });
-
-    for (let key in product.nutritional_value) {
-        product.nutritional_value[key] = Math.round(product.nutritional_value[key] * 100) / 100;
-    }
-
-    product.price = Math.round(product.price);
+    window.location.href = '/';
 }
 
-function addToOrder() {
-    const customMealDraft = storage.getCustomMealDraft();
+export function showChosenIngredients() {
+    const customMealDraft = utils.getCustomMealDraft();
+    const selectedIngredientsBody = document.getElementById('selectedIngredientsBody');
+    const selectedIngredientsContainer = document.getElementById('selectedIngredientsContainer');
 
-    if (customMealDraft) {
-        const newCustomMeal = {
-            product: {...customMealDraft.product},
-            quantity: customMealDraft.quantity
-        };
+    if (customMealDraft && customMealDraft.product && customMealDraft.product.ingredients && customMealDraft.product.ingredients.length > 0) {
+        selectedIngredientsBody.innerHTML = '';
 
-        const customMeals = storage.getCustomMeals();
-        customMeals.push(newCustomMeal);
-        storage.setCustomMeals(customMeals);
+        customMealDraft.product.ingredients.forEach(ingredient => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${ingredient.name}</td>
+                <td>${ingredient.price}</td>
+                <td>${ingredient.weight_grams}g</td>
+                <td>${(ingredient.price * ingredient.weight_grams)}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary edit-ingredient me-2" data-id="${ingredient.id}">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger remove-ingredient" data-id="${ingredient.id}">Remove</button>
+                </td>
+            `;
+            selectedIngredientsBody.appendChild(tr);
+        });
 
-        storage.clearCustomMealDraft();
-        updateCustomMealSummary();
-        storage.updateCartInfo();
+        // Add total price row
+        const totalRow = document.createElement('tr');
+        totalRow.innerHTML = `
+            <td colspan="5" class="text-center"><strong>${customMealDraft.product.price.toFixed(0)} IDR</strong></td>
+        `;
+        selectedIngredientsBody.appendChild(totalRow);
 
-        window.location.href = '/';
+        selectedIngredientsContainer.style.display = 'block';
+
+        // Add event listeners to edit buttons
+        document.querySelectorAll('.edit-ingredient').forEach(button => {
+            button.addEventListener('click', function () {
+                const ingredientId = this.dataset.id;
+                window.location.href = `/ingredient/${ingredientId}`;
+            });
+        });
+
+        // Add event listeners to remove buttons
+        document.querySelectorAll('.remove-ingredient').forEach(button => {
+            button.addEventListener('click', function () {
+                removeIngredient(this.dataset.id);
+            });
+        });
     } else {
-        alert('No custom meal to add to order!');
+        selectedIngredientsContainer.style.display = 'none';
     }
+}
+
+function removeIngredient(ingredientId) {
+    let customMealDraft = utils.getCustomMealDraft()
+    utils.removeIngredient(customMealDraft, ingredientId)
+
+    utils.recalculateCustomMealSummary(customMealDraft) // 1 - calculate new nutritions
+    updateAddToOrderButton();                           // 2 - Check & Update Button
+    showChosenIngredients();                            // 3 - update UI for Ingredients
+    utils.updateCustomMealSummary();                    // 5 - update UI for Summary
 }

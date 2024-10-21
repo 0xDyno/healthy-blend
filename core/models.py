@@ -72,11 +72,21 @@ class NutritionalValue(models.Model):
 
 
 class Ingredient(models.Model):
+    INGREDIENT_TYPES = (
+        ('base', 'Base'),
+        ('protein', 'Protein'),
+        ('vegetable', 'Vegetable'),
+        ('dairy', 'Dairy'),
+        ('fruit', 'Fruit'),
+        ('topping', 'Topping'),
+        ('other', 'Other'),
+    )
     name = models.CharField(max_length=100)
     description = models.TextField()
-    image = models.ImageField(upload_to='ingredients/', null=True, blank=True)
-    min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
-    max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(300)])
+    image = models.ImageField(upload_to='ingredients/')
+    ingredient_type = models.CharField(max_length=10, choices=INGREDIENT_TYPES, default='other')
+    min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
+    max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(500)])
     available = models.BooleanField(default=True)
 
     price_per_gram = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(999)])

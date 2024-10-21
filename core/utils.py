@@ -40,8 +40,8 @@ def validate_official_meal(official_meals):
 
         if not isinstance(meal_id, int):
             raise ValidationError(message="Official Meal - wrong type for id.")
-        if not isinstance(amount, int) or amount < 1 or amount > 5:
-            raise ValidationError(message="Official Meal - wrong type for quantity.")
+        if not isinstance(amount, int) or amount < 1 or amount > 10:
+            raise ValidationError(message="Official Meal - max allowed 10 for one type.")
         if not isinstance(calories, int):
             raise ValidationError(message="Official Meal - wrong type for calories.")
         if not isinstance(price, (int, float)):
@@ -72,8 +72,8 @@ def validate_custom_meal(custom_meals):
 
         if not isinstance(ingredients, list):
             raise ValidationError(message="Custom Meal - wrong type for ingredients.")
-        if not isinstance(amount, int) or amount < 1 or amount > 5:
-            raise ValidationError(message="Custom Meal - wrong type for quantity.")
+        if not isinstance(amount, int) or amount < 1 or amount > 10:
+            raise ValidationError(message="Custom Meal - max allowed 10 for one type.")
         if not isinstance(price, (int, float)):
             raise ValidationError(message="Custom Meal - wrong type for price.")
 
@@ -167,3 +167,19 @@ def get_date_today():
     from datetime import date
     current_date = date.today()
     return current_date.strftime("%d-%m-%Y %H:%M:%S")
+
+
+def get_ingredient_data(ingredient: Ingredient):
+    data = {
+        'id': ingredient.id,
+        'name': ingredient.name,
+        'description': ingredient.description,
+        'image': ingredient.image.url,
+        'ingredient_type': ingredient.ingredient_type,
+        'min_order': ingredient.min_order,
+        'max_order': ingredient.max_order,
+        'available': ingredient.available,
+        'price': ingredient.custom_price if ingredient.custom_price else ingredient.price_per_gram * ingredient.price_multiplier,
+        'nutritional_value': ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
+    }
+    return data

@@ -1,7 +1,7 @@
 // custom_add.js
 
 import storage from './storage.js';
-import { recalculateCustomMealSummary } from './utils.js';
+import * as utils from './utils.js';
 
 let ingredientData;
 
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
             ingredientData = data;
             updateIngredientInfo();
             initializeForm();
-            updateCustomMealSummary();
+            utils.updateCustomMealSummary();
         })
         .catch(error => console.error('Error:', error));
 });
@@ -23,6 +23,7 @@ function updateIngredientInfo() {
     document.getElementById('ingredientName').textContent = ingredientData.name;
     document.getElementById('ingredientDescription').textContent = ingredientData.description;
     document.getElementById('ingredientPrice').textContent = ingredientData.price;
+    document.getElementById('ingredientImage').src = ingredientData.image;
 }
 
 function initializeForm() {
@@ -31,8 +32,15 @@ function initializeForm() {
 
     amountSlider.min = ingredientData.min_order;
     amountSlider.max = ingredientData.max_order;
-    amountSlider.value = ingredientData.min_order;
-    amountOutput.textContent = ingredientData.min_order;
+
+    const existingWeight = checkIngredientInDraft(ingredientData.id);
+    if (existingWeight) {
+        amountSlider.value = existingWeight;
+        amountOutput.textContent = existingWeight;
+    } else {
+        amountSlider.value = ingredientData.min_order;
+        amountOutput.textContent = ingredientData.min_order;
+    }
 
     amountSlider.addEventListener('input', function () {
         amountOutput.textContent = this.value;
@@ -69,83 +77,60 @@ function updateDynamicData(amount) {
             dynamicElements[key].textContent = (ingredientData.nutritional_value[key] * factor).toFixed(1);
         }
     }
+    updateTotalNutrition(amount);
 }
 
-function updateCustomMealSummary() {
-    const customMealDraft = storage.getCustomMealDraft();
+function updateTotalNutrition(amount) {
+    const factor = amount / 100;
+    const totalNutrition = {...utils.getCustomMealDraft().product.nutritional_value};
 
-    if (customMealDraft && customMealDraft.product && customMealDraft.product.nutritional_value) {
-        const summaryElements = {
-            totalPrice: document.getElementById('totalPrice'),
-            calories: document.getElementById('totalKcal'),
-            fats: document.getElementById('totalFat'),
-            saturated_fats: document.getElementById('totalSaturatedFat'),
-            carbohydrates: document.getElementById('totalCarbs'),
-            sugars: document.getElementById('totalSugar'),
-            fiber: document.getElementById('totalFiber'),
-            proteins: document.getElementById('totalProtein')
-        };
-
-        const nutritional_value = customMealDraft.product.nutritional_value;
-
-        for (let key in summaryElements) {
-            if (key === 'totalPrice') {
-                summaryElements[key].textContent = customMealDraft.product.price.toFixed(2);
-            } else if (nutritional_value[key] !== undefined && summaryElements[key]) {
-                summaryElements[key].textContent = nutritional_value[key].toFixed(2);
-            }
+    for (let key in totalNutrition) {
+        if (ingredientData.nutritional_value[key] !== undefined) {
+            totalNutrition[key] += ingredientData.nutritional_value[key] * factor;
         }
-
-        const selectedIngredientsList = document.getElementById('selectedIngredients');
-        if (selectedIngredientsList) {
-            selectedIngredientsList.innerHTML = '';
-            customMealDraft.product.ingredients.forEach(ingredient => {
-                const li = document.createElement('li');
-                li.textContent = `${ingredient.name}: ${ingredient.weight_grams}g`;
-                selectedIngredientsList.appendChild(li);
-            });
-        }
-    } else {
-        console.warn("No custom meal draft or invalid structure");
     }
+    utils.updateNutritionSummary(totalNutrition);
 }
+
 
 function addIngredientToCustomMeal(amount) {
-    let customMealDraft = storage.getCustomMealDraft();
+    let customMealDraft = utils.getCustomMealDraft()
 
-    if (!customMealDraft) {
-        customMealDraft = {
-            product: {
-                id: Date.now(),
-                name: "Custom Meal",
-                description: "Custom created meal",
-                image: "",
-                product_type: "custom",
-                selectedCalories: 0,
-                nutritional_value: {},
-                price: 0,
-                ingredients: []
-            },
-            quantity: 1
-        };
+    if (amount > ingredientData.max_order) {
+        alert(`Amount can't be bigger than ${ingredientData.max_order} grams.`);
+        return;
     }
 
-    const existingIngredient = customMealDraft.product.ingredients.find(ing => ing.id === ingredientData.id);
-
-    if (existingIngredient) {
-        existingIngredient.weight_grams += amount;
+    if (amount <= 0) {
+        utils.removeIngredient(customMealDraft, ingredientId)
     } else {
-        const newIngredient = {
-            id: ingredientData.id,
-            name: ingredientData.name,
-            weight_grams: amount,
-            nutritional_value: {...ingredientData.nutritional_value},
-            price: ingredientData.price
-        };
-        customMealDraft.product.ingredients.push(newIngredient);
+        const existingIngredient = customMealDraft.product.ingredients.find(ing => ing.id === ingredientData.id);
+
+        if (existingIngredient) {
+            existingIngredient.weight_grams = amount;
+        } else {
+            const newIngredient = {
+                id: ingredientData.id,
+                name: ingredientData.name,
+                weight_grams: amount,
+                nutritional_value: {...ingredientData.nutritional_value},
+                price: ingredientData.price
+            };
+            customMealDraft.product.ingredients.push(newIngredient);
+        }
+    }
+    utils.recalculateCustomMealSummary(customMealDraft);
+    storage.updateCartInfo();
+}
+
+function checkIngredientInDraft(ingredientId) {
+    let customMealDraft = utils.getCustomMealDraft();
+
+    if (!customMealDraft.product.ingredients || customMealDraft.product.ingredients.length === 0) {
+        return false;
     }
 
-    recalculateCustomMealSummary(customMealDraft);
-    storage.setCustomMealDraft(customMealDraft);
-    storage.updateCartInfo();
+    const existingIngredient = customMealDraft.product.ingredients.find(ing => ing.id === ingredientId);
+
+    return existingIngredient ? existingIngredient.weight_grams : false;
 }

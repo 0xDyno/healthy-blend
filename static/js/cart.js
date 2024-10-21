@@ -1,10 +1,11 @@
 // cart.js
 
 import storage from './storage.js';
+import * as utils from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
     updateCartUI();
-    updateOrderSummary();
+    utils.updateOrderSummary();
 
     document.getElementById('checkoutButton').addEventListener('click', handleCheckout);
 });
@@ -19,6 +20,7 @@ function updateCartUI() {
     const {officialMeals, customMeals} = storage.getCartItemsSet();
 
     if (officialMeals.length === 0 && customMeals.length === 0) {
+        cartTotalElement.textContent = ``;
         cartItemsContainer.innerHTML = '<p>Your cart is empty.</p>';
     } else {
         const table = document.createElement('table');
@@ -53,9 +55,9 @@ function updateCartUI() {
         });
 
         addRemoveEventListeners();
+        cartTotalElement.textContent = `Total: ${total.toFixed(0)} IDR`;
     }
-
-    cartTotalElement.textContent = `${total.toFixed(0)} IDR`;
+    updateCartControls();
 }
 
 function createTableRow(item, index, type) {
@@ -96,48 +98,10 @@ function addRemoveEventListeners() {
             const id = this.getAttribute('data-id');
             const calories = this.getAttribute('data-calories');
             storage.removeItem(id, calories, type === 'custom');
+            utils.updateOrderSummary();
             updateCartUI();
-            updateOrderSummary();
         });
     });
-}
-
-function updateOrderSummary() {
-    const {officialMeals, customMeals} = storage.getCartItemsSet();
-    const allItems = [...officialMeals, ...customMeals];
-
-    const summary = allItems.reduce((acc, item) => {
-        const nutritionalInfo = item.product.nutritional_value;
-        acc.total += item.product.price * item.quantity;
-        acc.kcal += nutritionalInfo.calories * item.quantity;
-        acc.fat += nutritionalInfo.fats * item.quantity;
-        acc.saturatedFat += nutritionalInfo.saturated_fats * item.quantity;
-        acc.carbs += nutritionalInfo.carbohydrates * item.quantity;
-        acc.sugar += nutritionalInfo.sugars * item.quantity;
-        acc.fiber += nutritionalInfo.fiber * item.quantity;
-        acc.protein += nutritionalInfo.proteins * item.quantity;
-        return acc;
-    }, {total: 0, kcal: 0, fat: 0, saturatedFat: 0, carbs: 0, sugar: 0, fiber: 0, protein: 0});
-
-    document.getElementById('totalKcal').textContent = summary.kcal.toFixed(0);
-    document.getElementById('totalFat').textContent = summary.fat.toFixed(1);
-    document.getElementById('totalSaturatedFat').textContent = summary.saturatedFat.toFixed(1);
-    document.getElementById('totalCarbs').textContent = summary.carbs.toFixed(1);
-    document.getElementById('totalSugar').textContent = summary.sugar.toFixed(1);
-    document.getElementById('totalFiber').textContent = summary.fiber.toFixed(1);
-    document.getElementById('totalProtein').textContent = summary.protein.toFixed(1);
-
-    // Обновление общей стоимости
-    const cartTotalElement = document.getElementById('cartTotal');
-    if (cartTotalElement) {
-        cartTotalElement.textContent = `${summary.total.toFixed(0)} IDR`;
-    }
-
-    // Обновление количества товаров в корзине в навигационной панели
-    const cartItemCountElement = document.getElementById('cartItemCount');
-    if (cartItemCountElement) {
-        cartItemCountElement.textContent = allItems.reduce((total, item) => total + item.quantity, 0);
-    }
 }
 
 function handleCheckout() {
@@ -183,11 +147,29 @@ function handleCheckout() {
             if (data.success) {
                 storage.clearCart();
                 updateCartUI();
-                updateOrderSummary();
+                utils.updateOrderSummary();
                 window.location.href = data.redirect_url;
             } else {
                 alert(data.error);
             }
         })
         .catch(error => console.error('Error:', error));
+}
+
+function updateCartControls() {
+    const paymentTypeSelect = document.getElementById('paymentType');
+    const checkoutButton = document.getElementById('checkoutButton');
+    const {officialMeals, customMeals} = storage.getCartItemsSet();
+
+    if (officialMeals.length === 0 && customMeals.length === 0) {
+        paymentTypeSelect.style.display = 'none';
+        checkoutButton.disabled = true;
+        checkoutButton.classList.add('btn-secondary');
+        checkoutButton.classList.remove('btn-primary');
+    } else {
+        paymentTypeSelect.style.display = 'block';
+        checkoutButton.disabled = false;
+        checkoutButton.classList.add('btn-primary');
+        checkoutButton.classList.remove('btn-secondary');
+    }
 }

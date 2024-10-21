@@ -7,32 +7,14 @@
 
 {% block content %}
     <div class="container">
-        <div class="row mb-4">
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Order Summary</h5>
-                        <div class="d-flex justify-content-between">
-                            <p class="mb-0">kCal: <span id="totalKcal">0</span></p>
-                            <p class="mb-0">Fat: <span id="totalFat">0</span>g</p>
-                            <p class="mb-0">Saturated Fat: <span id="totalSaturatedFat">0</span>g</p>
-                            <p class="mb-0">Carbs: <span id="totalCarbs">0</span>g</p>
-                            <p class="mb-0">Sugar: <span id="totalSugar">0</span>g</p>
-                            <p class="mb-0">Fiber: <span id="totalFiber">0</span>g</p>
-                            <p class="mb-0">Protein: <span id="totalProtein">0</span>g</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% include 'base/nutritions.html' %}
 
         <h2>Your Cart</h2>
         <div id="cartItems">
-            <!-- Cart items will be dynamically inserted here -->
         </div>
         <div class="text-right mt-3">
-            <h4>Total: <span id="cartTotalRes">0 IDR</span></h4>
-            <div class="form-group mb-3">
+            <h4><span id="cartTotalRes"> <!-- Place for Total Price, .js file -->  </span></h4>
+            <div id="paymentTypeContainer" class="form-group mb-3">
                 <select id="paymentType" class="form-control">
                     <option value="">Payment Type</option>
                     <option value="cash" {% if is_manager %}selected{% endif %}>Cash</option>
@@ -40,7 +22,10 @@
                     <option value="qr">QR</option>
                 </select>
             </div>
-            <button id="checkoutButton" class="btn btn-primary">Proceed to Checkout</button>
+            <div class="text-center">
+                <a href="{% url 'home' %}" class="btn btn-success">Choose more</a>
+                <button id="checkoutButton" class="btn btn-primary">Proceed to Checkout</button>
+            </div>
         </div>
     </div>
 

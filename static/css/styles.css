@@ -47,3 +47,79 @@
     -webkit-line-clamp: 3; /* количество строк */
     -webkit-box-orient: vertical;
 }
+
+.card-body {
+    display: flex;
+    align-items: stretch;
+}
+
+.ingredient-info {
+    flex-grow: 1;
+    padding-right: 15px;
+}
+
+.ingredient-image-container {
+    width: 100px;
+    display: flex;
+    align-items: center;
+}
+
+.ingredient-image {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.custom-add-container {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.custom-add-image-container {
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 20px;
+}
+
+.custom-add-image {
+    width: 150px;
+    height: auto;
+    object-fit: cover;
+    border-radius: 80px;
+}
+
+.custom-add-info {
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 100px) {
+    .custom-add-container {
+        flex-direction: row;
+    }
+
+    .custom-add-image-container {
+        margin-bottom: 20px;
+        margin-left: 250px;
+    }
+}
+
+.drink-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.drink-item img {
+    max-width: 100%;
+    height: auto;
+}
+
+.drink-item .nutrients span {
+    margin-right: 10px;
+}
+
+.drink-item .price {
+    font-weight: bold;
+    margin-right: 10px;
+}

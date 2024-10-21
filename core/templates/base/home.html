@@ -5,25 +5,7 @@
 
 {% block content %}
     <div class="container">
-        <div class="row mb-4">
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Order Summary</h5>
-                        <div class="d-flex justify-content-between">
-                            <p class="mb-0">Total: <span id="totalPrice">0 IDR</span></p>
-                            <p class="mb-0">Calories: <span id="totalCalories">0</span></p>
-                            <p class="mb-0">Fats: <span id="totalFats">0</span>g</p>
-                            <p class="mb-0">Saturated Fats: <span id="totalSaturated_fats">0</span>g</p>
-                            <p class="mb-0">Carbohydrates: <span id="totalCarbohydrates">0</span>g</p>
-                            <p class="mb-0">Sugars: <span id="totalSugars">0</span>g</p>
-                            <p class="mb-0">Fiber: <span id="totalFiber">0</span>g</p>
-                            <p class="mb-0">Proteins: <span id="totalProteins">0</span>g</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% include 'base/nutritions.html' %}
 
         <div class="row mb-4">
             <div class="col">
