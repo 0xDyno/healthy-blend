@@ -156,12 +156,12 @@ def home(request):
 
 @login_required
 def custom_meal(request):
-    return render(request, 'orders/custom_meal.html')
+    return render(request, 'client/custom_meal.html')
 
 
 @login_required
 def custom_add(request, ingredient_id):
-    return render(request, 'orders/custom_add.html', {'ingredient_id': ingredient_id})
+    return render(request, 'client/custom_add.html', {'ingredient_id': ingredient_id})
 
 
 @login_required
@@ -169,7 +169,7 @@ def cart(request):
     context = {
         'is_manager': request.user.role == 'manager'
     }
-    return render(request, 'orders/cart.html', context)
+    return render(request, 'client/cart.html', context)
 
 
 @login_required

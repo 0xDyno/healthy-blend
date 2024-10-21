@@ -263,7 +263,12 @@ class Order(models.Model):
     price = models.IntegerField(default=0)
     total_price = models.IntegerField(default=0)
     payment_id = models.CharField(max_length=100, blank=True)
+    is_refunded = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    ready_at = models.DateTimeField(null=True, blank=True)
+    refunded_at = models.DateTimeField(null=True, blank=True)
 
 
 class OrderProduct(models.Model):
