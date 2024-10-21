@@ -80,7 +80,7 @@ function createTableRow(item, index, type) {
 function createIngredientsList(ingredients) {
     if (!ingredients || ingredients.length === 0) return '';
 
-    const ingredientsList = ingredients.map(ing => `<li>${ing.name}, ${ing.weight_grams}g</li>`).join('');
+    const ingredientsList = ingredients.map(ing => `<li>${ing.name}, ${utils.formatNumber(ing.weight_grams)}g</li>`).join('');
     return `
         <small class="d-block mt-1">
             Ingredients:

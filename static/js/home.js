@@ -62,7 +62,7 @@ function createDrinkElement(product) {
     for (const [key, value] of Object.entries(product.nutritional_value)) {
         if (typeof value === 'number' && value !== 0) {
             const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            nutrientsHtml += `<span>${formattedKey}: ${value.toFixed(1)}${key === 'calories' ? '' : 'g'}</span>`;
+            nutrientsHtml += `<span>${formattedKey}: ${utils.formatNumber(value)}${key === 'calories' ? '' : 'g'}</span>`;
         }
     }
     drinkDiv.innerHTML = `
@@ -82,7 +82,7 @@ function createDrinkElement(product) {
         </div>
     `;
 
-    // Shows only indicated nutrition
+    // Shows only indicated nutrition for Drinks
 
     // drinkDiv.innerHTML = `
     //     <div class="col-md-3">
@@ -164,13 +164,14 @@ function showDishDetails(product, modalBody, modal) {
             const row = nutritionalValueBody.insertRow();
             row.innerHTML = `
                 <td>${calories}</td>
-                <td>${(product.weight * multiplier).toFixed(1)}</td>
-                <td>${(nutritional_value.fats * multiplier).toFixed(1)}</td>
-                <td>${(nutritional_value.saturated_fats * multiplier).toFixed(1)}</td>
-                <td>${(nutritional_value.carbohydrates * multiplier).toFixed(1)}</td>
-                <td>${(nutritional_value.sugars * multiplier).toFixed(1)}</td>
-                <td>${(nutritional_value.fiber * multiplier).toFixed(1)}</td>
-                <td>${(nutritional_value.proteins * multiplier).toFixed(1)}</td>
+<!--                <td>${(product.weight * multiplier).toFixed(0)}</td>-->
+                <td>${utils.formatNumber(product.weight * multiplier)}</td>
+                <td>${utils.formatNumber(nutritional_value.fats * multiplier)}</td>
+                <td>${utils.formatNumber(nutritional_value.saturated_fats * multiplier)}</td>
+                <td>${utils.formatNumber(nutritional_value.carbohydrates * multiplier)}</td>
+                <td>${utils.formatNumber(nutritional_value.sugars * multiplier)}</td>
+                <td>${utils.formatNumber(nutritional_value.fiber * multiplier)}</td>
+                <td>${utils.formatNumber(nutritional_value.proteins * multiplier)}</td>
                 <td>${(product.price * multiplier).toFixed(0)} IDR</td>
                 <td>
                     <input type="radio" name="calorieOption" value="${calories}" ${index === 0 ? 'checked' : ''}>
@@ -182,6 +183,7 @@ function showDishDetails(product, modalBody, modal) {
     addToCartButton.addEventListener('click', () => {
         const selectedCalories = parseInt(modalBody.querySelector('input[name="calorieOption"]:checked').value);
         const multiplier = selectedCalories / nutritional_value.calories;
+        console.log(multiplier)
         const customProduct = {
             ...product,
             selectedCalories: selectedCalories,
@@ -202,18 +204,19 @@ function editDish(product, selectedCalories) {
 
     const baseCalories = product.nutritional_value.calories;
     const multiplier = selectedCalories / baseCalories;
+    console.log()
 
     const customMealDraft = {
         product: {
             ...product,
             id: Date.now(),
             product_type: "custom",
-            selectedCalories: selectedCalories,
+            selectedCalories: 0,
             nutritional_value: {},
             price: 0,
             ingredients: product.ingredients.map(ingredient => ({
                 ...ingredient,
-                weight_grams: Math.round(ingredient.weight_grams * multiplier)
+                weight_grams: (parseFloat((ingredient.weight_grams * multiplier).toFixed(1)))
             }))
         },
         quantity: 1
@@ -228,7 +231,7 @@ function addToCart(product, quantity) {
     const customProduct = {
         ...product,
         selectedCalories: product.nutritional_value.calories,
-        nutritional_value: { ...product.nutritional_value },
+        nutritional_value: {...product.nutritional_value},
         price: product.price
     };
 

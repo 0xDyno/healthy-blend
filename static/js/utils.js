@@ -2,14 +2,18 @@
 
 import storage from './storage.js';
 
+export function formatNumber(number) {
+    return Number.isInteger(number) ? number.toString() : number.toFixed(1);
+}
+
 export function updateNutritionSummary(summary) {
-    document.getElementById('nutritionSummaryCalories').textContent = summary.calories.toFixed(0);
-    document.getElementById('nutritionSummaryFats').textContent = summary.fats.toFixed(1);
-    document.getElementById('nutritionSummarySaturatedFats').textContent = summary.saturated_fats.toFixed(1);
-    document.getElementById('nutritionSummaryCarbohydrates').textContent = summary.carbohydrates.toFixed(1);
-    document.getElementById('nutritionSummarySugars').textContent = summary.sugars.toFixed(1);
-    document.getElementById('nutritionSummaryFiber').textContent = summary.fiber.toFixed(1);
-    document.getElementById('nutritionSummaryProteins').textContent = summary.proteins.toFixed(1);
+    document.getElementById('nutritionSummaryCalories').textContent = formatNumber(summary.calories);
+    document.getElementById('nutritionSummaryFats').textContent = formatNumber(summary.fats);
+    document.getElementById('nutritionSummarySaturatedFats').textContent = formatNumber(summary.saturated_fats);
+    document.getElementById('nutritionSummaryCarbohydrates').textContent = formatNumber(summary.carbohydrates);
+    document.getElementById('nutritionSummarySugars').textContent = formatNumber(summary.sugars);
+    document.getElementById('nutritionSummaryFiber').textContent = formatNumber(summary.fiber);
+    document.getElementById('nutritionSummaryProteins').textContent = formatNumber(summary.proteins);
 }
 
 export function calculateNutritionSummary(items) {
@@ -87,10 +91,10 @@ export function recalculateCustomMealSummary(customMeal) {
     });
 
     for (let key in customMeal.product.nutritional_value) {
-        customMeal.product.nutritional_value[key] = Math.round(customMeal.product.nutritional_value[key] * 100) / 100;
+        customMeal.product.nutritional_value[key] = parseFloat(customMeal.product.nutritional_value[key].toFixed(2));
     }
 
-    customMeal.product.price = Math.round(customMeal.product.price);
+    customMeal.product.price = parseFloat(customMeal.product.price.toFixed(2));
     storage.setCustomMealDraft(customMeal);
 }
 

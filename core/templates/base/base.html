@@ -28,17 +28,12 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 {% if user.is_authenticated %}
-                    {% if user.role == 'manager' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'orders' %}">Orders</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'product_management' %}">Products</a>
-                        </li>
-                    {% elif user.role == 'admin' %}
+                    {% if user.role == 'admin' %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
                         </li>
+                    {% endif %}
+                    {% if user.role == 'manager' or user.role == 'admin' %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'product_management' %}">Products</a>
                         </li>
@@ -46,6 +41,9 @@
                             <a class="nav-link" href="{% url 'ingredient_management' %}">Ingredients</a>
                         </li>
                     {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'orders' %}">Orders</a>
+                    </li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav">

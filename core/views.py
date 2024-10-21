@@ -2,12 +2,14 @@
 
 import json
 import logging
+from datetime import timedelta
 
 from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -16,7 +18,6 @@ from .models import User, Ingredient, Product, Order, History
 from .serializers import UserSerializer, IngredientSerializer, ProductSerializer, OrderSerializer, HistorySerializer
 from .forms import LoginForm
 from . import utils
-
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,11 @@ class IsManagerUser(permissions.BasePermission):
 class IsTableUser(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == 'table'
+
+
+class IsKitchenUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'kitchen'
 
 
 # API ViewSets
@@ -72,44 +78,71 @@ class ProductViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def all_products(self, request):
         products = Product.objects.filter(is_official=True)
-        data = [{
-            'id': product.id,
-            'product_type': product.product_type,
-            'name': product.name,
-            'description': product.description,
-            'image': product.image.url if product.image else None,
-            'weight': product.weight,
-            'price': product.get_selling_price(),
-            'ingredients': [{
-                'id': pi.ingredient.id,
-                'name': pi.ingredient.name,
-                'weight_grams': pi.weight_grams,
-                'nutritional_value': pi.ingredient.nutritional_value.to_dict() if pi.ingredient.nutritional_value else None,
-                'price': pi.ingredient.get_selling_price(),
-            } for pi in product.productingredient_set.all()],
-            'nutritional_value': product.nutritional_value.to_dict() if product.nutritional_value else None,
-        } for product in products]
+        data = []
+        for product in products:
+            product_info = {'id': product.id,
+                            'product_type': product.product_type,
+                            'name': product.name,
+                            'description': product.description,
+                            'image': product.image.url if product.image else None,
+                            'weight': product.weight,
+                            'price': product.get_selling_price(),
+                            'ingredients': [],
+                            'nutritional_value': product.nutritional_value.to_dict()}
+            for pi in product.productingredient_set.all():
+                ingredient_info = {'id': pi.ingredient.id,
+                                   'name': pi.ingredient.name,
+                                   'weight_grams': pi.weight_grams,
+                                   'nutritional_value': pi.ingredient.nutritional_value.to_dict(),
+                                   'price': pi.ingredient.get_selling_price()}
+                product_info.get("ingredients").append(ingredient_info)
+            data.append(product_info)
         return Response(data)
 
 
 class OrderViewSet(viewsets.ModelViewSet):
+    """
+    GET /api/orders/ - List orders (filtered based on user role)
+    GET /api/orders/<id>/ - Retrieve a specific order (if the user has permission)
+    POST /api/orders/ - Create a new order (admin only)
+    PUT /api/orders/<id>/ - Update an order (admin only)
+    PATCH /api/orders/<id>/ - Partially update an order (admin only)
+    DELETE /api/orders/<id>/ - Delete an order (admin only)
+    """
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
-    def get_permissions(self):
-        if self.action in ['create', 'list', 'retrieve']:
-            return [IsTableUser()]
-        elif self.action in ['update', 'partial_update']:
-            return [IsManagerUser()]
-        return [IsAdminUser()]
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'admin':
+            return Order.objects.all()
+        elif user.role == 'manager':
+            return Order.objects.filter(created_at__date=timezone.now().date())
+        elif user.role == 'table':
+            return Order.objects.filter(table=user, created_at__gte=timezone.now() - timedelta(hours=3))
+        elif user.role == 'kitchen':
+            return Order.objects.filter(
+                order_status__in=['pending', 'processing'],
+                payment_type__in=['card', 'qr']
+            )
+        return Order.objects.none()
 
-    @action(detail=False, methods=['get'], permission_classes=[IsTableUser])
-    def current(self, request):
-        order = Order.objects.filter(table=request.user, order_status__in=['pending', 'processing']).first()
-        if order:
-            serializer = self.get_serializer(order)
-            return Response(serializer.data)
-        return Response({'detail': 'No current order found.'}, status=status.HTTP_404_NOT_FOUND)
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            permission_classes = [permissions.IsAdminUser]
+        return [permission() for permission in permission_classes]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 class HistoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -189,7 +222,7 @@ def checkout(request):
 
         total_price = utils.big_validator(data)
 
-        order = Order.objects.create(table=request.user, payment_type=data["payment_type"], price=total_price)
+        order = Order.objects.create(table=request.user, payment_type=data["payment_type"], price=round(total_price))
 
         utils.process_official_meal(official_meals, order)
         utils.process_custom_meal(custom_meals, order)

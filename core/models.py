@@ -15,6 +15,7 @@ class User(AbstractUser):
         ('admin', 'Administrator'),
         ('manager', 'Manager'),
         ('table', 'Table'),
+        ('kitchen', 'Kitchen'),
         ('other', 'Other'),
     )
     nickname = models.CharField(max_length=50, blank=True, default="")
@@ -85,6 +86,7 @@ class Ingredient(models.Model):
     description = models.TextField()
     image = models.ImageField(upload_to='ingredients/')
     ingredient_type = models.CharField(max_length=10, choices=INGREDIENT_TYPES, default='other')
+    step = models.DecimalField(max_digits=2, decimal_places=1, default=1)
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(500)])
     available = models.BooleanField(default=True)
@@ -93,6 +95,7 @@ class Ingredient(models.Model):
     price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=3.00, validators=[MinValueValidator(0)])
     custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
 
+    # for 100g
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name='ingredient')
 
     private_note = models.TextField(blank=True)
@@ -225,7 +228,7 @@ class Product(models.Model):
 class ProductIngredient(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     ingredient = models.ForeignKey('Ingredient', on_delete=models.CASCADE)
-    weight_grams = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    weight_grams = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)])
 
     def clean(self):
         if self.weight_grams > self.ingredient.max_order:

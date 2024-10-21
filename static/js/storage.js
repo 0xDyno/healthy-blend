@@ -77,19 +77,19 @@ export default {
         localStorage.setItem(storageKey, JSON.stringify(updatedMeals));
     },
 
-    updateItemQuantity(productId, quantity, isCustom) {
-        const storageKey = isCustom ? CUSTOM_MEALS_KEY : OFFICIAL_MEALS_KEY;
-        const meals = JSON.parse(localStorage.getItem(storageKey)) || [];
-
-        const updatedMeals = meals.map(item => {
-            if (item.product.id === productId) {
-                return {...item, quantity};
-            }
-            return item;
-        });
-
-        localStorage.setItem(storageKey, JSON.stringify(updatedMeals));
-    },
+    // updateItemQuantity(productId, quantity, isCustom) {
+    //     const storageKey = isCustom ? CUSTOM_MEALS_KEY : OFFICIAL_MEALS_KEY;
+    //     const meals = JSON.parse(localStorage.getItem(storageKey)) || [];
+    //
+    //     const updatedMeals = meals.map(item => {
+    //         if (item.product.id === productId) {
+    //             return {...item, quantity};
+    //         }
+    //         return item;
+    //     });
+    //
+    //     localStorage.setItem(storageKey, JSON.stringify(updatedMeals));
+    // },
 
     getCartItemsSet() {
         return {

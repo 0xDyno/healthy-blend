@@ -114,8 +114,8 @@ export function showChosenIngredients() {
             tr.innerHTML = `
                 <td>${ingredient.name}</td>
                 <td>${ingredient.price}</td>
-                <td>${ingredient.weight_grams}g</td>
-                <td>${(ingredient.price * ingredient.weight_grams)}</td>
+                <td>${utils.formatNumber(ingredient.weight_grams)}g</td>
+                <td>${(ingredient.price * ingredient.weight_grams).toFixed(0)}</td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-outline-primary edit-ingredient me-2" data-id="${ingredient.id}">Edit</button>
                     <button class="btn btn-sm btn-outline-danger remove-ingredient" data-id="${ingredient.id}">Remove</button>

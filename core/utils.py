@@ -8,6 +8,9 @@ from .models import Product, Ingredient, Order, ProductIngredient, OrderProduct
 
 
 def big_validator(data: json):
+    """ We return, save & use frontend price - if it's less than 0.1% different of official. Customer oriented
+    :return: price
+    """
     official_meals = data.get("officialMeals", [])
     custom_meals = data.get("customMeals", [])
     price = data.get("price")
@@ -25,9 +28,9 @@ def big_validator(data: json):
     price_for_custom_meal = validate_custom_meal(custom_meals)
 
     total_off_price = price_for_official_meal + price_for_custom_meal
-    if round(total_off_price) != round(price):
+    if not validate_price(total_off_price, price):
         raise ValidationError(message=f"Wrong calculated total Price. Web price: {price}, off price {total_off_price}")
-    return total_off_price
+    return price
 
 
 def validate_official_meal(official_meals):
@@ -54,7 +57,7 @@ def validate_official_meal(official_meals):
             raise ValidationError(message="Official Meal - wrong calories number.")
 
         official_price = product.get_price_for_calories(calories)
-        if round(official_price) != round(price):
+        if not validate_price(official_price, price):
             raise ValidationError(message="Official Meal - wrong calculated price on web-site.")
 
         total_price += official_price * amount
@@ -84,8 +87,10 @@ def validate_custom_meal(custom_meals):
             ingredient_id = ingredient.get("id")
             weight = ingredient.get("weight")
 
-            if not isinstance(ingredient_id, int) or not isinstance(weight, int):
-                raise ValidationError(message="Custom Meal - wrong type for ingredient id.")
+            if not isinstance(ingredient_id, int):
+                raise ValidationError(message=f"Custom Meal - wrong type for ingredient id. Received ({type(ingredient_id)})")
+            if not isinstance(weight, float):
+                raise ValidationError(message=f"Custom Meal - wrong type for ingredient id. Received ({type(weight)})")
 
             if ingredient_id not in all_ingredients_map:
                 raise ValidationError(message="Custom Meal - wrong ingredient id.")
@@ -96,7 +101,7 @@ def validate_custom_meal(custom_meals):
                                               f"allowed {ingredient_object.min_order} - {ingredient_object.max_order}.")
 
             product_price += ingredient_object.get_selling_price_for_weight(weight)
-        if round(product_price) != round(price):
+        if not validate_price(price, product_price):
             raise ValidationError(message="Custom Meal - wrong calculated price on web-site.")
 
         total_price += product_price
@@ -142,7 +147,7 @@ def process_custom_meal(custom_meals, order: Order):
         name = f"Custom Meal, order {order.id}, table {order.table.id}"
         description = f"{name} - {get_date_today()}"
 
-        product = Product.objects.create(name=name, description=description, is_official=False, product_type="drink")
+        product = Product.objects.create(name=name, description=description, is_official=False, product_type="dish")
         amount = custom_meal.get("quantity")
 
         # get IDs of ingredients in Custom Meal
@@ -169,6 +174,15 @@ def get_date_today():
     return current_date.strftime("%d-%m-%Y %H:%M:%S")
 
 
+def validate_price(p1, p2, allowed_difference=0.1):
+    """ it doesn't matter divide difference to p1 or p2
+    :return: True if everything Okay. False if difference too big
+    """
+    difference = abs(float(p1) - float(p2))
+    percentage_difference = (difference / float(p1)) * 100
+    return percentage_difference < allowed_difference
+
+
 def get_ingredient_data(ingredient: Ingredient):
     data = {
         'id': ingredient.id,
@@ -176,6 +190,7 @@ def get_ingredient_data(ingredient: Ingredient):
         'description': ingredient.description,
         'image': ingredient.image.url,
         'ingredient_type': ingredient.ingredient_type,
+        "step": ingredient.step,
         'min_order': ingredient.min_order,
         'max_order': ingredient.max_order,
         'available': ingredient.available,

@@ -22,34 +22,30 @@ document.addEventListener('DOMContentLoaded', function () {
 function updateIngredientInfo() {
     document.getElementById('ingredientName').textContent = ingredientData.name;
     document.getElementById('ingredientDescription').textContent = ingredientData.description;
-    document.getElementById('ingredientPrice').textContent = ingredientData.price;
+    document.getElementById('ingredientPrice').textContent = ingredientData.price.toFixed(0);
     document.getElementById('ingredientImage').src = ingredientData.image;
 }
 
 function initializeForm() {
     const amountSlider = document.getElementById('ingredientAmount');
     const amountOutput = document.getElementById('amountOutput');
+    const existingWeight = checkIngredientInDraft(ingredientData.id);
 
     amountSlider.min = ingredientData.min_order;
     amountSlider.max = ingredientData.max_order;
+    amountSlider.step = ingredientData.step;
 
-    const existingWeight = checkIngredientInDraft(ingredientData.id);
-    if (existingWeight) {
-        amountSlider.value = existingWeight;
-        amountOutput.textContent = existingWeight;
-    } else {
-        amountSlider.value = ingredientData.min_order;
-        amountOutput.textContent = ingredientData.min_order;
-    }
+    amountSlider.value = existingWeight ? existingWeight : ingredientData.min_order;
+    amountOutput.textContent = amountSlider.value
 
     amountSlider.addEventListener('input', function () {
         amountOutput.textContent = this.value;
-        updateDynamicData(parseInt(this.value));
+        updateDynamicData(parseFloat(this.value));
     });
 
     document.getElementById('addIngredientForm').addEventListener('submit', function (e) {
         e.preventDefault();
-        const amount = parseInt(amountSlider.value);
+        const amount = parseFloat(amountSlider.value);
         addIngredientToCustomMeal(amount);
         window.location.href = '/custom-meal/';
     });
@@ -70,11 +66,11 @@ function updateDynamicData(amount) {
         proteins: document.getElementById('dynamicProteins')
     };
 
-    dynamicElements.total.textContent = (ingredientData.price * amount).toFixed(2);
+    dynamicElements.total.textContent = (ingredientData.price * amount).toFixed(0);
 
     for (let key in dynamicElements) {
         if (key !== 'total' && ingredientData.nutritional_value[key] !== undefined) {
-            dynamicElements[key].textContent = (ingredientData.nutritional_value[key] * factor).toFixed(1);
+            dynamicElements[key].textContent = utils.formatNumber(ingredientData.nutritional_value[key] * factor);
         }
     }
     updateTotalNutrition(amount);
@@ -112,7 +108,7 @@ function addIngredientToCustomMeal(amount) {
             const newIngredient = {
                 id: ingredientData.id,
                 name: ingredientData.name,
-                weight_grams: amount,
+                weight_grams: parseFloat(amount.toFixed(1)),
                 nutritional_value: {...ingredientData.nutritional_value},
                 price: ingredientData.price
             };
