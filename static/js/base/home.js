@@ -1,18 +1,17 @@
 // home.js
 
-import storage from './storage.js';
-import * as utils from './utils.js';
+import storage from '../storage.js';
+import * as utils from '../utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
     const dishesList = document.getElementById('dishesList');
     const drinksList = document.getElementById('drinksList');
 
     // Загрузка продуктов с сервера
-    fetch('/api/products/all_products/')
+    fetch('/api/get_all_products/')
         .then(response => response.json())
         .then(products => {
             products.forEach(product => {
-                console.log(JSON.stringify(products))
                 const productElement = createProductElement(product);
                 if (product.product_type === 'dish') {
                     dishesList.appendChild(productElement);
@@ -204,7 +203,6 @@ function editDish(product, selectedCalories) {
 
     const baseCalories = product.nutritional_value.calories;
     const multiplier = selectedCalories / baseCalories;
-    console.log()
 
     const customMealDraft = {
         product: {

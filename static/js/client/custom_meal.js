@@ -1,7 +1,7 @@
 // custom_meal.js
 
-import storage from './storage.js';
-import * as utils from './utils.js';
+import storage from '../storage.js';
+import * as utils from '../utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
     storage.updateCartInfo();           // update common CartItems & CartPrice
@@ -28,7 +28,7 @@ function loadIngredients(sortBy = 'protein') {
 
     const nutrientKey = validSortOptions[sortBy] || 'proteins';
 
-    fetch(`/api/ingredients/all_ingredients/`)
+    fetch(`/api/get_ingredients/`)
         .then(response => response.json())
         .then(data => {
             data.sort((a, b) => {

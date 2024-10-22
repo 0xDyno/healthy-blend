@@ -1,8 +1,8 @@
 // cart.js
 
-import storage from './storage.js';
-import * as utils from './utils.js';
-import {calculateNutritionSummary} from "./utils.js";
+import storage from '../storage.js';
+import * as utils from '../utils.js';
+import {calculateNutritionSummary} from "../utils.js";
 
 document.addEventListener('DOMContentLoaded', function () {
     updateCartUI();
@@ -55,8 +55,44 @@ function updateCartUI() {
             total += item.product.price * item.amount;
         });
 
+        // Calculate tax and service charge
+        const taxRate = 0.07; // 10% tax rate
+        const serviceChargeRate = 0.01; // 5% service charge
+
+        const tax = total * taxRate;
+        const serviceCharge = total * serviceChargeRate;
+        const totalTax = total + tax + serviceCharge;
+
+        // Add row for total
+        const somethingRow = document.createElement('tr');
+        somethingRow.innerHTML = `
+            <td colspan="4" style="text-align: left;"></td>
+            <td>${utils.formatNumber(total,0)} IDR</td>
+            <td></td>
+        `;
+        tableBody.appendChild(somethingRow);
+
+        // Add row for tax
+        const taxRow = document.createElement('tr');
+        taxRow.innerHTML = `
+            <td colspan="4" style="text-align: left;">Tax (${utils.formatNumber(taxRate * 100, 0)}%):</td>
+            <td>${utils.formatNumber(tax,0)} IDR</td>
+            <td></td>
+        `;
+        tableBody.appendChild(taxRow);
+
+        // Add row for service charge
+        const serviceRow = document.createElement('tr');
+        serviceRow.innerHTML = `
+            <td colspan="4" style="text-align: left;">Service Charge (${utils.formatNumber(serviceChargeRate * 100, 0)})%:</td>
+            <td>${utils.formatNumber(serviceCharge,0)} IDR</td>
+            <td></td>
+        `;
+        tableBody.appendChild(serviceRow);
+
+
         addRemoveEventListeners();
-        cartTotalElement.textContent = `Total: ${total.toFixed(0)} IDR`;
+        cartTotalElement.textContent = `Total: ${totalTax.toFixed(0)} IDR`;
     }
     updateCartControls();
 }
@@ -114,12 +150,12 @@ function handleCheckout() {
     }
 
     const {officialMeals, customMeals} = storage.getCartItemsSet();
-    const totalPrice = storage.getTotalPrice();
     let nutritions = calculateNutritionSummary([...officialMeals, ...customMeals])
     delete nutritions.total
 
     const cartData = {
-        price: totalPrice,
+        raw_price: storage.getRawPrice(),
+        total_price: storage.getTotalPrice(),
         payment_type: paymentType,
         nutritional_value: nutritions,
         official_meals: officialMeals.map(item => ({

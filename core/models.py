@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, MaxLengthValidator
 from django.db.models import Sum, F
 from django.utils import timezone
 
@@ -106,6 +106,7 @@ class Ingredient(models.Model):
     def save(self, *args, **kwargs):
         if not self.nutritional_value:
             self.nutritional_value = NutritionalValue.objects.create()
+        self.clean()
         super().save(*args, **kwargs)
 
     def get_selling_price_for_weight(self, weight):
@@ -131,7 +132,8 @@ class Product(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     image = models.ImageField(upload_to="products/", null=True, blank=True)
-    is_official = models.BooleanField(default=False)
+    is_menu = models.BooleanField(default=False)  # for Menu
+    is_official = models.BooleanField()  # True - copy of Menu, False - custom meal
 
     weight = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
 
@@ -144,8 +146,8 @@ class Product(models.Model):
 
     def clean(self):
         super().clean()
-        if self.is_official and not self.image:
-            raise ValidationError("Official products must have an image.")
+        if self.is_menu and (not self.image or not self.name or not self.description or not self.ingredients):
+            raise ValidationError("Menu products must have an image and other data.")
 
     def calculate_base_price(self):
         total_price = self.productingredient_set.aggregate(
@@ -238,6 +240,10 @@ class ProductIngredient(models.Model):
                 f"Weight is too small for ingredient \"{self.ingredient.name}\", "
                 f"allowed {self.ingredient.min_order}g min, you have {self.weight_grams}")
 
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
 
 class Order(models.Model):
     PENDING = "pending"
@@ -255,6 +261,7 @@ class Order(models.Model):
     )
     ORDER_TYPES = (
         ("offline", "Offline"),
+        ("takeaway", "Take Away"),
         ("online", "Online"),
     )
     PAYMENT_TYPES = (
@@ -262,19 +269,22 @@ class Order(models.Model):
         ("card", "Card"),
         ("qr", "QR"),
     )
-    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
     order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default="offline")
-    payment_type = models.CharField(max_length=20, choices=ORDER_TYPES, default="card")
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES, default="card")
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={"role": "table"})
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name="order")
 
-    raw_price = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    fee = models.IntegerField(default=7, validators=[MinValueValidator(0), MaxValueValidator(15)])
+    tax = models.IntegerField(default=7, validators=[MinValueValidator(0), MaxValueValidator(15)])
     service = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
+    base_price = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     total_price = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     payment_id = models.CharField(max_length=100, blank=True)
+    is_paid = models.BooleanField(default=False)
     is_refunded = models.BooleanField(default=False)
+    public_note = models.TextField(null=True, blank=True, max_length=500, validators=[MaxLengthValidator(1000)])
+    private_note = models.TextField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     paid_at = models.DateTimeField(null=True, blank=True)
@@ -283,13 +293,29 @@ class Order(models.Model):
 
     def clean(self):
         super().clean()
-        pass
+        if self.order_status in [Order.PROCESSING, Order.READY, Order.DELIVERED] and not self.is_paid:
+            raise ValidationError(f"The order is not paid. It should be paid before continue.")
+
+        if self.is_paid and not self.payment_id:
+            raise ValidationError(f"Please provide Payment ID for the order.")
+
+        if self.is_refunded and not self.private_note:
+            raise ValidationError("If it's refunded, please, add a few words to the private note about this situation. Thank you.")
+
+        if self.payment_type == "cash" and self.order_type == "online":
+            raise ValidationError(f"It's not possible to pay with Cash for online orders.")
 
     def save(self, *args, **kwargs):
+        self.clean()
         if self.is_refunded and self.refunded_at is None:
             self.refunded_at = timezone.now()
-        if self.order_status == self.READY:
+
+        if self.is_paid and not self.paid_at:
+            self.paid_at = timezone.now()
+
+        if self.order_status == self.READY and not self.ready_at:
             self.ready_at = timezone.now()
+
         super().save(*args, **kwargs)
 
 

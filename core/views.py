@@ -2,153 +2,122 @@
 
 import json
 import logging
-from datetime import timedelta
 
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
+from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import User, Ingredient, Product, Order, History, NutritionalValue
-# from .serializers import UserSerializer, IngredientSerializer, ProductSerializer, OrderSerializer, HistorySerializer
+from .models import Ingredient, Product, Order, NutritionalValue
 from .forms import LoginForm
 from . import utils
 
 logger = logging.getLogger(__name__)
 
 
-class IsAdminUser(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "admin"
+# ------------------------ API ------------------------------------------------------------------------------------------------
+
+@api_view(["GET"])
+@login_required
+def api_get_ingredient(request, pk=None):
+    ingredient = get_object_or_404(Ingredient, pk=pk)
+    data = utils.get_ingredient_data(ingredient)
+
+    return Response(data)
 
 
-class IsManagerUser(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "manager"
+@api_view(["GET"])
+@login_required
+def api_get_all_ingredients(request):
+    ingredients = Ingredient.objects.filter()
+    data = [utils.get_ingredient_data(ingredient) for ingredient in ingredients]
+    return Response(data)
 
 
-class IsTableUser(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "table"
+@api_view(["GET"])
+@login_required
+def api_get_all_products(request):
+    products = Product.objects.filter(is_menu=True)
+    data = []
+    for product in products:
+        product_info = {"id": product.id,
+                        "product_type": product.product_type,
+                        "name": product.name,
+                        "description": product.description,
+                        "image": product.image.url if product.image else None,
+                        "weight": product.weight,
+                        "price": product.get_selling_price(),
+                        "ingredients": [],
+                        "nutritional_value": product.nutritional_value.to_dict()}
+        for pi in product.productingredient_set.all():
+            ingredient_info = {"id": pi.ingredient.id,
+                               "name": pi.ingredient.name,
+                               "weight_grams": pi.weight_grams,
+                               "nutritional_value": pi.ingredient.nutritional_value.to_dict(),
+                               "price": pi.ingredient.get_selling_price()}
+            product_info.get("ingredients").append(ingredient_info)
+        data.append(product_info)
+    return Response(data)
 
 
-class IsKitchenUser(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "kitchen"
+@api_view(["GET"])
+@login_required
+def api_get_order(request, pk):
+    utils.verify_if_manager(request.user)
+    order = utils.get_order_full_info(Order.objects.get(pk=pk))
+    return Response(order)
 
 
-# API ViewSets
-
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    # serializer_class = UserSerializer
-    permission_classes = [IsAdminUser]
-
-
-class IngredientViewSet(viewsets.ViewSet):
-    http_method_names = ["get"]
-    queryset = Ingredient.objects.all()
-    # serializer_class = IngredientSerializer
-    permission_classes = [IsAdminUser]
-
-    @action(detail=True, methods=["get"], permission_classes=[permissions.IsAuthenticated])
-    def get_ingredient(self, request, pk=None):
-        ingredient = get_object_or_404(Ingredient, pk=pk)
-        data = utils.get_ingredient_data(ingredient)
-
-        return Response(data)
-
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
-    def all_ingredients(self, request):
-        ingredients = Ingredient.objects.filter()
-        data = [utils.get_ingredient_data(ingredient) for ingredient in ingredients]
-        return Response(data)
+@csrf_exempt
+@api_view(["GET"])
+@login_required
+def api_get_orders(request):
+    now = timezone.now()
+    data = Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+    if request.user.role == "admin":
+        orders = Order.objects.all().order_by("-created_at")
+        data = utils.get_orders_full_info(orders)
+    if request.user.role == "manager":
+        orders = Order.objects.filter(created_at__date=now.date()).order_by("-created_at")
+        data = utils.get_orders_full_info(orders)
+    if request.user.role == "table":
+        order = Order.objects.filter(user=request.user).order_by("-created_at").first()
+        data = [utils.get_order_data_for_table(order)]
+    if request.user.role == "kitchen":
+        orders = Order.objects.filter(created_at__date=timezone.now().date(), order_status__in=["processing"]).order_by("created_at")
+        data = utils.get_orders_for_kitchen(orders)
+    return Response(data)
 
 
-class ProductViewSet(viewsets.ViewSet):
-    queryset = Product.objects.all()
-    # serializer_class = ProductSerializer
-    permission_classes = [IsAdminUser]
-    http_method_names = ["get"]
+@api_view(["PUT"])
+@login_required
+def api_update_order(request, pk):
+    utils.verify_if_manager(request.user)
+    data = json.loads(request.body)
 
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
-    def all_products(self, request):
-        products = Product.objects.filter(is_official=True)
-        data = []
-        for product in products:
-            product_info = {"id": product.id,
-                            "product_type": product.product_type,
-                            "name": product.name,
-                            "description": product.description,
-                            "image": product.image.url if product.image else None,
-                            "weight": product.weight,
-                            "price": product.get_selling_price(),
-                            "ingredients": [],
-                            "nutritional_value": product.nutritional_value.to_dict()}
-            for pi in product.productingredient_set.all():
-                ingredient_info = {"id": pi.ingredient.id,
-                                   "name": pi.ingredient.name,
-                                   "weight_grams": pi.weight_grams,
-                                   "nutritional_value": pi.ingredient.nutritional_value.to_dict(),
-                                   "price": pi.ingredient.get_selling_price()}
-                product_info.get("ingredients").append(ingredient_info)
-            data.append(product_info)
-        return Response(data)
+    order = Order.objects.get(pk=pk)
+    order.order_status = data.get("order_status")
+    order.payment_id = data.get("payment_id")
+    order.is_paid = data.get("is_paid")
+    order.is_refunded = data.get("is_refunded")
+    order.private_note = data.get("private_note")
+    try:
+        order.clean()
+    except ValidationError as e:
+        return JsonResponse({"detail": e.messages}, status=status.HTTP_400_BAD_REQUEST)
+    order.save()
+
+    return JsonResponse({'message': 'Order updated successfully'}, status=status.HTTP_200_OK)
 
 
-class OrderViewSet(viewsets.ViewSet):
-    queryset = Order.objects.all()
-    permission_classes = [IsAdminUser]
-    http_method_names = ["get"]
 
-    @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
-    def get_orders(self, request):
-        role = request.user.role
-        now = timezone.now()
-        data = []
-        if role == "admin":
-            orders_ = Order.objects.all().order_by("-created_at")
-            data = utils.get_orders_full_info(orders_)
-        if role == "manager":
-            orders_ = Order.objects.filter(created_at__date=now.date()).order_by("-created_at")
-            data = utils.get_orders_full_info(orders_)
-        if role == "table":
-            orders_ = Order.objects.filter(user=request.user, created_at__gte=now-timedelta(hours=3)).order_by("created_at")
-            data = utils.get_orders_for_table(orders_)
-        if role == "kitchen":
-            orders_ = Order.objects.filter(created_at__date=timezone.now().date(), order_status__in=["processing"]).order_by("created_at")
-            data = utils.get_orders_for_kitchen(orders_)
-        return Response(data)
-
-    @action(detail=True, methods=["get"], permission_classes=[IsTableUser])
-    def get_order(self, request, pk=None):
-        order_ = get_object_or_404(Order, pk=pk)
-        order_time = order_.paid_at if order_.paid_at else order_.created_at
-
-        if self.request.user.role != "admin" and timezone.now() - order_time > timedelta(hours=3):
-            return Response({"detail": "Order is too old"}, status=status.HTTP_403_FORBIDDEN)
-
-        data = utils.get_order_data(order_)
-        return Response(data)
-
-
-class HistoryViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = History.objects.all()
-    # serializer_class = HistorySerializer
-    permission_classes = [IsAdminUser | IsManagerUser]
-
-    def get_queryset(self):
-        if self.request.user.role == "table":
-            return History.objects.filter(user=self.request.user)
-        return super().get_queryset()
-
-
-# Web Views
+# ------------------------ WEB views ------------------------------------------------------------------------------------------------
 
 def user_login(request):
     if request.user.is_authenticated:
@@ -195,10 +164,17 @@ def cart(request):
 
 
 @login_required
-def orders(request):
-    if request.user.role not in ["admin", "manager"]:
+def last_order(request):
+    if request.user.role != "table":
         return redirect("home")
-    return render(request, "manage/orders.html")
+    return render(request, "client/order.html")
+
+
+@login_required
+def order_management(request):
+    if request.user.role != "admin" and request.user.role != "manager":
+        return redirect("home")
+    return render(request, "manage/order_management.html")
 
 
 @login_required
@@ -207,24 +183,26 @@ def checkout(request):
     try:
         data = json.loads(request.body)
         official_meals = data.get("official_meals", [])
-        custom_meals = data.get("custom_Meals", [])
+        custom_meals = data.get("custom_meals", [])
 
-        total_price = utils.big_validator(data)
+        utils.big_validator(data)
+        price_no_fee = round(data.get("raw_price"))
+        price_with_fee = round(data.get("total_price"))
 
         nutritional_value = NutritionalValue.objects.create(**data.get("nutritional_value"))
         nutritional_value.save()
-        order = Order.objects.create(user=request.user, payment_type=data["payment_type"], raw_price=round(total_price),
-                                     nutritional_value=nutritional_value)
+        order = Order.objects.create(user=request.user, payment_type=data["payment_type"], base_price=price_no_fee,
+                                     total_price=price_with_fee, nutritional_value=nutritional_value)
 
         utils.process_official_meal(official_meals, order)
         utils.process_custom_meal(custom_meals, order)
         order.save()
 
-        return JsonResponse({"success": True, "redirect_url": f"/"})
+        return JsonResponse({"success": True, "redirect_url": f"/last-order/"})
     except ValidationError as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=400)
+        return JsonResponse({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=400)
+        return JsonResponse({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @login_required
@@ -246,11 +224,11 @@ def ingredient_management(request):
 @login_required
 def update_order_status(request):
     if request.user.role not in ["admin", "manager"]:
-        return JsonResponse({"success": False, "error": "Permission denied"}, status=403)
+        return JsonResponse({"success": False, "error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
 
     order_id = request.POST.get("order_id")
     new_status = request.POST.get("status")
     order = get_object_or_404(Order, id=order_id)
     order.order_status = new_status
     order.save()
-    return JsonResponse({"success": True})
+    return JsonResponse({"success": True}, status.HTTP_200_OK)

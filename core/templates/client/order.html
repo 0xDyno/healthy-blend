@@ -1,0 +1,80 @@
+{# order.html #}
+
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Order Details{% endblock %}
+
+{% block content %}
+    <div id="order-details" class="container">
+        <h1 class="d-flex justify-content-between align-items-center">
+            <span>Order #<span id="order-id"></span></span>
+            <span id="order-paid-status" class="badge"></span>
+        </h1>
+        <p>Status: <span id="order-status"></span></p>
+        <p id="payment-status"></p>
+        <p id="payment-time"></p>
+
+        <div class="nutrition-container">
+            <div id="nutrition-row-1" class="nutrition-row">
+                <div class="nutrition-cell">Calories</div>
+                <div class="nutrition-cell">Fats</div>
+                <div class="nutrition-cell">Sat. Fats</div>
+                <div class="nutrition-cell">Carbs</div>
+                <div class="nutrition-cell">Sugars</div>
+                <div class="nutrition-cell">Fiber</div>
+                <div class="nutrition-cell">Proteins</div>
+            </div>
+            <div id="nutrition-row-2" class="nutrition-row">
+                <div class="nutrition-cell">Vit A</div>
+                <div class="nutrition-cell">Vit C</div>
+                <div class="nutrition-cell">Vit D</div>
+                <div class="nutrition-cell">Vit E</div>
+                <div class="nutrition-cell">Vit K</div>
+                <div class="nutrition-cell">Thiamin B</div>
+                <div class="nutrition-cell">Riboflavin</div>
+                <div class="nutrition-cell">Niacin B3</div>
+                <div class="nutrition-cell">Vit B6</div>
+                <div class="nutrition-cell">Folate B9</div>
+                <div class="nutrition-cell">Vit B12</div>
+            </div>
+            <div id="nutrition-row-3" class="nutrition-row">
+                <div class="nutrition-cell">Calcium</div>
+                <div class="nutrition-cell">Iron</div>
+                <div class="nutrition-cell">Magnesium</div>
+                <div class="nutrition-cell">Phosphorus</div>
+                <div class="nutrition-cell">Potassium</div>
+                <div class="nutrition-cell">Sodium</div>
+                <div class="nutrition-cell">Zinc</div>
+                <div class="nutrition-cell">Copper</div>
+                <div class="nutrition-cell">Manganese</div>
+                <div class="nutrition-cell">Selenium</div>
+            </div>
+        </div>
+
+        <br>
+        <br>
+
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Product</th>
+                <th>Amount</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+            </thead>
+            <tbody id="product-list">
+            </tbody>
+            <tfoot>
+            <tr>
+                <td colspan="4" id="total-price" class="text-center"></td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="module" src="{% static 'js/client/order.js' %}"></script>
+{% endblock %}

@@ -123,3 +123,84 @@
     font-weight: bold;
     margin-right: 10px;
 }
+
+/* Общий контейнер */
+.nutrition-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 20px;
+    background-color: #f4f7fa; /* Лёгкий фон для контраста */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 5px auto;
+    max-width: 1500px; /* Ограничение ширины контейнера */
+}
+
+/* Каждая строка */
+.nutrition-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+/* Ячейки */
+.nutrition-cell {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    margin: 0 5px;
+    border: 1px solid #ddd; /* Тонкая граница */
+    border-radius: 5px;
+    background-color: #fff; /* Белый фон для каждой ячейки */
+    font-size: 12px;
+    font-family: 'Arial', sans-serif;
+    color: #333; /* Тёмно-серый текст */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Небольшая тень для глубины */
+    transition: background-color 0.3s, transform 0.3s; /* Плавные анимации */
+}
+
+/* Ховер-эффект */
+.nutrition-cell:hover {
+    background-color: #e2e6eb; /* Лёгкий цвет при наведении */
+    transform: translateY(-3px); /* Небольшой подъём */
+}
+
+/* Для первой строки (можно выделить особый стиль) */
+#nutrition-row-1 .nutrition-cell {
+    font-size: 14px;
+    background-color: #f1f3f5; /* Фон первого ряда */
+}
+
+/* Для последней строки */
+.nutrition-row:last-child {
+    margin-bottom: 0; /* Убираем последний отступ снизу */
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+    .nutrition-row {
+        flex-wrap: wrap;
+    }
+
+    .nutrition-cell {
+        flex: 1 1 45%; /* Делим ячейки на два столбца на мобильных */
+        margin-bottom: 10px;
+    }
+}
+
+.modal-xxl {
+    max-width: 90%;
+}
+
+#readyOrders {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+#pendingOrders {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+}

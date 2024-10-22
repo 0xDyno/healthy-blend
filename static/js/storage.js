@@ -98,13 +98,19 @@ export default {
         };
     },
 
-    getTotalPrice() {
+    getRawPrice() {
         const {officialMeals, customMeals} = this.getCartItemsSet();
         const allMeals = [...officialMeals, ...customMeals];
 
         return allMeals.reduce((total, item) => {
             return total + (item.product.price * item.amount);
         }, 0);
+    },
+
+    getTotalPrice() {
+        const raw_price = this.getRawPrice()
+        const price_tax = raw_price + (raw_price * 0.07)
+        return price_tax + (price_tax * 0.01)
     },
 
     clearCart() {
@@ -119,7 +125,7 @@ export default {
         if (cartItemCount && cartTotal) {
             const {officialMeals, customMeals} = this.getCartItemsSet();
             const totalItems = [...officialMeals, ...customMeals].reduce((sum, item) => sum + item.amount, 0);
-            const totalPrice = this.getTotalPrice();
+            const totalPrice = this.getRawPrice();
 
             cartItemCount.textContent = totalItems;
             cartTotal.textContent = `${totalPrice.toFixed(0)} IDR`;

@@ -20,7 +20,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container">
-        <a class="navbar-brand" href="{% url 'home' %}">Healthy Blend</a>
+        <a class="navbar-brand">Healthy Blend</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"
                 aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -28,9 +28,12 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 {% if user.is_authenticated %}
+                    <li class="nav-item">
+                            <a class="nav-link" href="{% url 'home' %}">Home</a>
+                    </li>
                     {% if user.role == 'admin' %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
+                            <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">Admin</a>
                         </li>
                     {% endif %}
                     {% if user.role == 'manager' or user.role == 'admin' %}
@@ -40,10 +43,15 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'ingredient_management' %}">Ingredients</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'order_management' %}">Orders</a>
+                        </li>
                     {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'orders' %}">Orders</a>
-                    </li>
+                    {% if user.role == "table" %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'last_order' %}">Last Order</a>
+                        </li>
+                    {% endif %}
                 {% endif %}
             </ul>
             <ul class="navbar-nav">

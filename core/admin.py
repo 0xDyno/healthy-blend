@@ -31,8 +31,8 @@ class ProductIngredientInline(admin.TabularInline):
 
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "price", "is_official", "product_type")
-    list_filter = ("is_official", "product_type")
+    list_display = ("id", "name", "price", "is_menu", "is_official", "product_type")
+    list_filter = ("is_menu", "is_official", "product_type")
     search_fields = ["name"]
     inlines = [ProductIngredientInline]
 
@@ -43,7 +43,7 @@ class OrderProductInline(admin.TabularInline):
 
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "order_status", "order_type", "payment_type", "total_price", "created_at")
+    list_display = ("id", "user", "order_status", "is_paid", "is_refunded", "order_type", "payment_type", "total_price", "created_at")
     list_filter = ("order_status", "order_type", "payment_type")
     search_fields = ["id", "user__username"]
     inlines = [OrderProductInline]

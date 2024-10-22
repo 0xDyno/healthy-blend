@@ -2,21 +2,21 @@
 
 import storage from './storage.js';
 
-export function formatNumber(number) {
+export function formatNumber(number, fixed=1) {
     if (number === undefined) {
         return
     }
-    return Number.isInteger(number) ? number.toString() : number.toFixed(1);
+    return Number.isInteger(number) ? number.toString() : number.toFixed(fixed);
 }
 
 export function updateNutritionSummary(summary) {
-    document.getElementById('nutritionSummaryCalories').textContent = formatNumber(summary.calories);
-    document.getElementById('nutritionSummaryFats').textContent = formatNumber(summary.fats);
-    document.getElementById('nutritionSummarySaturatedFats').textContent = formatNumber(summary.saturated_fats);
-    document.getElementById('nutritionSummaryCarbohydrates').textContent = formatNumber(summary.carbohydrates);
-    document.getElementById('nutritionSummarySugars').textContent = formatNumber(summary.sugars);
-    document.getElementById('nutritionSummaryFiber').textContent = formatNumber(summary.fiber);
-    document.getElementById('nutritionSummaryProteins').textContent = formatNumber(summary.proteins);
+    document.getElementById('nutritionSummaryCalories').textContent = formatNumber(summary.calories || 0);
+    document.getElementById('nutritionSummaryFats').textContent = formatNumber(summary.fats || 0);
+    document.getElementById('nutritionSummarySaturatedFats').textContent = formatNumber(summary.saturated_fats || 0);
+    document.getElementById('nutritionSummaryCarbohydrates').textContent = formatNumber(summary.carbohydrates || 0);
+    document.getElementById('nutritionSummarySugars').textContent = formatNumber(summary.sugars || 0);
+    document.getElementById('nutritionSummaryFiber').textContent = formatNumber(summary.fiber || 0);
+    document.getElementById('nutritionSummaryProteins').textContent = formatNumber(summary.proteins || 0);
 }
 
 export function calculateNutritionSummary(items) {

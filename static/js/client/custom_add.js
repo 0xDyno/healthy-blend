@@ -1,14 +1,14 @@
 // custom_add.js
 
-import storage from './storage.js';
-import * as utils from './utils.js';
+import storage from '../storage.js';
+import * as utils from '../utils.js';
 
 let ingredientData;
 
 document.addEventListener('DOMContentLoaded', function () {
     storage.updateCartInfo();
 
-    fetch(`/api/ingredients/${ingredientId}/get_ingredient/`)
+    fetch(`/api/get_ingredient/${ingredientId}/`)
         .then(response => response.json())
         .then(data => {
             ingredientData = data;

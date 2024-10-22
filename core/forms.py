@@ -26,10 +26,10 @@ class LoginForm(forms.Form):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["name", "description", "price", "product_type", "is_official"]
+        fields = ["name", "description", "price", "product_type", "is_menu"]
         labels = {
             "product_type": "Type",
-            "is_official": "Official Product",
+            "is_menu": "Official Product",
         }
 
 

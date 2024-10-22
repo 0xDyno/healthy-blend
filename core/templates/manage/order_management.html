@@ -1,0 +1,167 @@
+{# order.html #}
+
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+     <div class="mb-3 text-center">
+        <button id="toggleView" class="btn btn-dark">Toggle View</button>
+    </div>
+
+    <div id="splitView" class="row">
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3>Pending Orders</h3>
+                    <div id="pendingOrders" class="d-flex flex-column">
+                        <!-- Pending orders will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3>Ready Orders</h3>
+                    <div id="readyOrders" class="d-flex" style="flex-direction: column-reverse; height: calc(100vh - 200px); overflow-y: auto;">
+                        <!-- Ready orders will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Orders View -->
+    <div id="allOrdersView" style="display: none;">
+        <div class="card">
+            <div class="card-body">
+                <!-- Filters and sorting options -->
+                <h3>All Orders</h3>
+                <div class="mb-3">
+                    <input type="text" id="searchInput" placeholder="Search by order ID" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <input type="number" id="tableIdFilter" placeholder="Search by user ID" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">Order Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="ready">Ready</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <select id="orderTypeFilter" class="form-select">
+                        <option value="">Order Type</option>
+                        <option value="offline">Offline</option>
+                        <option value="takeaway">Take Away</option>
+                        <option value="online">Online</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <select id="paymentTypeFilter" class="form-select">
+                        <option value="">Payment Type</option>
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="qr">QR</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="isPaidFilter">
+                        <label class="form-check-label" for="isPaidFilter">Paid Orders</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="isRefundedFilter">
+                        <label class="form-check-label" for="isRefundedFilter">Refunded Orders</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <select id="sortBy" class="form-select">
+                        <option value="">Sort By</option>
+                        <option value="created_at_asc">Created At (Ascending)</option>
+                        <option value="created_at_desc">Created At (Descending)</option>
+                    </select>
+                </div>
+                <br><br>
+                <div id="allOrders" class="row">
+                    <!-- All orders will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderModalLabel">Order Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-8" id="orderDetails">
+                            <!-- Order details will be dynamically inserted here -->
+                        </div>
+                        <div class="col-4">
+                            <h5>Update Order Status</h5>
+                            <div class="mb-3">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <button type="button" class="btn btn-outline-primary w-100" data-status="processing">Processing
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button type="button" class="btn btn-outline-secondary w-100" data-status="ready">Ready
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-6">
+                                        <button type="button" class="btn btn-outline-success w-100" data-status="delivered">Delivered
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button type="button" class="btn btn-outline-danger w-100" data-status="cancelled">Cancelled
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="paymentId" class="form-label">Payment ID</label>
+                                <input type="text" class="form-control" id="paymentId">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isPaid">
+                                    <label class="form-check-label" for="isPaid">Is Paid</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isRefunded">
+                                    <label class="form-check-label" for="isRefunded">Is Refunded</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="privateNote" class="form-label">Private Note</label>
+                                <textarea class="form-control" id="privateNote" rows="3"></textarea>
+                            </div>
+                            <button type="button" class="btn btn-primary" id="updateOrderBtn">Update Order</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="module" src="{% static 'js/manage/order_management.js' %}"></script>
+{% endblock %}
