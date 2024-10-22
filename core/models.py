@@ -267,6 +267,8 @@ class Order(models.Model):
     payment_type = models.CharField(max_length=20, choices=ORDER_TYPES, default="card")
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={"role": "table"})
+    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name="order")
+
     raw_price = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     fee = models.IntegerField(default=7, validators=[MinValueValidator(0), MaxValueValidator(15)])
     service = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])

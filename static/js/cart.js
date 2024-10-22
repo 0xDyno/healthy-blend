@@ -2,6 +2,7 @@
 
 import storage from './storage.js';
 import * as utils from './utils.js';
+import {calculateNutritionSummary} from "./utils.js";
 
 document.addEventListener('DOMContentLoaded', function () {
     updateCartUI();
@@ -114,17 +115,20 @@ function handleCheckout() {
 
     const {officialMeals, customMeals} = storage.getCartItemsSet();
     const totalPrice = storage.getTotalPrice();
+    let nutritions = calculateNutritionSummary([...officialMeals, ...customMeals])
+    delete nutritions.total
 
     const cartData = {
         price: totalPrice,
         payment_type: paymentType,
-        officialMeals: officialMeals.map(item => ({
+        nutritional_value: nutritions,
+        official_meals: officialMeals.map(item => ({
             id: item.product.id,
             calories: item.product.nutritional_value.calories,
             amount: item.amount,
             price: item.product.price,
         })),
-        customMeals: customMeals.map(item => ({
+        custom_meals: customMeals.map(item => ({
             ingredients: item.product.ingredients.map(ing => ({
                 id: ing.id,
                 weight: ing.weight_grams,
@@ -146,8 +150,6 @@ function handleCheckout() {
         .then(data => {
             if (data.success) {
                 storage.clearCart();
-                updateCartUI();
-                utils.updateOrderSummary();
                 window.location.href = data.redirect_url;
             } else {
                 alert(data.error);

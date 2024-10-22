@@ -14,7 +14,7 @@ from django.views.decorators.http import require_POST
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import User, Ingredient, Product, Order, History
+from .models import User, Ingredient, Product, Order, History, NutritionalValue
 # from .serializers import UserSerializer, IngredientSerializer, ProductSerializer, OrderSerializer, HistorySerializer
 from .forms import LoginForm
 from . import utils
@@ -206,15 +206,19 @@ def orders(request):
 def checkout(request):
     try:
         data = json.loads(request.body)
-        official_meals = data.get("officialMeals", [])
-        custom_meals = data.get("customMeals", [])
+        official_meals = data.get("official_meals", [])
+        custom_meals = data.get("custom_Meals", [])
 
         total_price = utils.big_validator(data)
 
-        order = Order.objects.create(user=request.user, payment_type=data["payment_type"], raw_price=round(total_price))
+        nutritional_value = NutritionalValue.objects.create(**data.get("nutritional_value"))
+        nutritional_value.save()
+        order = Order.objects.create(user=request.user, payment_type=data["payment_type"], raw_price=round(total_price),
+                                     nutritional_value=nutritional_value)
 
         utils.process_official_meal(official_meals, order)
         utils.process_custom_meal(custom_meals, order)
+        order.save()
 
         return JsonResponse({"success": True, "redirect_url": f"/"})
     except ValidationError as e:

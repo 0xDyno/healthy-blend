@@ -1,20 +1,24 @@
 # utils.py
 
 import json
+from collections import defaultdict
+from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 
-from .models import Product, Ingredient, Order, ProductIngredient, OrderProduct
+from .models import Product, Ingredient, Order, ProductIngredient, OrderProduct, NutritionalValue
 
 
 def big_validator(data: json):
     """ We return, save & use frontend price - if it's less than 0.1% different of official. Customer oriented
     :return: price
     """
-    official_meals = data.get("officialMeals", [])
-    custom_meals = data.get("customMeals", [])
+    official_meals = data.get("official_meals", [])
+    custom_meals = data.get("custom_meals", [])
     price = data.get("price")
     payment_type = data.get("payment_type")
+
+    validate_nutritional_summary(data.get("nutritional_value"))
 
     if not official_meals and not custom_meals:
         raise ValidationError(message="The cart is empty")
@@ -108,6 +112,29 @@ def validate_custom_meal(custom_meals):
     return total_price
 
 
+def validate_nutritional_summary(nutritional_summary):
+    if not nutritional_summary:
+        raise ValidationError(f"Missing nutritions")
+    # Get all fields
+    model_fields = [field.name for field in NutritionalValue._meta.get_fields() if not field.auto_created]
+
+    # check we have all keys in nutritional_summary
+    for key, value in nutritional_summary.items():
+        if key not in model_fields:
+            raise ValidationError(f"Wrong format. Field '{key}' doesn't exist in nutritions.")
+
+        # Проверка, что значение является числом и больше 0
+        if not isinstance(value, (int, float, Decimal)):
+            raise ValidationError(f"Wrong format. Value for '{key}' should be a number")
+        if value < 0:
+            raise ValidationError(f"Wrong format. Value for '{key}' should be bigger than 0")
+
+    # check we have all fields we need
+    missing_fields = set(model_fields) - set(nutritional_summary.keys())
+    if missing_fields:
+        raise ValidationError(f"Wrong format, not all fields provided for nutritions. Missing for: {', '.join(missing_fields)}")
+
+
 def process_official_meal(official_meals, order: Order):
     for official_meal in official_meals:
         meal_id = official_meal.get("id")
@@ -176,12 +203,29 @@ def get_date_today():
 
 
 def validate_price(p1, p2, allowed_difference=0.1):
-    """ it doesn"t matter divide difference to p1 or p2
+    """ it doesn't matter divide difference to p1 or p2
     :return: True if everything Okay. False if difference too big
     """
     difference = abs(float(p1) - float(p2))
     percentage_difference = (difference / float(p1)) * 100
     return percentage_difference < allowed_difference
+
+
+def summarize_nutritions(nutritions: list):
+    """ Not is use now, can be deleted later
+    :param nutritions: list with NutritionalValue objects
+    :return: dict with sum of all nutritions
+    """
+    total_nutrients = defaultdict(lambda: 0)
+
+    # Проходим по каждому объекту в списке
+    for nutrient in nutritions:
+        nutrient_data = vars(nutrient)  # Получаем все атрибуты объекта в виде словаря
+        for key, value in nutrient_data.items():
+            if isinstance(value, (int, float, Decimal)):  # Проверяем, что значение числовое
+                total_nutrients[key] += value
+
+    return dict(total_nutrients)
 
 
 def get_ingredient_data(ingredient: Ingredient):
@@ -221,6 +265,7 @@ def get_orders_full_info(orders):
             "paid_at": order.paid_at,
             "ready_at": order.ready_at,
             "refunded_at": order.refunded_at,
+            "nutrition_value": order.nutritional_value.to_dict(),
             "products": [],
         }
 
@@ -239,11 +284,8 @@ def get_orders_full_info(orders):
             for product_ingredient in product.productingredient_set.all():
                 ingredient = product_ingredient.ingredient
                 ingredient_data = {
-                    "id": ingredient.id,
                     "name": ingredient.name,
                     "weight_grams": float(product_ingredient.weight_grams),
-                    "price": ingredient.get_selling_price_for_weight(product_ingredient.weight_grams),
-                    "ingredient_type": ingredient.ingredient_type,
                 }
                 product_data["ingredients"].append(ingredient_data)
 

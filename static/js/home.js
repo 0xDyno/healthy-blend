@@ -184,7 +184,6 @@ function showDishDetails(product, modalBody, modal) {
     addToCartButton.addEventListener('click', () => {
         const selectedCalories = parseInt(modalBody.querySelector('input[name="calorieOption"]:checked').value);
         const multiplier = selectedCalories / nutritional_value.calories;
-        console.log(multiplier)
         const customProduct = {
             ...product,
             selectedCalories: selectedCalories,
@@ -210,6 +209,7 @@ function editDish(product, selectedCalories) {
     const customMealDraft = {
         product: {
             ...product,
+            name: "Custom Meal",
             id: Date.now(),
             product_type: "custom",
             selectedCalories: 0,

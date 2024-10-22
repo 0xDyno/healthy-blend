@@ -3,6 +3,9 @@
 import storage from './storage.js';
 
 export function formatNumber(number) {
+    if (number === undefined) {
+        return
+    }
     return Number.isInteger(number) ? number.toString() : number.toFixed(1);
 }
 
@@ -18,21 +21,36 @@ export function updateNutritionSummary(summary) {
 
 export function calculateNutritionSummary(items) {
     return items.reduce((acc, item) => {
-        const nutritionalInfo = item.product.nutritional_value;
-        const amount = item.amount;
-        acc.total += item.product.price * amount;
-        acc.calories += nutritionalInfo.calories * amount;
-        acc.fats += nutritionalInfo.fats * amount;
-        acc.saturated_fats += nutritionalInfo.saturated_fats * amount;
-        acc.carbohydrates += nutritionalInfo.carbohydrates * amount;
-        acc.sugars += nutritionalInfo.sugars * amount;
-        acc.fiber += nutritionalInfo.fiber * amount;
-        acc.proteins += nutritionalInfo.proteins * amount;
+        const { nutritional_value: nutritionalInfo, price } = item.product;
+        const { amount } = item;
+
+        // Update price
+        acc.total += price * amount;
+
+        // Check keys in nutritionalInfo and sum
+        Object.keys(nutritionalInfo).forEach(key => {
+            const value = nutritionalInfo[key];
+
+            // = or + if it's not 0
+            if (value > 0) {
+                if (acc[key] !== undefined) {
+                    acc[key] += value * amount;
+                } else {
+                    acc[key] = value * amount;
+                }
+            }
+            else if (value <= 0) {
+                if (acc[key] === undefined) {       // or just save.. or init
+                    acc[key] = 0;
+                }
+            }
+        });
+
         return acc;
-    }, {total: 0, calories: 0, fats: 0, saturated_fats: 0, carbohydrates: 0, sugars: 0, fiber: 0, proteins: 0});
+    }, { total: 0 });
 }
 
-export function updateOrderSummary(update_nutrition_block=true) {
+export function updateOrderSummary(update_nutrition_block = true) {
     const {officialMeals, customMeals} = storage.getCartItemsSet();
     const allItems = [...officialMeals, ...customMeals];
     const summary = calculateNutritionSummary(allItems);
