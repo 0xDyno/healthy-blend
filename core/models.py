@@ -7,19 +7,20 @@ from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Sum, F
+from django.utils import timezone
 
 
 class User(AbstractUser):
     # login/pass, optional - first_name, last_names, email, is_staff, is_active, email
     ROLES = (
-        ('admin', 'Administrator'),
-        ('manager', 'Manager'),
-        ('table', 'Table'),
-        ('kitchen', 'Kitchen'),
-        ('other', 'Other'),
+        ("admin", "Administrator"),
+        ("manager", "Manager"),
+        ("table", "Table"),
+        ("kitchen", "Kitchen"),
+        ("other", "Other"),
     )
     nickname = models.CharField(max_length=50, blank=True, default="")
-    role = models.CharField(max_length=10, choices=ROLES, default='other')
+    role = models.CharField(max_length=10, choices=ROLES, default="other")
 
 
 class NutritionalValue(models.Model):
@@ -61,7 +62,7 @@ class NutritionalValue(models.Model):
 
     def to_dict(self, exclude_fields=None):
         if exclude_fields is None:
-            exclude_fields = ['id']
+            exclude_fields = ["id"]
         return {
             field.name: float(getattr(self, field.name)) if isinstance(getattr(self, field.name), Decimal) else getattr(self, field.name)
             for field in self._meta.fields
@@ -74,18 +75,18 @@ class NutritionalValue(models.Model):
 
 class Ingredient(models.Model):
     INGREDIENT_TYPES = (
-        ('base', 'Base'),
-        ('protein', 'Protein'),
-        ('vegetable', 'Vegetable'),
-        ('dairy', 'Dairy'),
-        ('fruit', 'Fruit'),
-        ('topping', 'Topping'),
-        ('other', 'Other'),
+        ("base", "Base"),
+        ("protein", "Protein"),
+        ("vegetable", "Vegetable"),
+        ("dairy", "Dairy"),
+        ("fruit", "Fruit"),
+        ("topping", "Topping"),
+        ("other", "Other"),
     )
     name = models.CharField(max_length=100)
     description = models.TextField()
-    image = models.ImageField(upload_to='ingredients/')
-    ingredient_type = models.CharField(max_length=10, choices=INGREDIENT_TYPES, default='other')
+    image = models.ImageField(upload_to="ingredients/")
+    ingredient_type = models.CharField(max_length=10, choices=INGREDIENT_TYPES, default="other")
     step = models.DecimalField(max_digits=2, decimal_places=1, default=1, validators=[MinValueValidator(0.05)])
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(500)])
@@ -96,7 +97,7 @@ class Ingredient(models.Model):
     custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
 
     # for 100g
-    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name='ingredient')
+    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name="ingredient")
 
     def clean(self):
         if self.max_order < self.min_order:
@@ -122,14 +123,14 @@ class Ingredient(models.Model):
 
 class Product(models.Model):
     PRODUCT_TYPES = (
-        ('dish', 'Dish'),
-        ('drink', 'Drink'),
+        ("dish", "Dish"),
+        ("drink", "Drink"),
     )
     product_type = models.CharField(max_length=10, choices=PRODUCT_TYPES, default="dish")
 
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to='products/', null=True, blank=True)
+    image = models.ImageField(upload_to="products/", null=True, blank=True)
     is_official = models.BooleanField(default=False)
 
     weight = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
@@ -138,8 +139,8 @@ class Product(models.Model):
     price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=3.00, validators=[MinValueValidator(0)])
     custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
 
-    ingredients = models.ManyToManyField('Ingredient', through='ProductIngredient')
-    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name='product', null=True, blank=True)
+    ingredients = models.ManyToManyField("Ingredient", through="ProductIngredient")
+    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name="product", null=True, blank=True)
 
     def clean(self):
         super().clean()
@@ -148,8 +149,8 @@ class Product(models.Model):
 
     def calculate_base_price(self):
         total_price = self.productingredient_set.aggregate(
-            total=Sum(F('ingredient__price_per_gram') * F('weight_grams'))
-        )['total'] or 0
+            total=Sum(F("ingredient__price_per_gram") * F("weight_grams"))
+        )["total"] or 0
         return round(total_price)
 
     def get_selling_price(self):
@@ -165,30 +166,30 @@ class Product(models.Model):
     def calculate_nutritional_value(self):
         nutritional_value = NutritionalValue()
         product_ingredients = self.productingredient_set.all()
-        total_weight = Decimal(product_ingredients.aggregate(total=Sum('weight_grams'))['total'] or 0)
+        total_weight = Decimal(product_ingredients.aggregate(total=Sum("weight_grams"))["total"] or 0)
 
         for product_ingredient in product_ingredients:
             ingredient = product_ingredient.ingredient
-            weight_ratio = Decimal(product_ingredient.weight_grams) / Decimal('100')
+            weight_ratio = Decimal(product_ingredient.weight_grams) / Decimal("100")
 
             for field in NutritionalValue._meta.fields:
-                if field.name != 'id':
-                    current_value = getattr(nutritional_value, field.name) or Decimal('0')
-                    ingredient_value = getattr(ingredient.nutritional_value, field.name) or Decimal('0')
+                if field.name != "id":
+                    current_value = getattr(nutritional_value, field.name) or Decimal("0")
+                    ingredient_value = getattr(ingredient.nutritional_value, field.name) or Decimal("0")
                     new_value = current_value + (ingredient_value * weight_ratio)
                     setattr(nutritional_value, field.name, round(new_value, 2))
 
         return nutritional_value, total_weight
 
     def is_dish(self):
-        return self.product_type == 'dish'
+        return self.product_type == "dish"
 
     @transaction.atomic
     def save(self, *args, **kwargs):
         self.full_clean()
         is_new = self.pk is None
 
-        if is_new and not hasattr(self, 'nutritional_value'):
+        if is_new and not hasattr(self, "nutritional_value"):
             self.nutritional_value = NutritionalValue.objects.create()
 
         super().save(*args, **kwargs)
@@ -203,7 +204,7 @@ class Product(models.Model):
 
             if self.nutritional_value:
                 for field in NutritionalValue._meta.fields:
-                    if field.name != 'id':
+                    if field.name != "id":
                         setattr(self.nutritional_value, field.name, getattr(new_nutritional_value, field.name))
                 self.nutritional_value.save()
             else:
@@ -224,7 +225,7 @@ class Product(models.Model):
 
 class ProductIngredient(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey('Ingredient', on_delete=models.CASCADE)
+    ingredient = models.ForeignKey("Ingredient", on_delete=models.CASCADE)
     weight_grams = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)])
 
     def clean(self):
@@ -239,27 +240,33 @@ class ProductIngredient(models.Model):
 
 
 class Order(models.Model):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    READY = "ready"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"
+
     STATUS_CHOICES = (
-        ('pending', 'Pending'),         # waiting for payment
-        ('processing', 'Processing'),   # paid - ready for Kitchen to cook
-        ('ready', 'Ready'),             # is ready for Manager to deliver
-        ('delivered', 'Delivered'),     # Done!
-        ('cancelled', 'Cancelled'),     # cancelled
+        (PENDING, "Pending"),  # waiting for payment
+        (PROCESSING, "Processing"),  # paid - ready for Kitchen to cook
+        (READY, "Ready"),  # is ready for Manager to deliver
+        (DELIVERED, "Delivered"),  # Done!
+        (CANCELLED, "Cancelled"),  # cancelled
     )
     ORDER_TYPES = (
-        ('offline', 'Offline'),
-        ('online', "Online"),
+        ("offline", "Offline"),
+        ("online", "Online"),
     )
     PAYMENT_TYPES = (
-        ('cash', 'Cash'),
-        ('card', 'Card'),
-        ('qr', 'QR'),
+        ("cash", "Cash"),
+        ("card", "Card"),
+        ("qr", "QR"),
     )
-    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='offline')
-    payment_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='card')
+    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default="offline")
+    payment_type = models.CharField(max_length=20, choices=ORDER_TYPES, default="card")
 
-    table = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'table'})
+    user = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={"role": "table"})
     raw_price = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     fee = models.IntegerField(default=7, validators=[MinValueValidator(0), MaxValueValidator(15)])
     service = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
@@ -272,11 +279,22 @@ class Order(models.Model):
     ready_at = models.DateTimeField(null=True, blank=True)
     refunded_at = models.DateTimeField(null=True, blank=True)
 
+    def clean(self):
+        super().clean()
+        pass
+
+    def save(self, *args, **kwargs):
+        if self.is_refunded and self.refunded_at is None:
+            self.refunded_at = timezone.now()
+        if self.order_status == self.READY:
+            self.ready_at = timezone.now()
+        super().save(*args, **kwargs)
+
 
 class OrderProduct(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='products')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="products")
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.IntegerField(validators=[MinValueValidator(1)])
+    amount = models.IntegerField(validators=[MinValueValidator(1)])
     price = models.IntegerField(validators=[MinValueValidator(0)])
 
 

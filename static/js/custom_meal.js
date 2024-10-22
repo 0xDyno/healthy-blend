@@ -87,7 +87,7 @@ function addToOrder() {
 
     const newCustomMeal = {
         product: {...customMealDraft.product},
-        quantity: customMealDraft.quantity
+        amount: customMealDraft.amount
     };
 
     const customMeals = storage.getCustomMeals();

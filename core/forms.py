@@ -10,39 +10,39 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput)
 
     def clean(self):
-        username = self.cleaned_data.get('username')
-        password = self.cleaned_data.get('password')
+        username = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
         user = authenticate(username=username, password=password)
         if not user or not user.is_active:
             raise forms.ValidationError("Invalid login credentials")
         return self.cleaned_data
 
     def get_user(self):
-        username = self.cleaned_data.get('username')
-        password = self.cleaned_data.get('password')
+        username = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
         return authenticate(username=username, password=password)
 
 
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'description', 'price', 'product_type', 'is_official']
+        fields = ["name", "description", "price", "product_type", "is_official"]
         labels = {
-            'product_type': 'Type',
-            'is_official': 'Official Product',
+            "product_type": "Type",
+            "is_official": "Official Product",
         }
 
 
 class IngredientForm(forms.ModelForm):
     class Meta:
         model = Ingredient
-        fields = ['name', 'description', 'min_order', 'max_order', 'available', 'price_per_gram']
+        fields = ["name", "description", "min_order", "max_order", "available", "price_per_gram"]
 
 
 class OrderStatusForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ['order_status']
+        fields = ["order_status"]
 
 
 class CustomProductForm(forms.Form):
@@ -53,23 +53,23 @@ class CustomProductForm(forms.Form):
         self.ingredients = Ingredient.objects.filter(available=True)
 
         for ingredient in self.ingredients:
-            self.fields[f'ingredient_{ingredient.id}'] = forms.IntegerField(
+            self.fields[f"ingredient_{ingredient.id}"] = forms.IntegerField(
                 label=ingredient.name,
                 required=False,
                 min_value=ingredient.min_order,
                 max_value=ingredient.max_order,
-                widget=forms.NumberInput(attrs={'class': 'ingredient-input'})
+                widget=forms.NumberInput(attrs={"class": "ingredient-input"})
             )
 
     def clean(self):
         cleaned_data = super().clean()
-        base_product = cleaned_data.get('base_product')
+        base_product = cleaned_data.get("base_product")
 
         if not base_product:
             raise forms.ValidationError("You must select a base product.")
 
         total_weight = sum(
-            cleaned_data.get(f'ingredient_{ingredient.id}', 0)
+            cleaned_data.get(f"ingredient_{ingredient.id}", 0)
             for ingredient in self.ingredients
         )
 
@@ -85,7 +85,7 @@ class UserRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'role', 'password']
+        fields = ["username", "email", "role", "password"]
 
     def clean(self):
         cleaned_data = super().clean()
@@ -108,4 +108,4 @@ class UserRegistrationForm(forms.ModelForm):
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ['payment_type']
+        fields = ["payment_type"]

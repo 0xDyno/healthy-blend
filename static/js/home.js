@@ -220,7 +220,7 @@ function editDish(product, selectedCalories) {
                 weight_grams: (parseFloat((ingredient.weight_grams * multiplier).toFixed(1)))
             }))
         },
-        quantity: 1
+        amount: 1
     };
 
     utils.recalculateCustomMealSummary(customMealDraft);
@@ -228,7 +228,7 @@ function editDish(product, selectedCalories) {
     window.location.href = '/custom-meal/';
 }
 
-function addToCart(product, quantity) {
+function addToCart(product, amount) {
     const customProduct = {
         ...product,
         selectedCalories: product.nutritional_value.calories,
@@ -236,7 +236,7 @@ function addToCart(product, quantity) {
         price: product.price
     };
 
-    storage.addItem(customProduct, quantity);
+    storage.addItem(customProduct, amount);
     utils.updateOrderSummary();
 }
 

@@ -25,11 +25,11 @@ from core.views import (
 
 # Создаем роутер для API
 router = DefaultRouter()
-router.register(r'users', UserViewSet)
+# router.register(r'users', UserViewSet)
+# router.register(r'history', HistoryViewSet)
 router.register(r'ingredients', IngredientViewSet)
 router.register(r'products', ProductViewSet)
 router.register(r'orders', OrderViewSet)
-router.register(r'history', HistoryViewSet)
 
 urlpatterns = [
     # Административная панель Django

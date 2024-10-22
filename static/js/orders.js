@@ -1,13 +1,16 @@
 // orders.js
 
+import * as utils from './utils.js';
+
 document.addEventListener('DOMContentLoaded', function () {
+    utils.updateOrderSummary(false)
     const userRole = '{{ user.role }}';
     const ordersContainer = document.getElementById('ordersContainer');
 
     // Function to fetch orders
     async function fetchOrders() {
         try {
-            const response = await fetch('/api/orders/all_orders/');
+            const response = await fetch('/api/orders/get_orders/');
             if (!response.ok) {
                 throw new Error('Failed to fetch orders');
             }
@@ -30,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <h4>Order #${order.id}</h4>
                 <p>Status: ${order.order_status}</p>
                 <p>Paid at: ${new Date(order.paid_at).toLocaleString()}</p>
-                <p>Products: ${order.products.map(p => `${p.product_name} (x${p.quantity})`).join(', ')}</p>
+                <p>Products: ${order.products.map(p => `${p.product_name} (x${p.amount})`).join(', ')}</p>
             `;
             orderElement.addEventListener('click', () => {
                 window.location.href = `/orders/${order.id}/`;

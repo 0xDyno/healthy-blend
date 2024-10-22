@@ -30,7 +30,7 @@ function updateCartUI() {
                 <tr>
                     <th>Product</th>
                     <th>Calories</th>
-                    <th>Quantity</th>
+                    <th>Amount</th>
                     <th>Price</th>
                     <th>Total</th>
                     <th>Actions</th>
@@ -45,13 +45,13 @@ function updateCartUI() {
         officialMeals.forEach((item, index) => {
             const row = createTableRow(item, index, 'official');
             tableBody.appendChild(row);
-            total += item.product.price * item.quantity;
+            total += item.product.price * item.amount;
         });
 
         customMeals.forEach((item, index) => {
             const row = createTableRow(item, index, 'custom');
             tableBody.appendChild(row);
-            total += item.product.price * item.quantity;
+            total += item.product.price * item.amount;
         });
 
         addRemoveEventListeners();
@@ -68,9 +68,9 @@ function createTableRow(item, index, type) {
             ${type === 'custom' ? createIngredientsList(item.product.ingredients) : ''}
         </td>
         <td>${(item.product.nutritional_value.calories).toFixed(0)}</td>
-        <td>${item.quantity}</td>
+        <td>${item.amount}</td>
         <td>${item.product.price.toFixed(0)} IDR</td>
-        <td>${(item.product.price * item.quantity).toFixed(0)} IDR</td>
+        <td>${(item.product.price * item.amount).toFixed(0)} IDR</td>
         <td><button class="btn btn-sm btn-danger remove-from-cart" data-type="${type}" data-id="${item.product.id}" 
         data-calories="${item.product.nutritional_value.calories}">Remove</button></td>
     `;
@@ -121,7 +121,7 @@ function handleCheckout() {
         officialMeals: officialMeals.map(item => ({
             id: item.product.id,
             calories: item.product.nutritional_value.calories,
-            quantity: item.quantity,
+            amount: item.amount,
             price: item.product.price,
         })),
         customMeals: customMeals.map(item => ({
@@ -129,7 +129,7 @@ function handleCheckout() {
                 id: ing.id,
                 weight: ing.weight_grams,
             })),
-            quantity: item.quantity,
+            amount: item.amount,
             price: item.product.price,
         }))
     };

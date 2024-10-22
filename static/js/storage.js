@@ -33,7 +33,7 @@ export default {
         localStorage.removeItem(CUSTOM_MEAL_DRAFT_KEY);
     },
 
-    addItem(product, quantity) {
+    addItem(product, amount) {
         const isCustom = product.product_type === 'custom';
         const storageKey = isCustom ? CUSTOM_MEALS_KEY : OFFICIAL_MEALS_KEY;
         const meals = JSON.parse(localStorage.getItem(storageKey)) || [];
@@ -44,7 +44,7 @@ export default {
         );
 
         if (existingItemIndex !== -1) {
-            meals[existingItemIndex].quantity += quantity;
+            meals[existingItemIndex].amount += amount;
         } else {
             meals.push({
                 product: {
@@ -58,7 +58,7 @@ export default {
                     price: product.price,
                     ingredients: product.ingredients ? [...product.ingredients] : []
                 },
-                quantity
+                amount
             });
         }
 
@@ -77,13 +77,13 @@ export default {
         localStorage.setItem(storageKey, JSON.stringify(updatedMeals));
     },
 
-    // updateItemQuantity(productId, quantity, isCustom) {
+    // updateItemAmount(productId, amount, isCustom) {
     //     const storageKey = isCustom ? CUSTOM_MEALS_KEY : OFFICIAL_MEALS_KEY;
     //     const meals = JSON.parse(localStorage.getItem(storageKey)) || [];
     //
     //     const updatedMeals = meals.map(item => {
     //         if (item.product.id === productId) {
-    //             return {...item, quantity};
+    //             return {...item, amount};
     //         }
     //         return item;
     //     });
@@ -103,7 +103,7 @@ export default {
         const allMeals = [...officialMeals, ...customMeals];
 
         return allMeals.reduce((total, item) => {
-            return total + (item.product.price * item.quantity);
+            return total + (item.product.price * item.amount);
         }, 0);
     },
 
@@ -118,7 +118,7 @@ export default {
 
         if (cartItemCount && cartTotal) {
             const {officialMeals, customMeals} = this.getCartItemsSet();
-            const totalItems = [...officialMeals, ...customMeals].reduce((sum, item) => sum + item.quantity, 0);
+            const totalItems = [...officialMeals, ...customMeals].reduce((sum, item) => sum + item.amount, 0);
             const totalPrice = this.getTotalPrice();
 
             cartItemCount.textContent = totalItems;

@@ -37,7 +37,7 @@ def validate_official_meal(official_meals):
     total_price = 0
     for official_meal in official_meals:
         meal_id = official_meal.get("id")
-        amount = official_meal.get("quantity")
+        amount = official_meal.get("amount")
         calories = official_meal.get("calories")
         price = official_meal.get("price")
 
@@ -70,7 +70,7 @@ def validate_custom_meal(custom_meals):
         product_price = 0
 
         ingredients = custom_meal.get("ingredients")
-        amount = custom_meal.get("quantity")
+        amount = custom_meal.get("amount")
         price = custom_meal.get("price")
 
         if not isinstance(ingredients, list):
@@ -114,13 +114,13 @@ def process_official_meal(official_meals, order: Order):
         price = round(official_meal.get("price"))
         official_product = Product.objects.filter(id=meal_id).first()
 
-        amount = official_meal.get("quantity")
+        amount = official_meal.get("amount")
         calories = official_meal.get("calories")
         coefficient = calories / official_product.nutritional_value.calories
 
         if not official_product.is_dish():
             # if it's drink - just connect with Order
-            OrderProduct.objects.create(order=order, product=official_product, quantity=amount, price=price)
+            OrderProduct.objects.create(order=order, product=official_product, amount=amount, price=price)
         else:
             new_name = f"{official_product.name} {calories}"
             new_desc = f"Copy for {calories} kCal for meal \"{official_product.description}\""
@@ -129,7 +129,7 @@ def process_official_meal(official_meals, order: Order):
             product = Product.objects.filter(name=new_name, description=new_desc, image=official_product.image, is_official=False,
                                              product_type=official_product.product_type).first()
 
-            # If we don"t have - let's create
+            # If we don't have - let's create
             if not product:
                 product = Product.objects.create(name=new_name, description=new_desc, image=official_product.image, is_official=False,
                                                  product_type=official_product.product_type)
@@ -140,7 +140,7 @@ def process_official_meal(official_meals, order: Order):
                 product.save()
 
             # Connect with order
-            OrderProduct.objects.create(order=order, product=product, quantity=amount, price=price)
+            OrderProduct.objects.create(order=order, product=product, amount=amount, price=price)
 
 
 def process_custom_meal(custom_meals, order: Order):
@@ -149,7 +149,7 @@ def process_custom_meal(custom_meals, order: Order):
         description = f"{name} - {get_date_today()}"
 
         product = Product.objects.create(name=name, description=description, is_official=False, product_type="dish")
-        amount = custom_meal.get("quantity")
+        amount = custom_meal.get("amount")
 
         # get IDs of ingredients in Custom Meal
         received_ingredients = custom_meal.get("ingredients")
@@ -166,7 +166,7 @@ def process_custom_meal(custom_meals, order: Order):
             ProductIngredient.objects.create(product=product, ingredient=official_ingredient, weight_grams=weight)
 
         product.save()
-        OrderProduct.objects.create(order=order, product=product, quantity=amount, price=round(custom_meal.get("price")))
+        OrderProduct.objects.create(order=order, product=product, amount=amount, price=round(custom_meal.get("price")))
 
 
 def get_date_today():
@@ -176,7 +176,7 @@ def get_date_today():
 
 
 def validate_price(p1, p2, allowed_difference=0.1):
-    """ it doesn't matter divide difference to p1 or p2
+    """ it doesn"t matter divide difference to p1 or p2
     :return: True if everything Okay. False if difference too big
     """
     difference = abs(float(p1) - float(p2))
@@ -186,28 +186,28 @@ def validate_price(p1, p2, allowed_difference=0.1):
 
 def get_ingredient_data(ingredient: Ingredient):
     data = {
-        'id': ingredient.id,
-        'name': ingredient.name,
-        'description': ingredient.description,
-        'image': ingredient.image.url,
-        'ingredient_type': ingredient.ingredient_type,
+        "id": ingredient.id,
+        "name": ingredient.name,
+        "description": ingredient.description,
+        "image": ingredient.image.url,
+        "ingredient_type": ingredient.ingredient_type,
         "step": ingredient.step,
-        'min_order': ingredient.min_order,
-        'max_order': ingredient.max_order,
-        'available': ingredient.available,
-        'price': ingredient.custom_price if ingredient.custom_price else ingredient.price_per_gram * ingredient.price_multiplier,
-        'nutritional_value': ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
+        "min_order": ingredient.min_order,
+        "max_order": ingredient.max_order,
+        "available": ingredient.available,
+        "price": ingredient.custom_price if ingredient.custom_price else ingredient.price_per_gram * ingredient.price_multiplier,
+        "nutritional_value": ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
     }
     return data
 
 
-def get_order_data_full(orders):
+def get_orders_full_info(orders):
     result = []
 
     for order in orders:
         data_to_send = {
             "id": order.id,
-            "table_id": order.table.id,
+            "table_id": order.user.id,
             "order_status": order.order_status,
             "order_type": order.order_type,
             "payment_type": order.payment_type,
@@ -231,7 +231,7 @@ def get_order_data_full(orders):
                 "name": product.name,
                 "weight": product.weight,
                 "price": order_product.price,
-                "quantity": order_product.quantity,
+                "amount": order_product.amount,
                 "nutritional_value": product.nutritional_value.to_dict() if product.nutritional_value else None,
                 "ingredients": [],
             }
@@ -254,36 +254,39 @@ def get_order_data_full(orders):
     return result
 
 
-def get_order_data_for_table(orders):
+def get_order_data(order):
+    data_to_send = {
+        "id": order.id,
+        "order_status": order.order_status,
+        "payment_type": order.payment_type,
+        "total_price": order.total_price,
+        "created_at": order.created_at,
+        "paid_at": order.paid_at if order.paid_at else None,
+        "products": [],
+    }
+    for product in order.products.all():
+        product_data = {
+            "product_name": product.product.name,
+            "price": product.price,
+            "amount": product.amount,
+        }
+        data_to_send["products"].append(product_data)
+    return data_to_send
+
+
+def get_orders_for_table(orders):
     result = []
     for order in orders:
-        data_to_send = {
-            "id": order.id,
-            "order_status": order.order_status,
-            "payment_type": order.payment_type,
-            "total_price": order.total_price,
-            "created_at": order.created_at,
-            "paid_at": order.paid_at if order.paid_at else None,
-            "products": [],
-        }
-        for product in order.products.all():
-            product_data = {
-                "product_name": product.product.name,
-                "price": product.price,
-                "quantity": product.quantity,
-            }
-            data_to_send["products"].append(product_data)
-
-        result.append(data_to_send)
+        result.append(get_order_data(order))
     return result
 
 
-def get_order_data_for_kitchen(orders):
+def get_orders_for_kitchen(orders):
     result = []
     for order in orders:
         data_to_send = {
             "id": order.id,
-            "table_id": order.table.id,
+            "table_id": order.user.id,
             "order_status": order.order_status,
             "paid_at": order.paid_at,
             "products": [],
@@ -293,7 +296,7 @@ def get_order_data_for_kitchen(orders):
             product = order_product.product
             product_data = {
                 "product_name": product.name,
-                "quantity": order_product.quantity,
+                "amount": order_product.amount,
                 "ingredients": [],
             }
 

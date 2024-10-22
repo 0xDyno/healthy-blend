@@ -19,30 +19,33 @@ export function updateNutritionSummary(summary) {
 export function calculateNutritionSummary(items) {
     return items.reduce((acc, item) => {
         const nutritionalInfo = item.product.nutritional_value;
-        const quantity = item.quantity;
-        acc.total += item.product.price * quantity;
-        acc.calories += nutritionalInfo.calories * quantity;
-        acc.fats += nutritionalInfo.fats * quantity;
-        acc.saturated_fats += nutritionalInfo.saturated_fats * quantity;
-        acc.carbohydrates += nutritionalInfo.carbohydrates * quantity;
-        acc.sugars += nutritionalInfo.sugars * quantity;
-        acc.fiber += nutritionalInfo.fiber * quantity;
-        acc.proteins += nutritionalInfo.proteins * quantity;
+        const amount = item.amount;
+        acc.total += item.product.price * amount;
+        acc.calories += nutritionalInfo.calories * amount;
+        acc.fats += nutritionalInfo.fats * amount;
+        acc.saturated_fats += nutritionalInfo.saturated_fats * amount;
+        acc.carbohydrates += nutritionalInfo.carbohydrates * amount;
+        acc.sugars += nutritionalInfo.sugars * amount;
+        acc.fiber += nutritionalInfo.fiber * amount;
+        acc.proteins += nutritionalInfo.proteins * amount;
         return acc;
     }, {total: 0, calories: 0, fats: 0, saturated_fats: 0, carbohydrates: 0, sugars: 0, fiber: 0, proteins: 0});
 }
 
-export function updateOrderSummary() {
+export function updateOrderSummary(update_nutrition_block=true) {
     const {officialMeals, customMeals} = storage.getCartItemsSet();
     const allItems = [...officialMeals, ...customMeals];
     const summary = calculateNutritionSummary(allItems);
-    updateNutritionSummary(summary);
+
+    if (update_nutrition_block) {
+        updateNutritionSummary(summary);
+    }
 
     // Update cart info in navbar
     const cartItemCountElement = document.getElementById('cartItemCount');
     const cartTotalElement = document.getElementById('cartTotal');
     if (cartItemCountElement && cartTotalElement) {
-        cartItemCountElement.textContent = allItems.reduce((total, item) => total + item.quantity, 0);
+        cartItemCountElement.textContent = allItems.reduce((total, item) => total + item.amount, 0);
         cartTotalElement.textContent = `${summary.total.toFixed(0)} IDR`;
     }
 }
@@ -67,7 +70,7 @@ export function getCustomMealDraft(give_new = false) {
                 price: 0,
                 ingredients: []
             },
-            quantity: 1
+            amount: 1
         };
     }
     return customMealDraft;
