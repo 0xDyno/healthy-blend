@@ -16,7 +16,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Ingredient, Product, Order, NutritionalValue
 from .forms import LoginForm
-from . import utils
+from core.utils import utils_api
+from core.utils import utils
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 @login_required
 def api_get_ingredient(request, pk=None):
     ingredient = get_object_or_404(Ingredient, pk=pk)
-    data = utils.get_ingredient_data(ingredient)
+    data = utils_api.get_ingredient_data(ingredient)
 
     return Response(data)
 
@@ -36,7 +37,7 @@ def api_get_ingredient(request, pk=None):
 @login_required
 def api_get_all_ingredients(request):
     ingredients = Ingredient.objects.filter()
-    data = [utils.get_ingredient_data(ingredient) for ingredient in ingredients]
+    data = [utils_api.get_ingredient_data(ingredient) for ingredient in ingredients]
     return Response(data)
 
 
@@ -44,25 +45,7 @@ def api_get_all_ingredients(request):
 @login_required
 def api_get_all_products(request):
     products = Product.objects.filter(is_menu=True)
-    data = []
-    for product in products:
-        product_info = {"id": product.id,
-                        "product_type": product.product_type,
-                        "name": product.name,
-                        "description": product.description,
-                        "image": product.image.url if product.image else None,
-                        "weight": product.weight,
-                        "price": product.get_selling_price(),
-                        "ingredients": [],
-                        "nutritional_value": product.nutritional_value.to_dict()}
-        for pi in product.productingredient_set.all():
-            ingredient_info = {"id": pi.ingredient.id,
-                               "name": pi.ingredient.name,
-                               "weight_grams": pi.weight_grams,
-                               "nutritional_value": pi.ingredient.nutritional_value.to_dict(),
-                               "price": pi.ingredient.get_selling_price()}
-            product_info.get("ingredients").append(ingredient_info)
-        data.append(product_info)
+    data = utils_api.get_all_products(products)
     return Response(data)
 
 
@@ -70,7 +53,7 @@ def api_get_all_products(request):
 @login_required
 def api_get_order(request, pk):
     utils.verify_if_manager(request.user)
-    order = utils.get_order_full_info(Order.objects.get(pk=pk))
+    order = utils_api.get_order_full(Order.objects.get(pk=pk))
     return Response(order)
 
 
@@ -82,16 +65,16 @@ def api_get_orders(request):
     data = Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
     if request.user.role == "admin":
         orders = Order.objects.all().order_by("-created_at")
-        data = utils.get_orders_full_info(orders)
+        data = utils_api.get_orders_general(orders)
     if request.user.role == "manager":
         orders = Order.objects.filter(created_at__date=now.date()).order_by("-created_at")
-        data = utils.get_orders_full_info(orders)
+        data = utils_api.get_orders_general(orders)
     if request.user.role == "table":
         order = Order.objects.filter(user=request.user).order_by("-created_at").first()
-        data = [utils.get_order_data_for_table(order)]
+        data = [utils_api.get_order_for_table(order)]
     if request.user.role == "kitchen":
         orders = Order.objects.filter(created_at__date=timezone.now().date(), order_status__in=["processing"]).order_by("created_at")
-        data = utils.get_orders_for_kitchen(orders)
+        data = utils_api.get_orders_for_kitchen(orders)
     return Response(data)
 
 
@@ -114,7 +97,6 @@ def api_update_order(request, pk):
     order.save()
 
     return JsonResponse({'message': 'Order updated successfully'}, status=status.HTTP_200_OK)
-
 
 
 # ------------------------ WEB views ------------------------------------------------------------------------------------------------

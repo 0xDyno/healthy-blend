@@ -1,14 +1,18 @@
 # utils.py
 
 import json
-from collections import defaultdict
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 from rest_framework import status
-from rest_framework.response import Response
 
-from .models import Product, Ingredient, Order, ProductIngredient, OrderProduct, NutritionalValue
+from core.models import Product, Ingredient, Order, ProductIngredient, OrderProduct, NutritionalValue
+
+
+def verify_if_manager(user):
+    if user.role != "admin" and user.role != "manager":
+        return JsonResponse({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
 
 def big_validator(data: json):
@@ -116,6 +120,15 @@ def validate_custom_meal(custom_meals):
     return total_price
 
 
+def validate_price(p1, p2, allowed_difference=0.5):
+    """ it doesn't matter divide difference to p1 or p2
+    :return: True if everything Okay. False if difference too big
+    """
+    difference = abs(float(p1) - float(p2))
+    percentage_difference = (difference / float(p1)) * 100
+    return percentage_difference < allowed_difference
+
+
 def validate_nutritional_summary(nutritional_summary):
     if not nutritional_summary:
         raise ValidationError(f"Missing nutritions")
@@ -211,153 +224,3 @@ def get_date_today():
 def get_price_with_tax(price):
     price_tax = price + (price * 0.07)
     return round(price_tax + (price_tax * 0.01))
-
-
-def validate_price(p1, p2, allowed_difference=0.5):
-    """ it doesn't matter divide difference to p1 or p2
-    :return: True if everything Okay. False if difference too big
-    """
-    difference = abs(float(p1) - float(p2))
-    percentage_difference = (difference / float(p1)) * 100
-    return percentage_difference < allowed_difference
-
-
-def get_ingredient_data(ingredient: Ingredient):
-    data = {
-        "id": ingredient.id,
-        "name": ingredient.name,
-        "description": ingredient.description,
-        "image": ingredient.image.url,
-        "ingredient_type": ingredient.ingredient_type,
-        "step": ingredient.step,
-        "min_order": ingredient.min_order,
-        "max_order": ingredient.max_order,
-        "available": ingredient.available,
-        "price": ingredient.custom_price if ingredient.custom_price else ingredient.price_per_gram * ingredient.price_multiplier,
-        "nutritional_value": ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
-    }
-    return data
-
-
-def get_orders_full_info(orders):
-    return [get_order_full_info(order) for order in orders]
-
-
-def get_order_full_info(order: Order):
-    data_to_send = {
-        "id": order.id,
-        "table_id": order.user.id,
-        "order_status": order.order_status,
-        "order_type": order.order_type,
-        "payment_type": order.payment_type,
-        "tax": order.tax,
-        "service": order.service,
-        "base_price": order.base_price,
-        "total_price": order.total_price,
-        "payment_id": order.payment_id,
-        "is_paid": order.is_paid,
-        "is_refunded": order.is_refunded,
-        "created_at": order.created_at,
-        "paid_at": order.paid_at,
-        "ready_at": order.ready_at,
-        "refunded_at": order.refunded_at,
-        "public_note": order.public_note,
-        "private_note": order.private_note,
-        "nutritional_value": order.nutritional_value.to_dict(),
-        "products": [],
-    }
-
-    for order_product in order.products.all():
-        # product: Product | order_product: OrderProduct
-        product = order_product.product
-        product_data = {
-            "id": product.id,
-            "name": product.name,
-            "weight": product.weight,
-            "price": order_product.price,
-            "amount": order_product.amount,
-            "is_official": product.is_official,
-            "nutritional_value": product.nutritional_value.to_dict() if product.nutritional_value else None,
-            "ingredients": [],
-        }
-
-        for product_ingredient in product.productingredient_set.all():
-            ingredient = product_ingredient.ingredient
-            ingredient_data = {
-                "name": ingredient.name,
-                "weight_grams": float(product_ingredient.weight_grams),
-            }
-            product_data["ingredients"].append(ingredient_data)
-
-        data_to_send["products"].append(product_data)
-    return data_to_send
-
-
-def get_order_data_for_table(order):
-    data_to_send = {
-        "id": order.id,
-        "order_status": order.get_order_status_display(),
-        "payment_type": order.payment_type,
-        "tax": order.tax,
-        "service": order.service,
-        "base_price": order.base_price,
-        "total_price": order.total_price,
-        "created_at": order.created_at,
-        "is_paid": order.is_paid,
-        "public_note": order.public_note,
-        "paid_at": order.paid_at if order.paid_at else None,
-        "nutritional_value": order.nutritional_value.to_dict(),
-        "products": [],
-    }
-    for order_product in order.products.all():
-        product_data = {
-            "product_id": order_product.id,
-            "product_name": order_product.product.name,
-            "price": order_product.price,
-            "amount": order_product.amount,
-            "is_official": order_product.product.is_official,
-        }
-        data_to_send["products"].append(product_data)
-    return data_to_send
-
-
-def get_orders_for_kitchen(orders):
-    result = []
-    for order in orders:
-        data_to_send = {
-            "id": order.id,
-            "table_id": order.user.id,
-            "order_status": order.order_status,
-            "paid_at": order.paid_at,
-            "products": [],
-        }
-
-        for order_product in order.products.all():
-            product = order_product.product
-            product_data = {
-                "product_name": product.name,
-                "amount": order_product.amount,
-                "is_official": product.is_official,
-                "ingredients": [],
-            }
-
-            for product_ingredient in product.productingredient_set.all():
-                ingredient = product_ingredient.ingredient
-                ingredient_data = {
-                    "id": ingredient.id,
-                    "name": ingredient.name,
-                    "weight_grams": float(product_ingredient.weight_grams),
-                    "ingredient_type": ingredient.ingredient_type,
-                }
-                product_data["ingredients"].append(ingredient_data)
-
-            data_to_send["products"].append(product_data)
-
-        result.append(data_to_send)
-
-    return result
-
-
-def verify_if_manager(user):
-    if user.role != "admin" and user.role != "manager":
-        return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
