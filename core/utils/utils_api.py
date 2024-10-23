@@ -71,7 +71,7 @@ def get_orders_general(orders):
 def get_order_full(order):
     data_to_send = {
         "id": order.id,
-        "user_role": order.user.role.capitalize(),
+        "user_role": order.user.role,
         "user_id": order.user.id,
         "order_status": order.order_status,
         "order_type": order.order_type,

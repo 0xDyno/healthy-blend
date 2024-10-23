@@ -153,7 +153,9 @@ function sortOrders() {
 
 function updateOrderStatus() {
     const orderId = document.getElementById('orderModal').getAttribute('data-order-id');
-    const orderStatus = document.querySelector('.modal-body button.active').getAttribute('data-status');
+    const orderStatus = document.querySelector('.modal-body button[data-status].active').getAttribute('data-status');
+    const orderType = document.querySelector('.modal-body button[data-order-type].active').getAttribute('data-order-type');
+    const paymentType = document.querySelector('.modal-body button[data-payment-type].active').getAttribute('data-payment-type');
     const paymentId = document.getElementById('paymentId').value;
     const isPaid = document.getElementById('isPaid').checked;
     const isRefunded = document.getElementById('isRefunded').checked;
@@ -161,6 +163,8 @@ function updateOrderStatus() {
 
     const data = {
         order_status: orderStatus,
+        order_type: orderType,
+        payment_type: paymentType,
         payment_id: paymentId,
         is_paid: isPaid,
         is_refunded: isRefunded,
@@ -238,10 +242,8 @@ function displayOrderDetails(orderId) {
             orderDetailsContainer.innerHTML = `
                 <div class="row">
                     <div class="col-md-6">
-                        <h5>Order ID: ${order.id}</h5>
+                        <h5>Order #${order.id} - ${order.user_role} ${order.user_id}</h5>
                         <p>${order.user_role} # ${order.user_id}</p>
-                        <p>Order Type: ${order.order_type}</p>
-                        <p>Payment Type: ${order.payment_type}</p>
                     </div>
                 </div>
                 <table class="table table-sm">
@@ -270,6 +272,7 @@ function displayOrderDetails(orderId) {
                 </table>
             `;
             document.getElementById('orderModal').setAttribute('data-order-id', orderId);
+            // Обработка статуса заказа
             const statusButtons = document.querySelectorAll('.modal-body button[data-status]');
             statusButtons.forEach(button => {
                 if (button.getAttribute('data-status') === order.order_status) {
@@ -277,13 +280,41 @@ function displayOrderDetails(orderId) {
                 } else {
                     button.classList.remove('active');
                 }
+            });
+
+            // Обработка типа заказа
+            const orderTypeButtons = document.querySelectorAll('.modal-body button[data-order-type]');
+            orderTypeButtons.forEach(button => {
+                if (button.getAttribute('data-order-type') === order.order_type) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+            // Обработка типа оплаты
+            const paymentTypeButtons = document.querySelectorAll('.modal-body button[data-payment-type]');
+            paymentTypeButtons.forEach(button => {
+                if (button.getAttribute('data-payment-type') === order.payment_type) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+            // Добавляем обработчики событий для всех кнопок
+            document.querySelectorAll('.modal-body button[data-status], .modal-body button[data-order-type], .modal-body button[data-payment-type]').forEach(button => {
                 button.addEventListener('click', function () {
-                    statusButtons.forEach(btn => btn.classList.remove('active'));
+                    // Находим все кнопки в той же группе
+                    const group = this.closest('.btn-group, .btn-group-vertical');
+                    if (group) {
+                        group.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    }
                     this.classList.add('active');
                 });
             });
 
-            // Load payment ID, is paid, is refunded, and private note
+            // Установка остальных значений
             document.getElementById('paymentId').value = order.payment_id;
             document.getElementById('isPaid').checked = order.is_paid;
             document.getElementById('isRefunded').checked = order.is_refunded;

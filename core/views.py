@@ -86,6 +86,7 @@ def api_update_order(request, pk):
 
     order = Order.objects.get(pk=pk)
     order.order_status = data.get("order_status")
+    order.payment_type = data.get("payment_type")
     order.payment_id = data.get("payment_id")
     order.is_paid = data.get("is_paid")
     order.is_refunded = data.get("is_refunded")
