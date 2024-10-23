@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('isPaidFilter').addEventListener('change', filterOrders);
     document.getElementById('isRefundedFilter').addEventListener('change', filterOrders);
     document.getElementById('sortBy').addEventListener('change', sortOrders);
+    document.getElementById('clearFilters').addEventListener('click', clearFilters);
 
     // Event listener for updating order status
     document.getElementById('updateOrderBtn').addEventListener('click', updateOrderStatus);
@@ -73,20 +74,25 @@ function createOrderElement(order, colClass = 'col-12') {
     orderElement.innerHTML = `
         <div class="card order-card" data-bs-toggle="modal" data-bs-target="#orderModal" data-order-id="${order.id}">
             <div class="card-body">
-                <h5 class="card-title">Order ID: ${order.id} ${order.is_refunded ? '<span style="color:red;">refunded</span>' : ''}</h5>
-                <p class="card-text">Table #${order.table_id}</p>
-                <p class="card-text">Status: ${order.order_status}</p>
+                <h5 class="card-title">Order #${order.id} ${order.is_refunded ? '<span class="text-danger">(Refunded)</span>' : ''}</h5>
+                <p class="card-text">${order.user_role} ${order.user_id}</p>
+                <p class="card-text"><span class="badge bg-${getStatusColor(order.order_status)}">${order.order_status}</span></p>
                 <p class="card-text">Type: ${order.order_type}</p>
                 <p class="card-text">Payment: ${order.payment_type}</p>
-                <p class="card-text">Total: ${order.total_price}</p>
-                <p class="card-text">Created: ${new Date(order.created_at).toLocaleString()}</p>
-                <p class="card-text" style="color: ${order.paid_at ? 'green' : 'red'};">
-                    ${order.paid_at ? `Paid: ${new Date(order.paid_at).toLocaleString()}` : 'Not Paid'}
+                <p class="card-text">Total: ${order.total_price} IDR</p>
+                <p class="card-text">Created: ${formatDate(order.created_at)}</p>
+                <p class="card-text ${order.is_paid ? 'text-success' : 'text-danger'}">
+                    ${order.paid_at ? `Paid: ${formatDate(order.paid_at)}` : 'Not Paid'}
                 </p>
             </div>
         </div>
     `;
     return orderElement;
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString();
 }
 
 function filterOrders() {
@@ -106,7 +112,7 @@ function filterOrders() {
                 const matchesStatus = statusFilter === '' || order.order_status === statusFilter;
                 const matchesOrderType = orderTypeFilter === '' || order.order_type === orderTypeFilter;
                 const matchesPaymentType = paymentTypeFilter === '' || order.payment_type === paymentTypeFilter;
-                const matchesTableId = tableIdFilter === '' || order.table_id === parseInt(tableIdFilter);
+                const matchesTableId = tableIdFilter === '' || order.user_id === parseInt(tableIdFilter);
                 const matchesIsPaid = !isPaidFilter || order.is_paid;
                 const matchesIsRefunded = !isRefundedFilter || order.is_refunded;
 
@@ -119,6 +125,18 @@ function filterOrders() {
             console.error('Error:', error);
             alert(error.message);
         });
+}
+
+function getStatusColor(status) {
+    const statusColors = {
+        'pending': 'warning',
+        'processing': 'primary',
+        'ready': 'success',
+        'delivered': 'info',
+        'cancelled': 'danger',
+        'problem': 'danger'
+    };
+    return statusColors[status] || 'secondary';
 }
 
 function sortOrders() {
@@ -148,7 +166,7 @@ function displayOrderDetails(orderId) {
         .then(order => {
             // Устанавливаем ID заказа в заголовке модального окна
             document.getElementById('modalOrderId').textContent = order.id;
-            document.getElementById('modalTableId').textContent = order.user_role + " " +order.user_id;
+            document.getElementById('modalTableId').textContent = order.user_role + " " + order.user_id;
 
             // Отображаем детали заказа
             const orderDetailsContainer = document.getElementById('orderDetails');
@@ -326,6 +344,30 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+function clearFilters() {
+    // Очистка текстовых полей
+    document.getElementById('searchInput').value = '';
+    document.getElementById('tableIdFilter').value = '';
+
+    // Сброс select элементов
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('orderTypeFilter').value = '';
+    document.getElementById('paymentTypeFilter').value = '';
+    document.getElementById('sortBy').value = '';
+
+    // Сброс чекбоксов
+    document.getElementById('isPaidFilter').checked = false;
+    document.getElementById('isRefundedFilter').checked = false;
+
+    // Сброс даты
+    if (document.getElementById('createdAtFilter')) {
+        document.getElementById('createdAtFilter').value = '';
+    }
+
+    // После очистки фильтров, обновляем отображение заказов
+    fetchOrders();
 }
 
 // Добавляем обработчик кликов по карточкам заказов
