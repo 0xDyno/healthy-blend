@@ -72,9 +72,12 @@ function createOrderElement(order, colClass = 'col-12') {
     const orderElement = document.createElement('div');
     orderElement.classList.add(colClass, 'mb-3');
     orderElement.innerHTML = `
-        <div class="card order-card" data-bs-toggle="modal" data-bs-target="#orderModal" data-order-id="${order.id}">
+        <div class="card order-card" data-status="${order.order_status}" data-bs-toggle="modal" data-bs-target="#orderModal" data-order-id="${order.id}">
             <div class="card-body">
-                <h5 class="card-title">Order #${order.id} ${order.is_refunded ? '<span class="text-danger">(Refunded)</span>' : ''}</h5>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title">Order #${order.id}</h5>
+                    ${order.is_refunded ? '<span class="badge bg-danger">Refunded</span>' : ''}
+                </div>
                 <p class="card-text">${order.user_role} ${order.user_id}</p>
                 <p class="card-text"><span class="badge bg-${getStatusColor(order.order_status)}">${order.order_status}</span></p>
                 <p class="card-text">Type: ${order.order_type}</p>
@@ -131,8 +134,8 @@ function getStatusColor(status) {
     const statusColors = {
         'pending': 'secondary',
         'cooking': 'primary',
-        'ready': 'success',
-        'delivered': 'info',
+        'ready': 'info',
+        'delivered': 'success',
         'cancelled': 'danger',
         'problem': 'danger'
     };
