@@ -7,6 +7,8 @@ from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator, MaxLengthValidator
 from django.db.models import Sum, F
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 
 
@@ -232,7 +234,7 @@ class ProductIngredient(models.Model):
     weight_grams = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)])
 
     def clean(self):
-        super().full_clean()
+        super().clean()
         if self.weight_grams > self.ingredient.max_order:
             raise ValidationError(
                 f"Weight is too big for ingredient \"{self.ingredient.name}\", "
@@ -327,6 +329,9 @@ class Order(models.Model):
 
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"Order {self.id}"
+
 
 class OrderProduct(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="products")
@@ -335,7 +340,45 @@ class OrderProduct(models.Model):
     price = models.IntegerField(validators=[MinValueValidator(0)])
 
 
-class History(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+class OrderHistory(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="history")
+    order_status = models.CharField(max_length=20, choices=Order.STATUS_CHOICES)
+    order_type = models.CharField(max_length=20, choices=Order.ORDER_TYPES)
+    payment_type = models.CharField(max_length=20, choices=Order.PAYMENT_TYPES)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="order_history_user")
+    user_last_update = models.ForeignKey(User, on_delete=models.CASCADE, related_name="order_history_last_update")
+    tax = models.IntegerField()
+    service = models.IntegerField()
+    base_price = models.IntegerField()
+    total_price = models.IntegerField()
+    payment_id = models.CharField(max_length=100, blank=True)
+    is_paid = models.BooleanField(default=False)
+    is_refunded = models.BooleanField(default=False)
+    public_note = models.TextField(null=True, blank=True, max_length=500)
+    private_note = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"OrderHistory for Order {self.order.id} at {self.created_at}"
+
+
+# Сигнал, который создает запись в истории при сохранении объекта Order
+@receiver(post_save, sender=Order)
+def create_order_history(sender, instance, **kwargs):
+    OrderHistory.objects.create(
+        order=instance,
+        order_status=instance.order_status,
+        order_type=instance.order_type,
+        payment_type=instance.payment_type,
+        user=instance.user,
+        user_last_update=instance.user_last_update,
+        tax=instance.tax,
+        service=instance.service,
+        base_price=instance.base_price,
+        total_price=instance.total_price,
+        payment_id=instance.payment_id,
+        is_paid=instance.is_paid,
+        is_refunded=instance.is_refunded,
+        public_note=instance.public_note,
+        private_note=instance.private_note,
+    )

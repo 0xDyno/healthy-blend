@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, NutritionalValue, Ingredient, Product, ProductIngredient, Order, OrderProduct, History
+from .models import User, NutritionalValue, Ingredient, Product, ProductIngredient, Order, OrderProduct, OrderHistory
 
 
 class CustomUserAdmin(UserAdmin):
@@ -60,4 +60,4 @@ admin.site.register(NutritionalValue, NutritionalValueAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Order, OrderAdmin)
-admin.site.register(History, HistoryAdmin)
+admin.site.register(OrderHistory, HistoryAdmin)

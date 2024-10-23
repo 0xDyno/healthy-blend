@@ -129,7 +129,7 @@ def user_logout(request):
 
 @login_required
 def home(request):
-    return render(request, "base/home.html")
+    return render(request, "client/home.html")
 
 
 @login_required
@@ -184,8 +184,6 @@ def checkout(request):
 
         return JsonResponse({"success": True, "redirect_url": f"/last-order/"})
     except ValidationError as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 

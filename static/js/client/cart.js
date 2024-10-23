@@ -1,6 +1,6 @@
 // cart.js
 
-import storage from '../storage.js';
+import storage from './storage.js';
 import * as utils from '../utils.js';
 import {calculateNutritionSummary} from "../utils.js";
 

@@ -1,6 +1,6 @@
 // custom_add.js
 
-import storage from '../storage.js';
+import storage from './storage.js';
 import * as utils from '../utils.js';
 
 let ingredientData;

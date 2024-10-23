@@ -1,6 +1,6 @@
 // home.js
 
-import storage from '../storage.js';
+import storage from './storage.js';
 import * as utils from '../utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
