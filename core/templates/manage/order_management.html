@@ -1,4 +1,4 @@
-{# order.html #}
+{# order_management.html #}
 
 {% extends 'base/base.html' %}
 {% load static %}
@@ -98,90 +98,97 @@
     </div>
 
     <!-- Order Details Modal -->
+    <!-- Order Details Modal -->
     <div class="modal fade" id="orderModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Order Details</h5>
+                    <h5 class="modal-title">Order #<span id="modalOrderId"></span> - <span id="modalTableId"></span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-8" id="orderDetails">
-                            <!-- Order details will be inserted here -->
-                        </div>
-                        <!-- Обновленная часть модального окна в order.html -->
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Update Order</h5>
-
-                                    <!-- Order Status -->
-                                    <div class="mb-3">
-                                        <label>Order Status</label>
-                                        <div class="btn-group-vertical w-100">
-                                            <button type="button" class="btn btn-outline-secondary mb-2" data-status="pending">Pending
-                                            </button>
-                                            <button type="button" class="btn btn-outline-primary mb-2" data-status="cooking">Cooking
-                                            </button>
-                                            <button type="button" class="btn btn-outline-success mb-2" data-status="ready">Ready</button>
-                                            <button type="button" class="btn btn-outline-info mb-2" data-status="delivered">Delivered
-                                            </button>
-                                            <button type="button" class="btn btn-outline-danger mb-2" data-status="cancelled">Cancelled
-                                            </button>
-                                            <button type="button" class="btn btn-outline-danger" data-status="problem">Problem</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Order Type -->
-                                    <div class="mb-3">
-                                        <label>Order Type</label>
-                                        <div class="btn-group w-100">
-                                            <button type="button" class="btn btn-outline-secondary" data-order-type="offline">Offline
-                                            </button>
-                                            <button type="button" class="btn btn-outline-secondary" data-order-type="takeaway">Take Away
-                                            </button>
-                                            <button type="button" class="btn btn-outline-secondary" data-order-type="online">Online</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Payment Type -->
-                                    <div class="mb-3">
-                                        <label>Payment Type</label>
-                                        <div class="btn-group w-100">
-                                            <button type="button" class="btn btn-outline-secondary" data-payment-type="cash">Cash</button>
-                                            <button type="button" class="btn btn-outline-secondary" data-payment-type="card">Card</button>
-                                            <button type="button" class="btn btn-outline-secondary" data-payment-type="qr">QR</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Checkboxes in one row -->
-                                    <div class="mb-3 d-flex justify-content-between">
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="isPaid">
-                                            <label class="form-check-label" for="isPaid">Is Paid</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="isRefunded">
-                                            <label class="form-check-label" for="isRefunded">Is Refunded</label>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="paymentId" class="form-label">Payment ID</label>
-                                        <input type="text" class="form-control" id="paymentId">
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="privateNote" class="form-label">Private Note</label>
-                                        <textarea class="form-control" id="privateNote" rows="3"></textarea>
-                                    </div>
-
-                                    <button type="button" class="btn btn-primary w-100" id="updateOrderBtn">Update Order</button>
-                                </div>
+                    <!-- Order Status Buttons -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-center mb-3">Order Status</h5>
+                            <div class="status-buttons-container">
+                                <button type="button" class="btn btn-outline-secondary" data-status="pending">Pending</button>
+                                <button type="button" class="btn btn-outline-success" data-status="ready">Ready</button>
+                                <button type="button" class="btn btn-outline-danger" data-status="cancelled">Cancelled</button>
+                                <button type="button" class="btn btn-outline-primary" data-status="cooking">Cooking</button>
+                                <button type="button" class="btn btn-outline-info" data-status="delivered">Delivered</button>
+                                <button type="button" class="btn btn-outline-danger" data-status="problem">Problem</button>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Main Content -->
+                    <div class="row">
+                        <!-- Left Column - Control Buttons -->
+                        <div class="col-md-4">
+                            <!-- Order Type -->
+                            <div class="mb-3">
+                                <label class="form-label">Order Type</label>
+                                <div class="btn-group w-100">
+                                    <button type="button" class="btn btn-outline-secondary" data-order-type="offline">Offline</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-order-type="takeaway">Take Away</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-order-type="online">Online</button>
+                                </div>
+                            </div>
+
+                            <!-- Payment Type -->
+                            <div class="mb-3">
+                                <label class="form-label">Payment Type</label>
+                                <div class="btn-group w-100">
+                                    <button type="button" class="btn btn-outline-secondary" data-payment-type="cash">Cash</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-payment-type="card">Card</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-payment-type="qr">QR</button>
+                                </div>
+                            </div>
+
+                            <!-- Checkboxes in one row -->
+                            <div class="mb-3 d-flex justify-content-start gap-4">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="isPaid">
+                                    <label class="form-check-label" for="isPaid">Is Paid</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="isRefunded">
+                                    <label class="form-check-label" for="isRefunded">Is Refunded</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column - Notes -->
+                        <div class="col-md-8">
+                            <!-- Payment ID -->
+                            <div class="mb-3">
+                                <label for="paymentId" class="form-label">Payment ID</label>
+                                <input type="text" class="form-control" id="paymentId">
+                            </div>
+
+                            <!-- Private Note -->
+                            <div class="mb-3">
+                                <label for="privateNote" class="form-label">Private Note</label>
+                                <textarea class="form-control" id="privateNote" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Update Button -->
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
+                            <button type="button" class="btn btn-success" id="updateOrderBtn">Update Order</button>
+                        </div>
+                    </div>
+
+                    <!-- Order Details Table -->
+                    <div class="row mt-4">
+                        <div class="col-12" id="orderDetails">
+                            <!-- Order details table will be inserted here -->
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>

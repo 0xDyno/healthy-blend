@@ -3,13 +3,12 @@
 import * as utils from "../utils.js"
 
 document.addEventListener('DOMContentLoaded', function () {
-    fetchOrders();
     utils.updateOrderSummary(false)
+    fetchOrders();
 
     // Event listeners for search, filters, and sorting
     document.getElementById('searchInput').addEventListener('input', filterOrders);
     document.getElementById('tableIdFilter').addEventListener('input', filterOrders);
-
     document.getElementById('statusFilter').addEventListener('change', filterOrders);
     document.getElementById('paymentTypeFilter').addEventListener('change', filterOrders);
     document.getElementById('orderTypeFilter').addEventListener('change', filterOrders);
@@ -19,8 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Event listener for updating order status
     document.getElementById('updateOrderBtn').addEventListener('click', updateOrderStatus);
-    document.getElementById('toggleView').addEventListener('click', toggleView)
-
+    document.getElementById('toggleView').addEventListener('click', toggleView);
 });
 
 function fetchOrders() {
@@ -76,12 +74,12 @@ function createOrderElement(order, colClass = 'col-12') {
         <div class="card order-card" data-bs-toggle="modal" data-bs-target="#orderModal" data-order-id="${order.id}">
             <div class="card-body">
                 <h5 class="card-title">Order ID: ${order.id} ${order.is_refunded ? '<span style="color:red;">refunded</span>' : ''}</h5>
-                <p class="card-text">${order.user_role} # ${order.user_id}</p>
-                <p class="card-text">Order Status: ${order.order_status}</p>
-                <p class="card-text">Order Type: ${order.order_type}</p>
-                <p class="card-text">Payment Type: ${order.payment_type}</p>
-                <p class="card-text">Total Price: ${order.total_price}</p>
-                <p class="card-text">Created At: ${new Date(order.created_at).toLocaleString()}</p>
+                <p class="card-text">Table #${order.table_id}</p>
+                <p class="card-text">Status: ${order.order_status}</p>
+                <p class="card-text">Type: ${order.order_type}</p>
+                <p class="card-text">Payment: ${order.payment_type}</p>
+                <p class="card-text">Total: ${order.total_price}</p>
+                <p class="card-text">Created: ${new Date(order.created_at).toLocaleString()}</p>
                 <p class="card-text" style="color: ${order.paid_at ? 'green' : 'red'};">
                     ${order.paid_at ? `Paid: ${new Date(order.paid_at).toLocaleString()}` : 'Not Paid'}
                 </p>
@@ -129,19 +127,12 @@ function sortOrders() {
     fetch('/api/get/orders/')
         .then(response => response.json())
         .then(data => {
-            const sortedOrders = data.sort((a, b) => {
+            const sortedOrders = [...data].sort((a, b) => {
                 if (sortBy === 'created_at_asc') {
                     return new Date(a.created_at) - new Date(b.created_at);
-                } else if (sortBy === 'paid_at_asc') {
-                    const paidAtA = a.paid_at ? new Date(a.paid_at) : Infinity;
-                    const paidAtB = b.paid_at ? new Date(b.paid_at) : Infinity;
-                    return paidAtA - paidAtB;
-                } else if (sortBy === 'paid_at_desc') {
-                    const paidAtA = a.paid_at ? new Date(a.paid_at) : -Infinity;
-                    const paidAtB = b.paid_at ? new Date(b.paid_at) : -Infinity;
-                    return paidAtB - paidAtA;
+                } else {
+                    return new Date(b.created_at) - new Date(a.created_at);
                 }
-                return 0;
             });
             displayAllOrders(sortedOrders);
         })
@@ -151,24 +142,133 @@ function sortOrders() {
         });
 }
 
+function displayOrderDetails(orderId) {
+    fetch(`/api/get/order/${orderId}/`)
+        .then(response => response.json())
+        .then(order => {
+            // Устанавливаем ID заказа в заголовке модального окна
+            document.getElementById('modalOrderId').textContent = order.id;
+            document.getElementById('modalTableId').textContent = order.user_role + " " +order.user_id;
+
+            // Отображаем детали заказа
+            const orderDetailsContainer = document.getElementById('orderDetails');
+            orderDetailsContainer.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th class="text-center">Amount</th>
+                            <th class="text-center">Price</th>
+                            <th class="text-center">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${order.products.map(product => `
+                            <tr>
+                                <td>${product.name}<br>
+                                    <small>${product.ingredients.map(ing => `${ing.name} (${ing.weight_grams}g)`).join(', ')}</small>
+                                </td>
+                                <td class="text-center">${product.amount}</td>
+                                <td class="text-center">${product.price}</td>
+                                <td class="text-center">${product.price * product.amount}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                            <td class="text-center"><strong>${order.total_price}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+
+            // Установка значений в форме
+            document.getElementById('paymentId').value = order.payment_id || '';
+            document.getElementById('isPaid').checked = order.is_paid;
+            document.getElementById('isRefunded').checked = order.is_refunded;
+            document.getElementById('privateNote').value = order.private_note || '';
+
+            // Обработка статуса заказа
+            const statusButtons = document.querySelectorAll('.status-buttons-container button[data-status]');
+            statusButtons.forEach(button => {
+                button.classList.remove('active');
+                if (button.getAttribute('data-status') === order.order_status) {
+                    button.classList.add('active');
+                }
+            });
+
+            // Добавляем обработчики для кнопок статуса
+            statusButtons.forEach(button => {
+                button.removeEventListener('click', handleStatusButtonClick);
+                button.addEventListener('click', handleStatusButtonClick);
+            });
+
+            // Обработка типа заказа
+            const orderTypeButtons = document.querySelectorAll('button[data-order-type]');
+            orderTypeButtons.forEach(button => {
+                button.classList.remove('active');
+                if (button.getAttribute('data-order-type') === order.order_type) {
+                    button.classList.add('active');
+                }
+                // Добавляем обработчик событий для каждой кнопки
+                button.removeEventListener('click', handleOrderTypeButtonClick);
+                button.addEventListener('click', handleOrderTypeButtonClick);
+            });
+
+            // Обработка типа оплаты
+            const paymentTypeButtons = document.querySelectorAll('button[data-payment-type]');
+            paymentTypeButtons.forEach(button => {
+                button.classList.remove('active');
+                if (button.getAttribute('data-payment-type') === order.payment_type) {
+                    button.classList.add('active');
+                }
+                // Добавляем обработчик событий для каждой кнопки
+                button.removeEventListener('click', handlePaymentTypeButtonClick);
+                button.addEventListener('click', handlePaymentTypeButtonClick);
+            });
+
+            // Установка ID заказа в модальном окне
+            document.getElementById('orderModal').setAttribute('data-order-id', orderId);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message);
+        });
+}
+
+function handleStatusButtonClick(event) {
+    const statusButtons = document.querySelectorAll('.status-buttons-container button[data-status]');
+    statusButtons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function handleOrderTypeButtonClick(event) {
+    const orderTypeButtons = document.querySelectorAll('button[data-order-type]');
+    orderTypeButtons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function handlePaymentTypeButtonClick(event) {
+    const paymentTypeButtons = document.querySelectorAll('button[data-payment-type]');
+    paymentTypeButtons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
 function updateOrderStatus() {
     const orderId = document.getElementById('orderModal').getAttribute('data-order-id');
-    const orderStatus = document.querySelector('.modal-body button[data-status].active').getAttribute('data-status');
-    const orderType = document.querySelector('.modal-body button[data-order-type].active').getAttribute('data-order-type');
-    const paymentType = document.querySelector('.modal-body button[data-payment-type].active').getAttribute('data-payment-type');
-    const paymentId = document.getElementById('paymentId').value;
-    const isPaid = document.getElementById('isPaid').checked;
-    const isRefunded = document.getElementById('isRefunded').checked;
-    const privateNote = document.getElementById('privateNote').value;
+    const activeStatusButton = document.querySelector('.status-buttons-container button.active');
+    const activeOrderTypeButton = document.querySelector('button[data-order-type].active');
+    const activePaymentTypeButton = document.querySelector('button[data-payment-type].active');
 
     const data = {
-        order_status: orderStatus,
-        order_type: orderType,
-        payment_type: paymentType,
-        payment_id: paymentId,
-        is_paid: isPaid,
-        is_refunded: isRefunded,
-        private_note: privateNote
+        order_status: activeStatusButton ? activeStatusButton.getAttribute('data-status') : null,
+        order_type: activeOrderTypeButton ? activeOrderTypeButton.getAttribute('data-order-type') : null,
+        payment_type: activePaymentTypeButton ? activePaymentTypeButton.getAttribute('data-payment-type') : null,
+        payment_id: document.getElementById('paymentId').value,
+        is_paid: document.getElementById('isPaid').checked,
+        is_refunded: document.getElementById('isRefunded').checked,
+        private_note: document.getElementById('privateNote').value
     };
 
     fetch(`/api/update/order/${orderId}/`, {
@@ -182,21 +282,35 @@ function updateOrderStatus() {
         .then(response => {
             if (!response.ok) {
                 return response.json().then(errorData => {
-                    throw new Error(errorData.detail ? errorData.detail[0] : 'Unknown error');
+                    throw new Error(errorData.detail || 'Unknown error');
                 });
             }
             return response.json();
         })
         .then(data => {
-            console.log('Order updated:', data);
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
+            modal.hide();
+            // Обновляем список заказов
             fetchOrders();
-            document.getElementById('orderModal').classList.remove('show');
-            document.querySelector('.modal-backdrop').remove();
         })
         .catch(error => {
             console.error('Error:', error);
             alert(error.message);
         });
+}
+
+function toggleView() {
+    const splitView = document.getElementById('splitView');
+    const allOrdersView = document.getElementById('allOrdersView');
+
+    if (splitView.style.display === 'none') {
+        splitView.style.display = 'flex';
+        allOrdersView.style.display = 'none';
+    } else {
+        splitView.style.display = 'none';
+        allOrdersView.style.display = 'block';
+    }
 }
 
 function getCookie(name) {
@@ -214,114 +328,10 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function toggleView() {
-    const splitView = document.getElementById('splitView');
-    const allOrdersView = document.getElementById('allOrdersView');
-
-    if (splitView.style.display === 'none') {
-        splitView.style.display = 'flex';
-        allOrdersView.style.display = 'none';
-    } else {
-        splitView.style.display = 'none';
-        allOrdersView.style.display = 'block';
-    }
-}
-
+// Добавляем обработчик кликов по карточкам заказов
 document.addEventListener('click', function (event) {
     if (event.target.closest('.order-card')) {
         const orderId = event.target.closest('.order-card').getAttribute('data-order-id');
         displayOrderDetails(orderId);
     }
 });
-
-function displayOrderDetails(orderId) {
-    fetch(`/api/get/order/${orderId}/`)
-        .then(response => response.json())
-        .then(order => {
-            const orderDetailsContainer = document.getElementById('orderDetails');
-            orderDetailsContainer.innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <h5>Order #${order.id} - ${order.user_role} ${order.user_id}</h5>
-                        <p>${order.user_role} # ${order.user_id}</p>
-                    </div>
-                </div>
-                <table class="table table-sm">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th class="text-center" >Amount</th>
-                            <th class="text-center" >Price</th>
-                            <th class="text-center" >Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${order.products.map(product => `
-                            <tr>
-                                <td>${product.name}<br><small>${product.ingredients.map(ingredient => ingredient.name).join(', ')}</small></td>
-                                <td class="text-center" style="width: 100px">${product.amount}</td>
-                                <td class="text-center" style="width: 100px">${product.price}</td>
-                                <td class="text-center" style="width: 100px">${product.price * product.amount}</td>
-                            </tr>
-                        `).join('')}
-                        <tr>
-                            <td class="text-center">Total Price</td>
-                            <td colspan="3" class="text-center">${order.total_price}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            `;
-            document.getElementById('orderModal').setAttribute('data-order-id', orderId);
-            // Обработка статуса заказа
-            const statusButtons = document.querySelectorAll('.modal-body button[data-status]');
-            statusButtons.forEach(button => {
-                if (button.getAttribute('data-status') === order.order_status) {
-                    button.classList.add('active');
-                } else {
-                    button.classList.remove('active');
-                }
-            });
-
-            // Обработка типа заказа
-            const orderTypeButtons = document.querySelectorAll('.modal-body button[data-order-type]');
-            orderTypeButtons.forEach(button => {
-                if (button.getAttribute('data-order-type') === order.order_type) {
-                    button.classList.add('active');
-                } else {
-                    button.classList.remove('active');
-                }
-            });
-
-            // Обработка типа оплаты
-            const paymentTypeButtons = document.querySelectorAll('.modal-body button[data-payment-type]');
-            paymentTypeButtons.forEach(button => {
-                if (button.getAttribute('data-payment-type') === order.payment_type) {
-                    button.classList.add('active');
-                } else {
-                    button.classList.remove('active');
-                }
-            });
-
-            // Добавляем обработчики событий для всех кнопок
-            document.querySelectorAll('.modal-body button[data-status], .modal-body button[data-order-type], .modal-body button[data-payment-type]').forEach(button => {
-                button.addEventListener('click', function () {
-                    // Находим все кнопки в той же группе
-                    const group = this.closest('.btn-group, .btn-group-vertical');
-                    if (group) {
-                        group.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-                    }
-                    this.classList.add('active');
-                });
-            });
-
-            // Установка остальных значений
-            document.getElementById('paymentId').value = order.payment_id;
-            document.getElementById('isPaid').checked = order.is_paid;
-            document.getElementById('isRefunded').checked = order.is_refunded;
-            document.getElementById('privateNote').value = order.private_note;
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(error.message);
-        });
-}
