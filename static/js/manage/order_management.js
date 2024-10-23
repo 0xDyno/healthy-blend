@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function fetchOrders() {
-    fetch('/api/get_orders/')
+    fetch('/api/get/orders/')
         .then(response => response.json())
         .then(data => {
             displayPendingOrders(data);
@@ -76,14 +76,14 @@ function createOrderElement(order, colClass = 'col-12') {
         <div class="card order-card" data-bs-toggle="modal" data-bs-target="#orderModal" data-order-id="${order.id}">
             <div class="card-body">
                 <h5 class="card-title">Order ID: ${order.id} ${order.is_refunded ? '<span style="color:red;">refunded</span>' : ''}</h5>
-                <p class="card-text">Table ID: ${order.table_id}</p>
+                <p class="card-text">${order.user_role} # ${order.user_id}</p>
                 <p class="card-text">Order Status: ${order.order_status}</p>
                 <p class="card-text">Order Type: ${order.order_type}</p>
                 <p class="card-text">Payment Type: ${order.payment_type}</p>
                 <p class="card-text">Total Price: ${order.total_price}</p>
                 <p class="card-text">Created At: ${new Date(order.created_at).toLocaleString()}</p>
                 <p class="card-text" style="color: ${order.paid_at ? 'green' : 'red'};">
-                    ${order.paid_at ? `Paid At: ${new Date(order.paid_at).toLocaleString()}` : 'Not Paid'}
+                    ${order.paid_at ? `Paid: ${new Date(order.paid_at).toLocaleString()}` : 'Not Paid'}
                 </p>
             </div>
         </div>
@@ -100,7 +100,7 @@ function filterOrders() {
     const isPaidFilter = document.getElementById('isPaidFilter').checked;
     const isRefundedFilter = document.getElementById('isRefundedFilter').checked;
 
-    fetch('/api/get_orders/')
+    fetch('/api/get/orders/')
         .then(response => response.json())
         .then(data => {
             const filteredOrders = data.filter(order => {
@@ -126,14 +126,12 @@ function filterOrders() {
 function sortOrders() {
     const sortBy = document.getElementById('sortBy').value;
 
-    fetch('/api/get_orders/')
+    fetch('/api/get/orders/')
         .then(response => response.json())
         .then(data => {
             const sortedOrders = data.sort((a, b) => {
                 if (sortBy === 'created_at_asc') {
                     return new Date(a.created_at) - new Date(b.created_at);
-                } else if (sortBy === 'created_at_desc') {
-                    return new Date(b.created_at) - new Date(a.created_at);
                 } else if (sortBy === 'paid_at_asc') {
                     const paidAtA = a.paid_at ? new Date(a.paid_at) : Infinity;
                     const paidAtB = b.paid_at ? new Date(b.paid_at) : Infinity;
@@ -169,7 +167,7 @@ function updateOrderStatus() {
         private_note: privateNote
     };
 
-    fetch(`/api/update_order/${orderId}/`, {
+    fetch(`/api/update/order/${orderId}/`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -233,7 +231,7 @@ document.addEventListener('click', function (event) {
 });
 
 function displayOrderDetails(orderId) {
-    fetch(`/api/get_order/${orderId}/`)
+    fetch(`/api/get/order/${orderId}/`)
         .then(response => response.json())
         .then(order => {
             const orderDetailsContainer = document.getElementById('orderDetails');
@@ -241,69 +239,33 @@ function displayOrderDetails(orderId) {
                 <div class="row">
                     <div class="col-md-6">
                         <h5>Order ID: ${order.id}</h5>
-                        <p>Table ID: ${order.table_id}</p>
-                        <p>Order Status: ${order.order_status}</p>
+                        <p>${order.user_role} # ${order.user_id}</p>
                         <p>Order Type: ${order.order_type}</p>
                         <p>Payment Type: ${order.payment_type}</p>
-                        <p>Payment ID: ${order.payment_id}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Nutritional Value:</h6>
-                        <table class="table table-sm">
-                            <tbody>
-                                <tr>
-                                    <td>Calories</td>
-                                    <td>${order.nutritional_value.calories}</td>
-                                </tr>
-                                <tr>
-                                    <td>Proteins</td>
-                                    <td>${order.nutritional_value.proteins}</td>
-                                </tr>
-                                <tr>
-                                    <td>Fats</td>
-                                    <td>${order.nutritional_value.fats}</td>
-                                </tr>
-                                <tr>
-                                    <td>Saturated Fats</td>
-                                    <td>${order.nutritional_value.saturated_fats}</td>
-                                </tr>
-                                <tr>
-                                    <td>Carbohydrates</td>
-                                    <td>${order.nutritional_value.carbohydrates}</td>
-                                </tr>
-                                <tr>
-                                    <td>Sugars</td>
-                                    <td>${order.nutritional_value.sugars}</td>
-                                </tr>
-                                <tr>
-                                    <td>Fiber</td>
-                                    <td>${order.nutritional_value.fiber}</td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
-                <h6>Products:</h6>
                 <table class="table table-sm">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Name</th>
-                            <th>Quantity</th>
-                            <th>Price</th>
-                            <th>Total</th>
+                            <th class="text-center" >Amount</th>
+                            <th class="text-center" >Price</th>
+                            <th class="text-center" >Total</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${order.products.map(product => `
                             <tr>
-                                <td>${product.id}</td>
                                 <td>${product.name}<br><small>${product.ingredients.map(ingredient => ingredient.name).join(', ')}</small></td>
-                                <td>${product.amount}</td>
-                                <td>${product.price}</td>
-                                <td>${product.price * product.amount}</td>
+                                <td class="text-center" style="width: 100px">${product.amount}</td>
+                                <td class="text-center" style="width: 100px">${product.price}</td>
+                                <td class="text-center" style="width: 100px">${product.price * product.amount}</td>
                             </tr>
                         `).join('')}
+                        <tr>
+                            <td class="text-center">Total Price</td>
+                            <td colspan="3" class="text-center">${order.total_price}</td>
+                        </tr>
                     </tbody>
                 </table>
             `;

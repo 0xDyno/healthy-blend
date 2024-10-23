@@ -247,17 +247,19 @@ class ProductIngredient(models.Model):
 
 class Order(models.Model):
     PENDING = "pending"
-    PROCESSING = "processing"
+    COOKING = "cooking"
     READY = "ready"
     DELIVERED = "delivered"
     CANCELLED = "cancelled"
+    PROBLEM = "problem"
 
     STATUS_CHOICES = (
         (PENDING, "Pending"),  # waiting for payment
-        (PROCESSING, "Processing"),  # paid - ready for Kitchen to cook
+        (COOKING, "Cooking"),  # paid - ready for Kitchen to cook
         (READY, "Ready"),  # is ready for Manager to deliver
         (DELIVERED, "Delivered"),  # Done!
-        (CANCELLED, "Cancelled"),  # cancelled
+        (CANCELLED, "Cancelled"),  # cancelledы
+        (PROBLEM, "Problem"),  # cancelled
     )
     ORDER_TYPES = (
         ("offline", "Offline"),
@@ -273,7 +275,8 @@ class Order(models.Model):
     order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default="offline")
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES, default="card")
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="first_order")
+    user_last_update = models.ForeignKey(User, on_delete=models.CASCADE, related_name="last_update")
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name="order")
 
     tax = models.IntegerField(default=7, validators=[MinValueValidator(0), MaxValueValidator(15)])
@@ -287,13 +290,14 @@ class Order(models.Model):
     private_note = models.TextField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     paid_at = models.DateTimeField(null=True, blank=True)
     ready_at = models.DateTimeField(null=True, blank=True)
     refunded_at = models.DateTimeField(null=True, blank=True)
 
     def clean(self):
         super().clean()
-        if self.order_status in [Order.PROCESSING, Order.READY, Order.DELIVERED] and not self.is_paid:
+        if self.order_status in [Order.COOKING, Order.READY, Order.DELIVERED] and not self.is_paid:
             raise ValidationError(f"The order is not paid. It should be paid before continue.")
 
         if self.is_paid and not self.payment_id:
@@ -304,6 +308,9 @@ class Order(models.Model):
 
         if self.payment_type == "cash" and self.order_type == "online":
             raise ValidationError(f"It's not possible to pay with Cash for online orders.")
+
+        if not self.user_last_update:
+            raise ValidationError("Please specify the user who is making the update.")
 
     def save(self, *args, **kwargs):
         self.clean()

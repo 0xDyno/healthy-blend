@@ -204,3 +204,43 @@
     height: calc(100vh - 200px);
     overflow-y: auto;
 }
+
+/* styles.css */
+.virtual-viewport {
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+    position: relative;
+}
+
+.order-card {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-group button.active {
+    background-color: #007bff;
+    color: white;
+}
+
+#splitView {
+    height: calc(100vh - 100px);
+}
+
+#allOrdersView {
+    height: calc(100vh - 100px);
+}
+
+.modal-xl {
+    max-width: 90%;
+}
+
+@media (max-width: 768px) {
+    .virtual-viewport {
+        height: calc(100vh - 150px);
+    }
+}

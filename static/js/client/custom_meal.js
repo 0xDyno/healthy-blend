@@ -28,7 +28,7 @@ function loadIngredients(sortBy = 'protein') {
 
     const nutrientKey = validSortOptions[sortBy] || 'proteins';
 
-    fetch(`/api/get_ingredients/`)
+    fetch(`/api/get/ingredients/`)
         .then(response => response.json())
         .then(data => {
             data.sort((a, b) => {

@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const drinksList = document.getElementById('drinksList');
 
     // Загрузка продуктов с сервера
-    fetch('/api/get_all_products/')
+    fetch('/api/get/products/')
         .then(response => response.json())
         .then(products => {
             products.forEach(product => {

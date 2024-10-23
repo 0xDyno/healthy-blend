@@ -8,7 +8,7 @@ let ingredientData;
 document.addEventListener('DOMContentLoaded', function () {
     storage.updateCartInfo();
 
-    fetch(`/api/get_ingredient/${ingredientId}/`)
+    fetch(`/api/get/ingredient/${ingredientId}/`)
         .then(response => response.json())
         .then(data => {
             ingredientData = data;

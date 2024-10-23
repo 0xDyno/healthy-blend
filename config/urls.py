@@ -43,12 +43,12 @@ urlpatterns = [
     path('checkout/', checkout, name='checkout'),
 
     # API URLs
-    path('api/get_all_products/', api_get_all_products),
-    path('api/get_ingredient/<int:pk>/', api_get_ingredient),
-    path('api/get_ingredients/', api_get_all_ingredients),
-    path('api/get_order/<int:pk>/', api_get_order),
-    path('api/get_orders/', api_get_orders),
-    path('api/update_order/<int:pk>/', api_update_order),
+    path('api/get/products/', api_get_all_products),
+    path('api/get/ingredient/<int:pk>/', api_get_ingredient),
+    path('api/get/ingredients/', api_get_all_ingredients),
+    path('api/get/order/<int:pk>/', api_get_order),
+    path('api/get/orders/', api_get_orders),
+    path('api/update/order/<int:pk>/', api_update_order),
 
 ]
 

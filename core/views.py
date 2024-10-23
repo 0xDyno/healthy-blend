@@ -73,7 +73,7 @@ def api_get_orders(request):
         order = Order.objects.filter(user=request.user).order_by("-created_at").first()
         data = [utils_api.get_order_for_table(order)]
     if request.user.role == "kitchen":
-        orders = Order.objects.filter(created_at__date=timezone.now().date(), order_status__in=["processing"]).order_by("created_at")
+        orders = Order.objects.filter(created_at__date=timezone.now().date(), order_status__in=["cooking"]).order_by("created_at")
         data = utils_api.get_orders_for_kitchen(orders)
     return Response(data)
 
@@ -173,8 +173,8 @@ def checkout(request):
 
         nutritional_value = NutritionalValue.objects.create(**data.get("nutritional_value"))
         nutritional_value.save()
-        order = Order.objects.create(user=request.user, payment_type=data["payment_type"], base_price=price_no_fee,
-                                     total_price=price_with_fee, nutritional_value=nutritional_value)
+        order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=data["payment_type"],
+                                     base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
 
         utils.process_official_meal(official_meals, order)
         utils.process_custom_meal(custom_meals, order)
@@ -212,5 +212,6 @@ def update_order_status(request):
     new_status = request.POST.get("status")
     order = get_object_or_404(Order, id=order_id)
     order.order_status = new_status
+    order.user_last_update = request.user
     order.save()
     return JsonResponse({"success": True}, status.HTTP_200_OK)
