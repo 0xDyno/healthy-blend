@@ -129,8 +129,8 @@ function filterOrders() {
 
 function getStatusColor(status) {
     const statusColors = {
-        'pending': 'warning',
-        'processing': 'primary',
+        'pending': 'secondary',
+        'cooking': 'primary',
         'ready': 'success',
         'delivered': 'info',
         'cancelled': 'danger',

@@ -104,6 +104,7 @@ class Ingredient(models.Model):
             raise ValidationError("Max order must be greater than or equal to Min order.")
 
     def save(self, *args, **kwargs):
+        self.full_clean()
         if not self.nutritional_value:
             self.nutritional_value = NutritionalValue.objects.create()
         self.clean()
@@ -231,6 +232,7 @@ class ProductIngredient(models.Model):
     weight_grams = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)])
 
     def clean(self):
+        super().full_clean()
         if self.weight_grams > self.ingredient.max_order:
             raise ValidationError(
                 f"Weight is too big for ingredient \"{self.ingredient.name}\", "
@@ -313,7 +315,7 @@ class Order(models.Model):
             raise ValidationError("Please specify the user who is making the update.")
 
     def save(self, *args, **kwargs):
-        self.clean()
+        super().full_clean()
         if self.is_refunded and self.refunded_at is None:
             self.refunded_at = timezone.now()
 
