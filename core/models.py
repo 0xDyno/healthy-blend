@@ -253,7 +253,7 @@ class Order(models.Model):
     PENDING = "pending"
     COOKING = "cooking"
     READY = "ready"
-    DELIVERED = "delivered"
+    FINISHED = "finished"
     CANCELLED = "cancelled"
     PROBLEM = "problem"
 
@@ -261,8 +261,8 @@ class Order(models.Model):
         (PENDING, "Pending"),  # waiting for payment
         (COOKING, "Cooking"),  # paid - ready for Kitchen to cook
         (READY, "Ready"),  # is ready for Manager to deliver
-        (DELIVERED, "Delivered"),  # Done!
-        (CANCELLED, "Cancelled"),  # cancelledы
+        (FINISHED, "Finished"),  # Done!
+        (CANCELLED, "Cancelled"),  # cancelled
         (PROBLEM, "Problem"),  # cancelled
     )
     ORDER_TYPES = (
@@ -301,20 +301,28 @@ class Order(models.Model):
 
     def clean(self):
         super().clean()
-        if self.order_status in [Order.COOKING, Order.READY, Order.DELIVERED] and not self.is_paid:
+        if self.order_status in [Order.COOKING, Order.READY, Order.FINISHED] and not self.is_paid:
             raise ValidationError(f"The order is not paid. It should be paid before continue.")
 
         if self.is_paid and not self.payment_id:
-            raise ValidationError(f"Please provide Payment ID for the order.")
+            if self.payment_type != "cash":             # TEMPORARY, until I know how works payment system
+                raise ValidationError(f"Please provide Payment ID for the order.")
 
         if self.is_refunded and not self.private_note:
-            raise ValidationError("If it's refunded, please, add a few words to the private note about this situation. Thank you.")
+            raise ValidationError("Please add ID for Refund and describe what has happened. Thank you.")
+
+        if self.order_status == Order.PROBLEM and not self.private_note:
+            raise ValidationError("Please add a few words to the private note about the problem. Thank you.")
 
         if self.payment_type == "cash" and self.order_type == "online":
             raise ValidationError(f"It's not possible to pay with Cash for online orders.")
 
         if not self.user_last_update:
             raise ValidationError("Please specify the user who is making the update.")
+
+        if self.is_paid and self.order_status == Order.PENDING:
+            raise ValidationError(f"If the order is paid, then it can't be Pending. "
+                                  f"Please change it to {Order.COOKING} or to {Order.PENDING}, if something went wrong.")
 
     def save(self, *args, **kwargs):
         super().full_clean()
@@ -362,7 +370,7 @@ class OrderHistory(models.Model):
         return f"OrderHistory for Order {self.order.id} at {self.created_at}"
 
 
-# Сигнал, который создает запись в истории при сохранении объекта Order
+# Creates signal to create OrderHistory when Order saves
 @receiver(post_save, sender=Order)
 def create_order_history(sender, instance, **kwargs):
     OrderHistory.objects.create(

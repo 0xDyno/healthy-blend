@@ -12,7 +12,7 @@
         <div class="col-6 h-100">
             <div class="card h-100">
                 <div class="card-header">
-                    <h3>Pending Orders</h3>
+                    <h3>Pending Orders for Payment</h3>
                 </div>
                 <div class="card-body p-2">
                     <div id="pendingOrders" class="orders-container">
@@ -24,7 +24,7 @@
         <div class="col-6 h-100">
             <div class="card h-100">
                 <div class="card-header">
-                    <h3>Ready Orders</h3>
+                    <h3>Ready Orders for Delivery</h3>
                 </div>
                 <div class="card-body p-2">
                     <div id="readyOrders" class="orders-container">
@@ -53,7 +53,7 @@
                         <option value="pending">Pending</option>
                         <option value="cooking">Cooking</option>
                         <option value="ready">Ready</option>
-                        <option value="delivered">Delivered</option>
+                        <option value="finished">Finished</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="problem">Problem</option>
                     </select>
@@ -124,7 +124,7 @@
                                 <button type="button" class="btn btn-outline-info" data-status="ready">Ready</button>
                                 <button type="button" class="btn btn-outline-danger" data-status="cancelled">Cancelled</button>
                                 <button type="button" class="btn btn-outline-primary" data-status="cooking">Cooking</button>
-                                <button type="button" class="btn btn-outline-success" data-status="delivered">Delivered</button>
+                                <button type="button" class="btn btn-outline-success" data-status="finished">Finished</button>
                                 <button type="button" class="btn btn-outline-danger" data-status="problem">Problem</button>
                             </div>
                         </div>

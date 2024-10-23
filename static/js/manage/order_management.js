@@ -135,7 +135,7 @@ function getStatusColor(status) {
         'pending': 'secondary',
         'cooking': 'primary',
         'ready': 'info',
-        'delivered': 'success',
+        'finished': 'success',
         'cancelled': 'danger',
         'problem': 'danger'
     };

@@ -353,7 +353,7 @@
     border-left: 4px solid #17a2b8;
 }
 
-.order-card[data-status='delivered'] {
+.order-card[data-status='finished'] {
     border-left: 4px solid #28a745;
 }
 

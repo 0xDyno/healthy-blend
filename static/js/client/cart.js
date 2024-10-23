@@ -60,7 +60,7 @@ function updateCartUI() {
         const serviceChargeRate = 0.01; // 5% service charge
 
         const tax = total * taxRate;
-        const serviceCharge = total * serviceChargeRate;
+        const serviceCharge = (total + tax) * serviceChargeRate;
         const totalTax = total + tax + serviceCharge;
 
         // Add row for total
