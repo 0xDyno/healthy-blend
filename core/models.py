@@ -19,7 +19,7 @@ class User(AbstractUser):
         ("manager", "Manager"),
         ("table", "Table"),
         ("kitchen", "Kitchen"),
-        ("other", "Other"),
+        ("user", "User"),
     )
     nickname = models.CharField(max_length=50, blank=True, default="")
     role = models.CharField(max_length=10, choices=ROLES, default="other")
@@ -92,14 +92,14 @@ class Ingredient(models.Model):
     step = models.DecimalField(max_digits=2, decimal_places=1, default=1, validators=[MinValueValidator(0.05)])
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(500)])
-    available = models.BooleanField(default=True)
+    is_available = models.BooleanField(default=True)
 
     price_per_gram = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(999)])
     price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=3.00, validators=[MinValueValidator(0)])
     custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
 
     # for 100g
-    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name="ingredient")
+    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.PROTECT, related_name="ingredient")
 
     def clean(self):
         if self.max_order < self.min_order:
@@ -136,7 +136,8 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     image = models.ImageField(upload_to="products/", null=True, blank=True)
     is_menu = models.BooleanField(default=False)  # for Menu
-    is_official = models.BooleanField()  # True - copy of Menu, False - custom meal
+    is_official = models.BooleanField()     # True - copy of Menu, False - custom meal
+    is_available = models.BooleanField(default=False)    # for Menu if there's no Ingredients
 
     weight = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
 
@@ -145,7 +146,7 @@ class Product(models.Model):
     custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
 
     ingredients = models.ManyToManyField("Ingredient", through="ProductIngredient")
-    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name="product", null=True, blank=True)
+    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.PROTECT, related_name="product", null=True, blank=True)
 
     def clean(self):
         super().clean()
@@ -203,7 +204,7 @@ class Product(models.Model):
             new_nutritional_value, total_weight = self.calculate_nutritional_value()
 
             if total_weight is not None and total_weight > 0:
-                self.weight = int(total_weight)
+                self.weight = round(total_weight)
             else:
                 self.weight = None
 
@@ -230,7 +231,7 @@ class Product(models.Model):
 
 class ProductIngredient(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey("Ingredient", on_delete=models.CASCADE)
+    ingredient = models.ForeignKey("Ingredient", on_delete=models.PROTECT)
     weight_grams = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)])
 
     def clean(self):
@@ -243,6 +244,8 @@ class ProductIngredient(models.Model):
             raise ValidationError(
                 f"Weight is too small for ingredient \"{self.ingredient.name}\", "
                 f"allowed {self.ingredient.min_order}g min, you have {self.weight_grams}")
+        if not self.ingredient.is_available:
+            raise ValidationError(f"Ingredient {self.ingredient.name} is not available")
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -279,9 +282,9 @@ class Order(models.Model):
     order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default="offline")
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES, default="card")
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="first_order")
-    user_last_update = models.ForeignKey(User, on_delete=models.CASCADE, related_name="last_update")
-    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.CASCADE, related_name="order")
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="first_order")
+    user_last_update = models.ForeignKey(User, on_delete=models.PROTECT, related_name="last_update")
+    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.PROTECT, related_name="order")
 
     tax = models.IntegerField(default=7, validators=[MinValueValidator(0), MaxValueValidator(15)])
     service = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
@@ -301,6 +304,7 @@ class Order(models.Model):
 
     def clean(self):
         super().clean()
+
         if self.order_status in [Order.COOKING, Order.READY, Order.FINISHED] and not self.is_paid:
             raise ValidationError(f"The order is not paid. It should be paid before continue.")
 
@@ -343,7 +347,7 @@ class Order(models.Model):
 
 class OrderProduct(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="products")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
     amount = models.IntegerField(validators=[MinValueValidator(1)])
     price = models.IntegerField(validators=[MinValueValidator(0)])
 
@@ -353,8 +357,8 @@ class OrderHistory(models.Model):
     order_status = models.CharField(max_length=20, choices=Order.STATUS_CHOICES)
     order_type = models.CharField(max_length=20, choices=Order.ORDER_TYPES)
     payment_type = models.CharField(max_length=20, choices=Order.PAYMENT_TYPES)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="order_history_user")
-    user_last_update = models.ForeignKey(User, on_delete=models.CASCADE, related_name="order_history_last_update")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="order_history_user")
+    user_last_update = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="order_history_last_update")
     tax = models.IntegerField()
     service = models.IntegerField()
     base_price = models.IntegerField()

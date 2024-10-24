@@ -92,6 +92,7 @@ def api_update_order(request, pk):
     order.is_paid = data.get("is_paid")
     order.is_refunded = data.get("is_refunded")
     order.private_note = data.get("private_note")
+    order.user_last_update = request.user
     try:
         order.clean()
     except ValidationError as e:
@@ -128,41 +129,38 @@ def user_logout(request):
 
 
 @login_required
+@utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
 def home(request):
     return render(request, "client/home.html")
 
 
 @login_required
+@utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
 def custom_meal(request):
     return render(request, "client/custom_meal.html")
 
 
 @login_required
+@utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
 def custom_add(request, ingredient_id):
     return render(request, "client/custom_add.html", {"ingredient_id": ingredient_id})
 
 
 @login_required
+@utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
 def cart(request):
     return render(request, "client/cart.html")
 
 
 @login_required
+@utils.role_redirect(roles=["table"], redirect_url="home", do_redirect=False)
 def last_order(request):
-    if request.user.role != "table":
-        return redirect("home")
     return render(request, "client/order.html")
 
 
 @login_required
-def order_management(request):
-    if request.user.role != "admin" and request.user.role != "manager":
-        return redirect("home")
-    return render(request, "manage/order_management.html")
-
-
-@login_required
 @require_POST
+@utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
 def checkout(request):
     try:
         data = json.loads(request.body)
@@ -188,30 +186,24 @@ def checkout(request):
 
 
 @login_required
+@utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
+def order_management(request):
+    return render(request, "manage/order_management.html")
+
+
+@login_required
+@utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
 def product_management(request):
-    if request.user.role not in ["admin", "manager"]:
-        return redirect("home")
-    # Implement product management logic here
     return render(request, "manage/product_management.html")
 
 
 @login_required
+@utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
 def ingredient_management(request):
-    if request.user.role not in ["admin", "manager"]:
-        return redirect("home")
-    # Implement ingredient management logic here
     return render(request, "manage/ingredient_management.html")
 
 
 @login_required
-def update_order_status(request):
-    if request.user.role not in ["admin", "manager"]:
-        return JsonResponse({"success": False, "error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
-
-    order_id = request.POST.get("order_id")
-    new_status = request.POST.get("status")
-    order = get_object_or_404(Order, id=order_id)
-    order.order_status = new_status
-    order.user_last_update = request.user
-    order.save()
-    return JsonResponse({"success": True}, status.HTTP_200_OK)
+@utils.role_redirect(roles=["kitchen", "admin"], redirect_url="home", do_redirect=False)
+def kitchen(request):
+    return render(request, "manage/kitchen.html")

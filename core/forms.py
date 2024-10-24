@@ -36,7 +36,7 @@ class ProductForm(forms.ModelForm):
 class IngredientForm(forms.ModelForm):
     class Meta:
         model = Ingredient
-        fields = ["name", "description", "min_order", "max_order", "available", "price_per_gram"]
+        fields = ["name", "description", "min_order", "max_order", "is_available", "price_per_gram"]
 
 
 class OrderStatusForm(forms.ModelForm):

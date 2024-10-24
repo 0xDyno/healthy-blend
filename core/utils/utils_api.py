@@ -34,7 +34,7 @@ def get_ingredient_data(ingredient: Ingredient):
         "step": ingredient.step,
         "min_order": ingredient.min_order,
         "max_order": ingredient.max_order,
-        "available": ingredient.available,
+        "available": ingredient.is_available,
         "price": ingredient.custom_price if ingredient.custom_price else ingredient.price_per_gram * ingredient.price_multiplier,
         "nutritional_value": ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
     }
@@ -152,8 +152,6 @@ def get_order_for_kitchen(order: Order):
     data_to_send = {
         "id": order.id,
         "table_id": order.user.id,
-        "order_status": order.order_status,
-        "paid_at": order.paid_at,
         "products": [],
     }
 

@@ -56,6 +56,7 @@ export default {
                     selectedCalories: product.selectedCalories,
                     nutritional_value: {...product.nutritional_value},
                     price: product.price,
+                    weight: product.weight,
                     ingredients: product.ingredients ? [...product.ingredients] : []
                 },
                 amount
