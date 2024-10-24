@@ -151,9 +151,11 @@ def get_order_for_table(order: Order):
 def get_order_for_kitchen(order: Order):
     data_to_send = {
         "id": order.id,
-        "table_id": order.user.id,
-        "products": [],
+        "order_type": order.order_type,
         "paid_at": order.paid_at,
+        "public_note": order.public_note,
+        "private_note": order.private_note,
+        "products": [],
     }
 
     for order_product in order.products.all():

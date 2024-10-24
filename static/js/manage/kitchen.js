@@ -30,14 +30,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Render Functions
     function renderOrders(orders) {
-        const ordersList = document.getElementById('ordersList');
-        ordersList.innerHTML = orders.map(order => {
-            const timeSincePayment = order.paid_at ? getTimeSincePayment(order.paid_at) : '';
+    const ordersList = document.getElementById('ordersList');
+    ordersList.innerHTML = orders.map(order => {
+        const timeSincePayment = order.paid_at ? getTimeSincePayment(order.paid_at) : '';
+        const orderTypeBadge = order.order_type !== 'offline' ?
+            `<span class="order-type-badge order-type-${order.order_type}">${order.order_type.toUpperCase()}</span>` : '';
 
-            return `
-        <div class="order-card" data-id="${order.id}">
+        return `
+        <div class="order-card" data-id="${order.id}" data-order-type="${order.order_type}">
             <div class="order-header">
-                <span class="order-number">Order #${order.id}</span>
+                <div>
+                    <span class="order-number">Order #${order.id}</span>
+                    ${orderTypeBadge}
+                </div>
                 <div>
                     <span class="payment-time">${timeSincePayment}</span>
                 </div>
@@ -106,8 +111,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Modal Content Functions
     function showOrderDetails(order) {
+        const orderTypeBadge = order.order_type !== 'offline' ?
+            `<span class="order-type-badge order-type-${order.order_type}">${order.order_type.toUpperCase()}</span>` : '';
+
         document.getElementById('orderDetails').innerHTML = `
-            <h2>Order Details</h2>
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <h2>Order Details #${order.id}</h2>
+            ${orderTypeBadge}
+        </div>
             ${order.products.map(product => `
                 <div class="product-item">
                     <div class="product-header">

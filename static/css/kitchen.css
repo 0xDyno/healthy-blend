@@ -329,3 +329,29 @@ body {
     align-items: center;
     margin-bottom: 10px; /* уменьшен отступ с 15px до 10px */
 }
+
+.order-card[data-order-type="takeaway"] {
+    border-left: 4px solid #f39c12; /* оранжевый для takeaway */
+}
+
+.order-card[data-order-type="online"] {
+    border-left: 4px solid #3498db; /* синий для online */
+}
+
+.order-type-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.order-type-takeaway {
+    background-color: #f39c12;
+    color: white;
+}
+
+.order-type-online {
+    background-color: #3498db;
+    color: white;
+}
