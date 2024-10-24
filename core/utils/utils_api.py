@@ -180,3 +180,38 @@ def get_order_for_kitchen(order: Order):
 
 def get_orders_for_kitchen(orders: list):
     return [get_order_for_kitchen(order) for order in orders]
+
+
+def filter_ordes(request, orders):
+    search = request.GET.get("search", "")
+    order_status = request.GET.get("status", "")
+    order_type = request.GET.get("order_type", "")
+    payment_type = request.GET.get("payment_type", "")
+    table_id = request.GET.get("table_id", "")
+    is_paid = request.GET.get("is_paid", "")
+    is_refunded = request.GET.get("is_refunded", "")
+    sort_by = request.GET.get("sort_by", "-created_at")
+
+    if search:
+        orders = orders.filter(id__icontains=search)
+    if order_status:
+        orders = orders.filter(order_status=order_status)
+    if order_type:
+        orders = orders.filter(order_type=order_type)
+    if payment_type:
+        orders = orders.filter(payment_type=payment_type)
+    if table_id:
+        orders = orders.filter(user_id=table_id)
+    print(f"{is_paid} = {type(is_paid)}")
+    if is_paid == "true":
+        print("Do Filter")
+        orders = orders.filter(is_paid=True)
+    if is_refunded == "true":
+        orders = orders.filter(is_refunded=True)
+
+    # Apply sorting
+    if sort_by == "created_at_asc":
+        orders = orders.order_by("created_at")
+    else:
+        orders = orders.order_by("-created_at")
+    return orders

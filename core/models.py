@@ -253,6 +253,17 @@ class ProductIngredient(models.Model):
 
 
 class Order(models.Model):
+    class Meta:
+        indexes = [
+            models.Index(fields=['order_status']),
+            models.Index(fields=['order_type']),
+            models.Index(fields=['payment_type']),
+            models.Index(fields=['is_paid']),
+            models.Index(fields=['is_refunded']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['user_id']),
+        ]
+
     PENDING = "pending"
     COOKING = "cooking"
     READY = "ready"

@@ -99,30 +99,32 @@ function formatDate(dateString) {
 }
 
 function filterOrders() {
-    const searchInput = document.getElementById('searchInput').value.toLowerCase();
+    const searchInput = document.getElementById('searchInput').value;
     const statusFilter = document.getElementById('statusFilter').value;
     const orderTypeFilter = document.getElementById('orderTypeFilter').value;
     const paymentTypeFilter = document.getElementById('paymentTypeFilter').value;
     const tableIdFilter = document.getElementById('tableIdFilter').value;
     const isPaidFilter = document.getElementById('isPaidFilter').checked;
     const isRefundedFilter = document.getElementById('isRefundedFilter').checked;
+    const sortBy = document.getElementById('sortBy').value;
 
-    fetch('/api/get/orders/')
+    // Construct query parameters
+    const params = new URLSearchParams({
+        search: searchInput,
+        status: statusFilter,
+        order_type: orderTypeFilter,
+        payment_type: paymentTypeFilter,
+        table_id: tableIdFilter,
+        is_paid: isPaidFilter,
+        is_refunded: isRefundedFilter,
+        sort_by: sortBy
+    });
+
+    // Fetch filtered data
+    fetch(`/api/get/orders/?${params.toString()}`)
         .then(response => response.json())
         .then(data => {
-            const filteredOrders = data.filter(order => {
-                const matchesSearch = order.id.toString().includes(searchInput);
-                const matchesStatus = statusFilter === '' || order.order_status === statusFilter;
-                const matchesOrderType = orderTypeFilter === '' || order.order_type === orderTypeFilter;
-                const matchesPaymentType = paymentTypeFilter === '' || order.payment_type === paymentTypeFilter;
-                const matchesTableId = tableIdFilter === '' || order.user_id === parseInt(tableIdFilter);
-                const matchesIsPaid = !isPaidFilter || order.is_paid;
-                const matchesIsRefunded = !isRefundedFilter || order.is_refunded;
-
-                return matchesSearch && matchesStatus && matchesOrderType && matchesPaymentType &&
-                    matchesTableId && matchesIsPaid && matchesIsRefunded;
-            });
-            displayAllOrders(filteredOrders);
+            displayAllOrders(data);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -143,24 +145,7 @@ function getStatusColor(status) {
 }
 
 function sortOrders() {
-    const sortBy = document.getElementById('sortBy').value;
-
-    fetch('/api/get/orders/')
-        .then(response => response.json())
-        .then(data => {
-            const sortedOrders = [...data].sort((a, b) => {
-                if (sortBy === 'created_at_asc') {
-                    return new Date(a.created_at) - new Date(b.created_at);
-                } else {
-                    return new Date(b.created_at) - new Date(a.created_at);
-                }
-            });
-            displayAllOrders(sortedOrders);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(error.message);
-        });
+    filterOrders();
 }
 
 function displayOrderDetails(orderId) {

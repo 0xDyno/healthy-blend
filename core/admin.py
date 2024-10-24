@@ -4,7 +4,7 @@ from .models import User, NutritionalValue, Ingredient, Product, ProductIngredie
 
 
 class CustomUserAdmin(UserAdmin):
-    list_display = ("username", "email", "role", "is_staff", "is_active")
+    list_display = ("username", "id", "role", "is_staff", "is_active")
     list_filter = ("role", "is_staff", "is_active")
     fieldsets = UserAdmin.fieldsets + (
         ("Custom Fields", {"fields": ("role", "nickname")}),

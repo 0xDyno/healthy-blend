@@ -61,21 +61,21 @@ def api_get_order(request, pk):
 @api_view(["GET"])
 @login_required
 def api_get_orders(request):
-    now = timezone.now()
-    data = Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
     if request.user.role == "admin":
-        orders = Order.objects.all().order_by("-created_at")
-        data = utils_api.get_orders_general(orders)
-    if request.user.role == "manager":
-        orders = Order.objects.filter(created_at__date=now.date()).order_by("-created_at")
-        data = utils_api.get_orders_general(orders)
-    if request.user.role == "table":
+        orders = Order.objects.all()
+    elif request.user.role == "manager":
+        orders = Order.objects.filter(created_at__date=timezone.now().date())
+    elif request.user.role == "table":
         order = Order.objects.filter(user=request.user).order_by("-created_at").first()
-        data = [utils_api.get_order_for_table(order)]
-    if request.user.role == "kitchen":
+        return Response([utils_api.get_order_for_table(order)])
+    elif request.user.role == "kitchen":
         orders = Order.objects.filter(created_at__date=timezone.now().date(), order_status__in=["cooking"]).order_by("created_at")
-        data = utils_api.get_orders_for_kitchen(orders)
-    return Response(data)
+        return Response(utils_api.get_orders_for_kitchen(orders))
+    else:
+        return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+    orders = utils_api.filter_ordes(request, orders)
+    return Response(utils_api.get_orders_general(orders))
 
 
 @api_view(["PUT"])
