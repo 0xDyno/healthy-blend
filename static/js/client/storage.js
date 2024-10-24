@@ -110,8 +110,8 @@ export default {
 
     getTotalPrice() {
         const raw_price = this.getRawPrice()
-        const price_tax = raw_price + (raw_price * 0.07)
-        return price_tax + (price_tax * 0.01)
+        const price_tax = raw_price + (raw_price * 0.01)
+        return price_tax + (price_tax * 0.07)
     },
 
     clearCart() {

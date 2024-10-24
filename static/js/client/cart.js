@@ -56,12 +56,12 @@ function updateCartUI() {
         });
 
         // Calculate tax and service charge
-        const taxRate = 0.07; // 10% tax rate
-        const serviceChargeRate = 0.01; // 5% service charge
+        const serviceChargeRate = 0.01; // 1% service charge
+        const taxRate = 0.07; // 7% tax rate
 
-        const tax = total * taxRate;
-        const serviceCharge = (total + tax) * serviceChargeRate;
-        const totalTax = total + tax + serviceCharge;
+        const only_service = total * serviceChargeRate;
+        const service_and_tax = (total + only_service) * taxRate;
+        const totalPrice = total + only_service + service_and_tax;
 
         // Add row for total
         const somethingRow = document.createElement('tr');
@@ -75,8 +75,8 @@ function updateCartUI() {
         // Add row for tax
         const taxRow = document.createElement('tr');
         taxRow.innerHTML = `
-            <td colspan="4" style="text-align: left;">Tax (${utils.formatNumber(taxRate * 100, 0)}%):</td>
-            <td>${utils.formatNumber(tax,0)} IDR</td>
+            <td colspan="4" style="text-align: left;">Service (${utils.formatNumber(serviceChargeRate * 100, 0)}%):</td>
+            <td>${utils.formatNumber(only_service,0)} IDR</td>
             <td></td>
         `;
         tableBody.appendChild(taxRow);
@@ -84,15 +84,15 @@ function updateCartUI() {
         // Add row for service charge
         const serviceRow = document.createElement('tr');
         serviceRow.innerHTML = `
-            <td colspan="4" style="text-align: left;">Service Charge (${utils.formatNumber(serviceChargeRate * 100, 0)})%:</td>
-            <td>${utils.formatNumber(serviceCharge,0)} IDR</td>
+            <td colspan="4" style="text-align: left;">Tax (${utils.formatNumber(taxRate * 100, 0)}%):</td>
+            <td>${utils.formatNumber(service_and_tax,0)} IDR</td>
             <td></td>
         `;
         tableBody.appendChild(serviceRow);
 
 
         addRemoveEventListeners();
-        cartTotalElement.textContent = `Total: ${totalTax.toFixed(0)} IDR`;
+        cartTotalElement.textContent = `Total: ${totalPrice.toFixed(0)} IDR`;
     }
     updateCartControls();
 }
@@ -163,6 +163,7 @@ function handleCheckout() {
             calories: item.product.nutritional_value.calories,
             amount: item.amount,
             price: item.product.price,
+            weight: item.product.weight,
         })),
         custom_meals: customMeals.map(item => ({
             ingredients: item.product.ingredients.map(ing => ({
@@ -171,6 +172,7 @@ function handleCheckout() {
             })),
             amount: item.amount,
             price: item.product.price,
+            weight: item.product.weight,
         }))
     };
 

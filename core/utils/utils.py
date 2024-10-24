@@ -5,6 +5,7 @@ from decimal import Decimal
 from functools import wraps
 
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from rest_framework import status
@@ -29,11 +30,6 @@ def role_redirect(roles, redirect_url, do_redirect=True):
             return view_func(request, *args, **kwargs)
         return _wrapped_view
     return decorator
-
-
-def verify_if_manager(user):
-    if user.role != "admin" and user.role != "manager":
-        return JsonResponse({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
 
 def big_validator(data: json):
@@ -195,6 +191,7 @@ def validate_nutritional_summary(nutritional_summary):
         raise ValidationError(f"Wrong format, not all fields provided for nutritions. Missing for: {', '.join(missing_fields)}")
 
 
+@transaction.atomic
 def process_official_meal(official_meals, order: Order):
     for meal in official_meals:
         meal_id = meal.get("id")
@@ -229,6 +226,7 @@ def process_official_meal(official_meals, order: Order):
             OrderProduct.objects.create(order=order, product=product, amount=amount, price=price)
 
 
+@transaction.atomic
 def process_custom_meal(custom_meals, order: Order):
     for meal in custom_meals:
         name = "Custom Meal"
@@ -254,8 +252,6 @@ def process_custom_meal(custom_meals, order: Order):
             total_weight += weight_grams
             ProductIngredient.objects.create(product=product, ingredient=official_ingredient, weight_grams=weight_grams)
 
-        print(total_weight)
-        print(round(total_weight))
         product.weight = round(total_weight)
         product.save()
         OrderProduct.objects.create(order=order, product=product, amount=amount, price=price)
@@ -268,5 +264,5 @@ def get_date_today():
 
 
 def get_price_with_tax(price):
-    price_tax = price + (price * 0.07)
-    return round(price_tax + (price_tax * 0.01))
+    price_service = price + (price * 0.01)
+    return round(price_service + (price_service * 0.07))

@@ -35,6 +35,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">Admin</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'kitchen' %}">Kitchen</a>
+                        </li>
                     {% endif %}
                     {% if user.role == 'manager' or user.role == 'admin' %}
                         <li class="nav-item">

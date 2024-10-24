@@ -1,366 +1,288 @@
 /* styles.css */
 
-.card {
-    height: 100%;
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #34495e;
+    --accent-color: #3498db;
+    --success-color: #2ecc71;
+    --danger-color: #ffffff;
+    --gray-color: #95a5a6;
+    --light-gray: #ecf0f1;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f6fa;
+    min-height: 100vh;
+}
+
+/* Navigation */
+.top-nav {
     display: flex;
-    flex-direction: column;
+    height: 60px;
+    background-color: var(--primary-color);
 }
 
-.card-img-top.product-image {
-    width: 100%;
-    height: 200px; /* Фиксированная высота */
-    object-fit: cover; /* Сохраняет пропорции изображения */
-}
-
-@media (min-width: 768px) {
-    .card-img-top.product-image {
-        height: 250px; /* Увеличиваем высоту на больших экранах */
-    }
-}
-
-@media (min-width: 992px) {
-    .card-img-top.product-image {
-        height: 300px; /* Еще больше увеличиваем высоту на очень больших экранах */
-    }
-}
-
-.product-card {
-    cursor: pointer;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.card-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-}
-
-.card-text {
-    flex-grow: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 3; /* количество строк */
-    -webkit-box-orient: vertical;
-}
-
-.card-body {
-    display: flex;
-    align-items: stretch;
-}
-
-.ingredient-info {
-    flex-grow: 1;
-    padding-right: 15px;
-}
-
-.ingredient-image-container {
-    width: 100px;
-    display: flex;
-    align-items: center;
-}
-
-.ingredient-image {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-}
-
-.custom-add-container {
-    display: flex;
-    flex-direction: column-reverse;
-}
-
-.custom-add-image-container {
-    width: 100%;
-    max-width: 300px;
-    margin-bottom: 20px;
-}
-
-.custom-add-image {
-    width: 150px;
-    height: auto;
-    object-fit: cover;
-    border-radius: 80px;
-}
-
-.custom-add-info {
-    display: flex;
-    flex-direction: column;
-}
-
-@media (min-width: 100px) {
-    .custom-add-container {
-        flex-direction: row;
-    }
-
-    .custom-add-image-container {
-        margin-bottom: 20px;
-        margin-left: 250px;
-    }
-}
-
-.drink-item {
-    border: 1px solid #ddd;
-    padding: 15px;
-    margin-bottom: 15px;
-}
-
-.drink-item img {
-    max-width: 100%;
-    height: auto;
-}
-
-.drink-item .nutrients span {
-    margin-right: 10px;
-}
-
-.drink-item .price {
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-/* Общий контейнер */
-.nutrition-container {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    padding: 20px;
-    background-color: #f4f7fa; /* Лёгкий фон для контраста */
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    margin: 5px auto;
-    max-width: 1500px; /* Ограничение ширины контейнера */
-}
-
-/* Каждая строка */
-.nutrition-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-}
-
-/* Ячейки */
-.nutrition-cell {
+.nav-btn {
     flex: 1;
-    text-align: center;
-    padding: 12px;
-    margin: 0 5px;
-    border: 1px solid #ddd; /* Тонкая граница */
-    border-radius: 5px;
-    background-color: #fff; /* Белый фон для каждой ячейки */
-    font-size: 12px;
-    font-family: 'Arial', sans-serif;
-    color: #333; /* Тёмно-серый текст */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Небольшая тень для глубины */
-    transition: background-color 0.3s, transform 0.3s; /* Плавные анимации */
+    border: none;
+    background: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-/* Ховер-эффект */
-.nutrition-cell:hover {
-    background-color: #e2e6eb; /* Лёгкий цвет при наведении */
-    transform: translateY(-3px); /* Небольшой подъём */
+.nav-btn.active {
+    background-color: var(--accent-color);
 }
 
-/* Для первой строки (можно выделить особый стиль) */
-#nutrition-row-1 .nutrition-cell {
-    font-size: 14px;
-    background-color: #f1f3f5; /* Фон первого ряда */
+/* Main Content */
+.section {
+    display: none;
+    padding: 20px;
 }
 
-/* Для последней строки */
-.nutrition-row:last-child {
-    margin-bottom: 0; /* Убираем последний отступ снизу */
+.section.active {
+    display: block;
 }
 
-/* Мобильная адаптация */
-@media (max-width: 768px) {
-    .nutrition-row {
-        flex-wrap: wrap;
-    }
-
-    .nutrition-cell {
-        flex: 1 1 45%; /* Делим ячейки на два столбца на мобильных */
-        margin-bottom: 10px;
-    }
-}
-
-.modal-xxl {
-    max-width: 90%;
-}
-
-#readyOrders {
-    display: flex;
-    flex-direction: column-reverse;
-}
-
-#pendingOrders {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 200px);
-    overflow-y: auto;
-}
-
-/* styles.css */
-.virtual-viewport {
-    height: calc(100vh - 200px);
-    overflow-y: auto;
-    position: relative;
+/* Orders Grid */
+.orders-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 20px;
 }
 
 .order-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    min-height: 200px;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.order-number {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.table-number {
+    background-color: var(--accent-color);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.order-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.product-item {
+    margin-bottom: 15px;
+}
+
+.product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.product-name {
+    font-weight: 500;
+    font-size: 1.1rem;
+}
+
+.product-amount {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.ingredients-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ingredient-pill {
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+/* Ingredients Grid */
+.ingredients-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.ingredient-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
     cursor: pointer;
     transition: transform 0.2s;
 }
 
-.order-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.ingredient-card:hover {
+    transform: translateY(-5px);
 }
 
-.btn-group button.active {
-    background-color: #007bff;
+.ingredient-card.unavailable {
+    opacity: 0.7;
+    background-color: var(--light-gray);
+}
+
+.ingredient-card img {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.ingredient-card h3 {
+    margin: 10px 0;
+    color: var(--primary-color);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    z-index: 1000;
+}
+
+.modal-content {
+    position: relative;
+    background-color: white;
+    margin: 5% auto;
+    padding: 25px;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--gray-color);
+}
+
+/* Buttons */
+.ready-btn,
+.status-btn {
+    width: 100%;
+    padding: 15px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
     color: white;
 }
 
-#splitView {
-    height: calc(100vh - 100px);
+.ready-btn {
+    background-color: var(--success-color);
 }
 
-#allOrdersView {
-    height: calc(100vh - 100px);
+.status-btn {
+    background-color: var(--danger-color);
 }
 
-.modal-xl {
-    max-width: 90%;
+.ready-btn:hover,
+.status-btn:hover {
+    opacity: 0.9;
 }
 
-@media (max-width: 768px) {
-    .virtual-viewport {
-        height: calc(100vh - 150px);
+/* Modal Content Styles */
+#orderDetails,
+#ingredientDetails {
+    padding: 20px 0;
+}
+
+#orderDetails h2,
+#ingredientDetails h2 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+#ingredientDetails img {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin: 0 auto 15px;
+    display: block;
+}
+
+#ingredientDetails p {
+    margin: 10px 0;
+    line-height: 1.5;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--light-gray);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gray-color);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #7f8c8d;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .orders-grid {
+        grid-template-columns: 1fr;
     }
-}
 
-.btn-group-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.btn-group-grid .btn {
-    width: 100%;
-    margin: 0;
-}
-
-.modal-xl {
-    max-width: 1200px;
-}
-
-.status-buttons-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    width: 100%;
-    padding: 0 15px;
-}
-
-.status-buttons-container .btn {
-    width: 100%;
-    height: 60px; /* Фиксированная высота для всех кнопок */
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.modal-xl {
-    max-width: 1200px;
-}
-
-/* Стили для чекбоксов */
-.form-check {
-    margin: 0;
-    padding: 0;
-}
-
-.form-check-input {
-    margin-right: 5px;
-}
-
-/* Добавьте эти стили в ваш CSS файл */
-#splitView {
-    height: calc(100vh - 80px);
-    margin: 0;
-}
-
-.orders-container {
-    height: 100%;
-    overflow-y: auto;
-    padding: 10px;
-}
-
-.card-header {
-    background-color: #f8f9fa;
-    padding: 10px 15px;
-}
-
-.card-header h3 {
-    margin: 0;
-    font-size: 1.25rem;
-}
-
-.order-card {
-    margin-bottom: 10px;
-    border: 1px solid rgba(0,0,0,.125);
-    border-radius: .25rem;
-}
-
-/* Стили для скроллбара */
-.orders-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.orders-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-.orders-container::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-.orders-container::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-/* Стили для ордеров в зависимости от их статуса */
-.order-card[data-status='pending'] {
-    border-left: 4px solid #6c757d;
-}
-
-.order-card[data-status='cooking'] {
-    border-left: 4px solid #007bff;
-}
-
-.order-card[data-status='ready'] {
-    border-left: 4px solid #17a2b8;
-}
-
-.order-card[data-status='finished'] {
-    border-left: 4px solid #28a745;
-}
-
-.order-card[data-status='cancelled'] {
-    border-left: 4px solid #dc3545;
-}
-
-.order-card[data-status='problem'] {
-    border-left: 4px solid #dc3545;
+    .ingredients-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
 }

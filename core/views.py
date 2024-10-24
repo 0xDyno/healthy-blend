@@ -9,7 +9,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -51,40 +50,58 @@ def api_get_all_products(request):
 
 @api_view(["GET"])
 @login_required
+@utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
 def api_get_order(request, pk):
-    utils.verify_if_manager(request.user)
     order = utils_api.get_order_full(Order.objects.get(pk=pk))
     return Response(order)
 
 
-@csrf_exempt
 @api_view(["GET"])
 @login_required
+@utils.role_redirect(roles=["table"], redirect_url="home", do_redirect=False)
+def api_get_order_table(request):
+    order = Order.objects.filter(user=request.user).order_by("-created_at").first()
+    return Response([utils_api.get_order_for_table(order)])
+
+
+@api_view(["GET"])
+@login_required
+@utils.role_redirect(roles=["admin", "kitchen", "manager"], redirect_url="home", do_redirect=False)
+def api_get_orders_kitchen(request):
+    orders = Order.objects.filter(order_status__in=["cooking"]).order_by("paid_at")
+    return Response(utils_api.get_orders_for_kitchen(orders))
+
+
+@api_view(["GET"])
+@login_required
+@utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
 def api_get_orders(request):
     if request.user.role == "admin":
         orders = Order.objects.all()
-    elif request.user.role == "manager":
+    if request.user.role == "manager":
         orders = Order.objects.filter(created_at__date=timezone.now().date())
-    elif request.user.role == "table":
-        order = Order.objects.filter(user=request.user).order_by("-created_at").first()
-        return Response([utils_api.get_order_for_table(order)])
-    elif request.user.role == "kitchen":
-        orders = Order.objects.filter(created_at__date=timezone.now().date(), order_status__in=["cooking"]).order_by("created_at")
-        return Response(utils_api.get_orders_for_kitchen(orders))
-    else:
-        return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
-    orders = utils_api.filter_ordes(request, orders)
-    return Response(utils_api.get_orders_general(orders))
+    try:
+        orders = utils_api.filter_orders(request, orders)
+        return Response(utils_api.get_orders_general(orders))
+    except Exception as e:
+        msg = f"Error api/get/orders. Please make a photo and send to the admin. Info:\n{e.__str__()}"
+        return Response({"details": msg}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["PUT"])
 @login_required
+@utils.role_redirect(roles=["admin", "manager", "kitchen"], redirect_url="home", do_redirect=False)
 def api_update_order(request, pk):
-    utils.verify_if_manager(request.user)
+    order = Order.objects.get(pk=pk)
+
+    if request.user.role == "kitchen":
+        order.order_status = Order.READY
+        order.save()
+        return JsonResponse({}, status=status.HTTP_200_OK)
+
     data = json.loads(request.body)
 
-    order = Order.objects.get(pk=pk)
     order.order_status = data.get("order_status")
     order.order_type = data.get("order_type")
     order.payment_type = data.get("payment_type")
@@ -100,6 +117,22 @@ def api_update_order(request, pk):
     order.save()
 
     return JsonResponse({'message': 'Order updated successfully'}, status=status.HTTP_200_OK)
+
+
+@api_view(["PUT"])
+@login_required
+@utils.role_redirect(roles=["admin", "manager", "kitchen"], redirect_url="home", do_redirect=False)
+def api_update_ingredient(request, pk):
+    try:
+        ingredient = Ingredient.objects.get(pk=pk)
+    except Ingredient.DoesNotExist:
+        return JsonResponse({"detail": "Not Found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.user.role == "kitchen":
+        ingredient.is_available = not ingredient.is_available
+        ingredient.save()
+
+    return JsonResponse({}, status=status.HTTP_200_OK)
 
 
 # ------------------------ WEB views ------------------------------------------------------------------------------------------------
@@ -129,7 +162,7 @@ def user_logout(request):
 
 
 @login_required
-@utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
+@utils.role_redirect(roles=["kitchen"], redirect_url="kitchen", do_redirect=True)
 def home(request):
     return render(request, "client/home.html")
 

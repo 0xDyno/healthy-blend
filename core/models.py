@@ -136,42 +136,46 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     image = models.ImageField(upload_to="products/", null=True, blank=True)
     is_menu = models.BooleanField(default=False)  # for Menu
-    is_official = models.BooleanField()     # True - copy of Menu, False - custom meal
-    is_available = models.BooleanField(default=False)    # for Menu if there's no Ingredients
-
-    weight = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
+    is_official = models.BooleanField()  # True - copy of Menu w/ different kCal, False - custom meal
+    is_available = models.BooleanField(default=False)  # for Menu if there's no Ingredients
 
     price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
     price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=3.00, validators=[MinValueValidator(0)])
     custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+    weight = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
 
     ingredients = models.ManyToManyField("Ingredient", through="ProductIngredient")
-    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.PROTECT, related_name="product", null=True, blank=True)
+    nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.PROTECT, related_name="product")
 
     def clean(self):
         super().clean()
         if self.is_menu and (not self.image or not self.name or not self.description or not self.ingredients):
             raise ValidationError("Menu products must have an image and other data.")
 
-    def calculate_base_price(self):
-        total_price = self.productingredient_set.aggregate(
-            total=Sum(F("ingredient__price_per_gram") * F("weight_grams"))
-        )["total"] or 0
-        return round(total_price)
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        try:
+            self.nutritional_value
+        except AttributeError:
+            self.nutritional_value = NutritionalValue.objects.create()
+        self.full_clean()
+        super().save(*args, **kwargs)
 
-    def get_selling_price(self):
-        if self.custom_price is not None and self.custom_price > 0:
-            return self.custom_price
-        return self.price * self.price_multiplier
+        if self.productingredient_set.exists():
+            new_nutritional_value, total_weight = self.calculate_nutritional_value()
+            NutritionalValue.objects.filter(id=self.nutritional_value.id).update(**new_nutritional_value.to_dict())
 
-    def get_price_for_calories(self, calories):
-        base_calories = self.nutritional_value.calories
-        price_factor = calories / base_calories
-        return self.get_selling_price() * price_factor
+            self.weight = round(total_weight) if total_weight > 0 else None
+            self.price = self.calculate_base_price()
+            Product.objects.filter(pk=self.pk).update(weight=self.weight, price=self.price)
 
     def calculate_nutritional_value(self):
         nutritional_value = NutritionalValue()
-        product_ingredients = self.productingredient_set.all()
+        product_ingredients = self.productingredient_set.select_related('ingredient__nutritional_value').all()
+
+        if not product_ingredients.exists():
+            return nutritional_value, Decimal('0')
+
         total_weight = Decimal(product_ingredients.aggregate(total=Sum("weight_grams"))["total"] or 0)
 
         for product_ingredient in product_ingredients:
@@ -187,43 +191,22 @@ class Product(models.Model):
 
         return nutritional_value, total_weight
 
+    def calculate_base_price(self):
+        total_price = self.productingredient_set.aggregate(total=Sum(F("ingredient__price_per_gram") * F("weight_grams")))["total"] or 0
+        return round(total_price)
+
+    def get_selling_price(self):
+        if self.custom_price is not None and self.custom_price > 0:
+            return self.custom_price
+        return self.price * self.price_multiplier
+
+    def get_price_for_calories(self, calories):
+        base_calories = self.nutritional_value.calories
+        price_factor = calories / base_calories
+        return self.get_selling_price() * price_factor
+
     def is_dish(self):
         return self.product_type == "dish"
-
-    @transaction.atomic
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        is_new = self.pk is None
-
-        if is_new and not hasattr(self, "nutritional_value"):
-            self.nutritional_value = NutritionalValue.objects.create()
-
-        super().save(*args, **kwargs)
-
-        if self.pk:
-            new_nutritional_value, total_weight = self.calculate_nutritional_value()
-
-            if total_weight is not None and total_weight > 0:
-                self.weight = round(total_weight)
-            else:
-                self.weight = None
-
-            if self.nutritional_value:
-                for field in NutritionalValue._meta.fields:
-                    if field.name != "id":
-                        setattr(self.nutritional_value, field.name, getattr(new_nutritional_value, field.name))
-                self.nutritional_value.save()
-            else:
-                new_nutritional_value.save()
-                self.nutritional_value = new_nutritional_value
-
-            self.price = self.calculate_base_price()
-
-            Product.objects.filter(pk=self.pk).update(
-                weight=self.weight,
-                nutritional_value=self.nutritional_value,
-                price=self.price
-            )
 
     def __str__(self):
         return self.name
@@ -298,7 +281,7 @@ class Order(models.Model):
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.PROTECT, related_name="order")
 
     tax = models.IntegerField(default=7, validators=[MinValueValidator(0), MaxValueValidator(15)])
-    service = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
+    service = models.IntegerField(default=1, validators=[MinValueValidator(0), MaxValueValidator(10)])
     base_price = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     total_price = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     payment_id = models.CharField(max_length=100, blank=True)
@@ -320,7 +303,7 @@ class Order(models.Model):
             raise ValidationError(f"The order is not paid. It should be paid before continue.")
 
         if self.is_paid and not self.payment_id:
-            if self.payment_type != "cash":             # TEMPORARY, until I know how works payment system
+            if self.payment_type != "cash":  # TEMPORARY, until I know how works payment system
                 raise ValidationError(f"Please provide Payment ID for the order.")
 
         if self.is_refunded and not self.private_note:

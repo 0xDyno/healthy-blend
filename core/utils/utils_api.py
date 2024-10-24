@@ -153,6 +153,7 @@ def get_order_for_kitchen(order: Order):
         "id": order.id,
         "table_id": order.user.id,
         "products": [],
+        "paid_at": order.paid_at,
     }
 
     for order_product in order.products.all():
@@ -182,7 +183,7 @@ def get_orders_for_kitchen(orders: list):
     return [get_order_for_kitchen(order) for order in orders]
 
 
-def filter_ordes(request, orders):
+def filter_orders(request, orders):
     search = request.GET.get("search", "")
     order_status = request.GET.get("status", "")
     order_type = request.GET.get("order_type", "")
@@ -202,9 +203,7 @@ def filter_ordes(request, orders):
         orders = orders.filter(payment_type=payment_type)
     if table_id:
         orders = orders.filter(user_id=table_id)
-    print(f"{is_paid} = {type(is_paid)}")
     if is_paid == "true":
-        print("Do Filter")
         orders = orders.filter(is_paid=True)
     if is_refunded == "true":
         orders = orders.filter(is_refunded=True)

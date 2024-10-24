@@ -1,10 +1,50 @@
+{# kitchen.html #}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
-    <title>Healthy Blend</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/kitchen.css' %}">
 </head>
 <body>
-<center><h1>Kitchen Place</h1></center>
+    <nav class="top-nav">
+        <button id="ordersBtn" class="nav-btn active">Orders</button>
+        <button id="ingredientsBtn" class="nav-btn">Ingredients</button>
+    </nav>
+
+    <main>
+        <!-- Orders Section -->
+        <section id="ordersSection" class="section active">
+            <div id="ordersList" class="orders-grid"></div>
+        </section>
+
+        <!-- Ingredients Section -->
+        <section id="ingredientsSection" class="section">
+            <div id="ingredientsList" class="ingredients-grid"></div>
+        </section>
+    </main>
+
+    <!-- Order Details Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="orderDetails"></div>
+            <button id="orderReadyBtn" class="ready-btn">Mark as Ready</button>
+        </div>
+    </div>
+
+    <!-- Ingredient Details Modal -->
+    <div id="ingredientModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="ingredientDetails"></div>
+            <button id="ingredientStatusBtn" class="status-btn">Mark as Unavailable</button>
+        </div>
+    </div>
+
+    <script src="{% static 'js/manage/kitchen.js' %}"></script>
 </body>
 </html>

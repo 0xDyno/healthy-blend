@@ -55,9 +55,14 @@ class HistoryAdmin(admin.ModelAdmin):
     search_fields = ["user__username", "order__id"]
 
 
+class OrderProductAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in OrderProduct._meta.fields]
+
+
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(NutritionalValue, NutritionalValueAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(OrderHistory, HistoryAdmin)
+admin.site.register(OrderProduct, OrderProductAdmin)

@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function fetchOrderDetails() {
-    fetch('/api/get/orders/')
+    fetch('/api/get/order/table/')
         .then(response => response.json())
         .then(data => {
             if (data.length > 0) {

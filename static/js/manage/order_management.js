@@ -41,7 +41,7 @@ function displayPendingOrders(orders) {
     const pendingOrdersContainer = document.getElementById('pendingOrders');
     pendingOrdersContainer.innerHTML = '';
 
-    pendingOrders.forEach(order => {
+    pendingOrders.reverse().forEach(order => {
         const orderElement = createOrderElement(order);
         pendingOrdersContainer.appendChild(orderElement);
     });
@@ -122,14 +122,23 @@ function filterOrders() {
 
     // Fetch filtered data
     fetch(`/api/get/orders/?${params.toString()}`)
-        .then(response => response.json())
-        .then(data => {
-            displayAllOrders(data);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(error.message);
-        });
+    .then(response => {
+        // Проверяем, является ли статус ответа успешным (2xx)
+        if (!response.ok) {
+            // Если статус не успешен, выбрасываем ошибку с текстом ответа
+            return response.json().then(err => {
+                throw new Error(err.details);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        displayAllOrders(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message);
+    });
 }
 
 function getStatusColor(status) {
