@@ -122,23 +122,23 @@ function filterOrders() {
 
     // Fetch filtered data
     fetch(`/api/get/orders/?${params.toString()}`)
-    .then(response => {
-        // Проверяем, является ли статус ответа успешным (2xx)
-        if (!response.ok) {
-            // Если статус не успешен, выбрасываем ошибку с текстом ответа
-            return response.json().then(err => {
-                throw new Error(err.details);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        displayAllOrders(data);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error.message);
-    });
+        .then(response => {
+            // Проверяем, является ли статус ответа успешным (2xx)
+            if (!response.ok) {
+                // Если статус не успешен, выбрасываем ошибку с текстом ответа
+                return response.json().then(err => {
+                    throw new Error(err.details);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayAllOrders(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message);
+        });
 }
 
 function getStatusColor(status) {
@@ -164,6 +164,15 @@ function displayOrderDetails(orderId) {
             // Устанавливаем ID заказа в заголовке модального окна
             document.getElementById('modalOrderId').textContent = order.id;
             document.getElementById('modalTableId').textContent = order.user_role + " " + order.user_id;
+
+            // Отображение публичной заметки
+            const publicNoteDisplay = document.getElementById('publicNoteDisplay');
+            if (order.public_note) {
+                publicNoteDisplay.textContent = `Customer Note: ${order.public_note}`;
+                publicNoteDisplay.parentElement.style.display = 'block';
+            } else {
+                publicNoteDisplay.parentElement.style.display = 'none';
+            }
 
             // Отображаем детали заказа
             const orderDetailsContainer = document.getElementById('orderDetails');

@@ -364,3 +364,12 @@
 .order-card[data-status='problem'] {
     border-left: 4px solid #dc3545;
 }
+
+.public-note-display {
+    padding: 8px;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    font-style: italic;
+}
+
