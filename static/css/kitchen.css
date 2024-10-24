@@ -127,6 +127,7 @@ body {
     height: 100%;
     background-color: rgba(0,0,0,0.7);
     z-index: 1000;
+    overflow-y: auto;
 }
 
 .modal-content {
