@@ -30,13 +30,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Render Functions
     function renderOrders(orders) {
-    const ordersList = document.getElementById('ordersList');
-    ordersList.innerHTML = orders.map(order => {
-        const timeSincePayment = order.paid_at ? getTimeSincePayment(order.paid_at) : '';
-        const orderTypeBadge = order.order_type !== 'offline' ?
-            `<span class="order-type-badge order-type-${order.order_type}">${order.order_type.toUpperCase()}</span>` : '';
+        const ordersList = document.getElementById('ordersList');
+        ordersList.innerHTML = orders.map(order => {
+            const timeSincePayment = order.paid_at ? getTimeSincePayment(order.paid_at) : '';
+            const orderTypeBadge = order.order_type !== 'offline' ?
+                `<span class="order-type-badge order-type-${order.order_type}">${order.order_type.toUpperCase()}</span>` : '';
 
-        return `
+            // Добавляем отображение заметок
+            const publicNote = order.public_note ?
+                `<div class="note public-note" title="${order.public_note}">📝 ${order.public_note.substring(0, 30)}${order.public_note.length > 30 ? '...' : ''}</div>` : '';
+            const privateNote = order.private_note ?
+                `<div class="note private-note" title="${order.private_note}">🔒 ${order.private_note.substring(0, 30)}${order.private_note.length > 30 ? '...' : ''}</div>` : '';
+
+            return `
         <div class="order-card" data-id="${order.id}" data-order-type="${order.order_type}">
             <div class="order-header">
                 <div>
@@ -47,6 +53,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     <span class="payment-time">${timeSincePayment}</span>
                 </div>
             </div>
+            ${publicNote}
+            ${privateNote}
             <div class="order-content">
                 ${order.products.map(product => `
                     <div class="product-item">
@@ -114,11 +122,27 @@ document.addEventListener('DOMContentLoaded', function () {
         const orderTypeBadge = order.order_type !== 'offline' ?
             `<span class="order-type-badge order-type-${order.order_type}">${order.order_type.toUpperCase()}</span>` : '';
 
+        const notesSection = `
+        ${order.public_note ? `
+            <div class="note-section">
+                <h3>Public Note:</h3>
+                <p class="full-note public-note">${order.public_note}</p>
+            </div>
+        ` : ''}
+        ${order.private_note ? `
+            <div class="note-section">
+                <h3>Private Note:</h3>
+                <p class="full-note private-note">${order.private_note}</p>
+            </div>
+        ` : ''}
+    `;
+
         document.getElementById('orderDetails').innerHTML = `
         <div style="display: flex; align-items: center; margin-bottom: 15px;">
             <h2>Order Details #${order.id}</h2>
             ${orderTypeBadge}
         </div>
+        ${notesSection}
             ${order.products.map(product => `
                 <div class="product-item">
                     <div class="product-header">
