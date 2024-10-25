@@ -1,5 +1,7 @@
 // utils.js
 
+export const REFRESH_INTERVAL = 10000;
+
 export function fetchOrders(callback) {
     fetch('/api/get/orders/')
         .then(response => response.json())

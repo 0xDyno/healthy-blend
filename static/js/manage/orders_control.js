@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Event listener for updating order status
     document.getElementById('updateOrderBtn').addEventListener('click', utils.updateOrderStatus);
+
+    setInterval(() => {
+        loadControlOrders();
+    }, utils.REFRESH_INTERVAL);
 });
 
 export function loadControlOrders() {

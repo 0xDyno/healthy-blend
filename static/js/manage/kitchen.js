@@ -1,4 +1,5 @@
 // kitchen.js
+import {REFRESH_INTERVAL} from "./utils"
 
 document.addEventListener('DOMContentLoaded', function () {
     // DOM Elements
@@ -282,5 +283,5 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             fetchIngredients();
         }
-    }, 10000);
+    }, REFRESH_INTERVAL);
 });
