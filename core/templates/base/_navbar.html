@@ -1,0 +1,59 @@
+{# _navbar.html #}
+
+{% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand">Healthy Blend</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'home' %}">Home</a>
+                        </li>
+                        {% if user.role == 'manager' or user.role == 'admin' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'orders_manage_control' %}">Control Panel</a>
+                            </li>
+                        {% endif %}
+                        {% if user.role == 'admin' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">Admin Panel</a>
+                            </li>
+                        {% endif %}
+                        {% if user.role == "table" %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'last_order' %}">Last Order</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="nav-link">{{ user.nickname }}</span>
+                        </li>
+                        {% if user.role == 'manager' or user.role == "admin" or user.role == "kitchen" %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'cart' %}">
+                                Cart: <span id="cartItemCount">0</span> items |
+                                Total: <span id="cartTotal">0 IDR</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+{% endblock %}

@@ -3,6 +3,7 @@
 import json
 import logging
 
+from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -220,20 +221,26 @@ def checkout(request):
 
 @login_required
 @utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
-def order_management(request):
-    return render(request, "manage/order_management.html")
+def orders_control(request):
+    return render(request, "manage/orders.html")
+
+
+@login_required
+@utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
+def orders_all(request):
+    return render(request, "manage/orders.html")
 
 
 @login_required
 @utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
 def product_management(request):
-    return render(request, "manage/product_management.html")
+    return render(request, "manage/products.html")
 
 
 @login_required
 @utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
 def ingredient_management(request):
-    return render(request, "manage/ingredient_management.html")
+    return render(request, "manage/ingredients.html")
 
 
 @login_required

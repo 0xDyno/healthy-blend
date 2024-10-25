@@ -1,0 +1,69 @@
+/* _navbar.css */
+
+.top-nav {
+    background-color: #f8f9fa;
+    padding: 10px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0 20px;
+}
+
+.left-side {
+    flex: 0 0 auto;
+}
+
+.center-links {
+    flex: 1;
+    text-align: center;
+}
+
+.right-side {
+    flex: 0 0 auto;
+}
+
+.home-link, .logout-link {
+    text-decoration: none;
+    color: #333;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.center-links a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+}
+
+.top-nav a:hover {
+    color: #007bff;
+}
+
+/* Медиа-запросы для адаптивности навбара */
+@media (max-width: 768px) {
+    .nav-container {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .left-side, .center-links, .right-side {
+        width: 100%;
+        text-align: center;
+        margin: 5px 0;
+    }
+
+    .center-links a {
+        margin: 5px 10px;
+        display: inline-block;
+    }
+}

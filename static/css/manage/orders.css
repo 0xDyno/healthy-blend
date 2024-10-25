@@ -1,0 +1,102 @@
+/* orders.css */
+
+#splitView {
+    height: calc(100vh - 120px);
+    margin: 0;
+}
+
+.orders-container {
+    height: 100%;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.order-card {
+    margin-bottom: 10px;
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: .25rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Order status styles */
+.order-card[data-status='pending'] {
+    border-left: 4px solid #6c757d;
+}
+
+.order-card[data-status='cooking'] {
+    border-left: 4px solid #007bff;
+}
+
+.order-card[data-status='ready'] {
+    border-left: 4px solid #17a2b8;
+}
+
+.order-card[data-status='finished'] {
+    border-left: 4px solid #28a745;
+}
+
+.order-card[data-status='cancelled'] {
+    border-left: 4px solid #dc3545;
+}
+
+.order-card[data-status='problem'] {
+    border-left: 4px solid #dc3545;
+}
+
+.status-buttons-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    padding: 0 15px;
+}
+
+.status-buttons-container .btn {
+    width: 100%;
+    height: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.public-note-display {
+    padding: 8px;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+.btn-group button.active {
+    background-color: #007bff;
+    color: white;
+}
+
+#readyOrders {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+#pendingOrders {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-xl {
+    max-width: 90%;
+}
+
+@media (max-width: 768px) {
+    .status-buttons-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    #splitView {
+        height: calc(100vh - 100px);
+    }
+}

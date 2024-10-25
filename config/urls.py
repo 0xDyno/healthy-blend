@@ -17,10 +17,11 @@ urlpatterns = [
     path("checkout/", checkout, name="checkout"),
     path("last-order/", last_order, name="last_order"),
 
-    path("kitchen/", kitchen, name="kitchen"),
-    path("order-management/", order_management, name="order_management"),
-    path("ingredient-management/", ingredient_management, name="ingredient_management"),
-    path("product-management/", product_management, name="product_management"),
+    path("manage/kitchen/", kitchen, name="kitchen"),
+    path("manage/orders/control/", orders_control, name="orders_manage_control"),
+    path("manage/orders/all/", orders_all, name="orders_manage_all"),
+    path("manage/ingredients/", ingredient_management, name="ingredient_management"),
+    path("manage/products/", product_management, name="product_management"),
 
     # API URLs
     path("api/get/products/", api_get_all_products),
