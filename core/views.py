@@ -10,6 +10,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -100,6 +101,10 @@ def api_update_order(request, pk):
         order.order_status = Order.READY
         order.save()
         return JsonResponse({}, status=status.HTTP_200_OK)
+
+    if request.META.get("HTTP_REFERER").endswith("kitchen/"):
+        print(f"User ({request.user.rule}) tried to update Order from {request.META.get('HTTP_REFERER')}")
+        return JsonResponse({"detail": "You can't do it from here"}, status=status.HTTP_403_FORBIDDEN)
 
     data = json.loads(request.body)
 

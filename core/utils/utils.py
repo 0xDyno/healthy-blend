@@ -266,3 +266,7 @@ def get_date_today():
 def get_price_with_tax(price):
     price_service = price + (price * 0.01)
     return round(price_service + (price_service * 0.07))
+
+
+def get_ingredient_type_choices():
+    return [ingredient[0] for ingredient in Ingredient.INGREDIENT_TYPES]

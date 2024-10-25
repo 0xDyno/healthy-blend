@@ -4,18 +4,22 @@
     margin: 0;
 }
 
-.orders-container {
-    height: 100%;
-    overflow-y: auto;
-    padding: 10px;
-}
-
 .order-card {
     margin-bottom: 10px;
     border: 1px solid rgba(0,0,0,.125);
     border-radius: .25rem;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s ease;
+    background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 12px;
+    position: relative;
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    background: linear-gradient(to bottom, #ffffff 0%, #f1f3f5 100%);
 }
 
 .order-card:hover {
@@ -23,29 +27,30 @@
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* Order status styles */
 .order-card[data-status='pending'] {
     border-left: 4px solid #6c757d;
+    background: linear-gradient(to right, rgba(108,117,125,0.15) 0%, rgba(255,255,255,1) 100%);
 }
 
 .order-card[data-status='cooking'] {
-    border-left: 4px solid #007bff;
+    border-left: 4px solid #17a2b8;
+    background: linear-gradient(to right, rgba(23,162,184,0.15) 0%, rgba(255,255,255,1) 100%);
 }
 
 .order-card[data-status='ready'] {
-    border-left: 4px solid #17a2b8;
+    border-left: 4px solid #007bff;
+    background: linear-gradient(to right, rgba(0,123,255,0.15) 0%, rgba(255,255,255,1) 100%);
 }
 
 .order-card[data-status='finished'] {
     border-left: 4px solid #28a745;
+    background: linear-gradient(to right, rgba(40,167,69,0.15) 0%, rgba(255,255,255,1) 100%);
 }
 
-.order-card[data-status='cancelled'] {
-    border-left: 4px solid #dc3545;
-}
-
+.order-card[data-status='cancelled'],
 .order-card[data-status='problem'] {
     border-left: 4px solid #dc3545;
+    background: linear-gradient(to right, rgba(220,53,69,0.15) 0%, rgba(255,255,255,1) 100%);
 }
 
 .status-buttons-container {
@@ -151,4 +156,223 @@
 .table.table-borderless td {
     border: none;
     padding: 8px;
+}
+
+/* Улучшенные стили для публичных заметок */
+.order-card .public-note-truncate {
+    background: rgba(248,249,250,0.9); /* Менее прозрачный фон */
+    border-radius: 3px;
+    padding: 6px 10px;
+    margin-top: 8px;
+    border: 1px solid rgba(0,0,0,0.08);
+}
+
+/* Остальные стили остаются без изменений */
+.orders-container {
+    height: 100%;
+    overflow-y: auto;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 0.25rem;
+}
+
+.order-card:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.order-card .table td {
+    padding: 4px 8px;
+    position: relative;
+}
+
+.order-dates {
+    color: #6c757d;
+    font-size: 0.85em;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Добавляем в orders.css */
+
+/* Основные стили модального окна */
+.modal-content {
+    background: #f8f9fa;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    font-size: 0.85rem;
+}
+
+/* Шапка модального окна */
+.modal-header {
+    background: linear-gradient(to right, #f1f3f5, #e9ecef);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    border-radius: 12px 12px 0 0;
+    padding: 15px 20px;
+}
+
+.modal-title {
+    color: #495057;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.btn-close {
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.btn-close:hover {
+    opacity: 1;
+}
+
+/* Тело модального окна */
+.modal-body {
+    background: #ffffff;
+    padding: 20px;
+    font-size: 0.85rem;
+}
+
+/* Стили для кнопок статуса */
+.status-buttons-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 0 10px;
+    margin-bottom: 5px;
+}
+
+.status-buttons-container .btn {
+    padding: 8px 12px;
+    font-size: 1rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    height: 50px;
+}
+
+/* Стили для групп кнопок */
+.btn-group {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 6px;
+}
+
+.btn-group .btn {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+}
+
+/* Стили для инпутов и текстовых полей */
+.form-control, .form-select {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    transition: all 0.2s;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #fff;
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
+}
+
+/* Чекбоксы */
+.form-check-input {
+    cursor: pointer;
+}
+
+.form-check-label {
+    color: #495057;
+    cursor: pointer;
+}
+
+/* Публичная заметка */
+.public-note-display {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 10px;
+    margin: 10px 0;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Кнопка обновления */
+#updateOrderBtn {
+    background: linear-gradient(to bottom right, #28a745, #20c997);
+    border: none;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(40,167,69,0.2);
+    transition: all 0.2s;
+}
+
+#updateOrderBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(40,167,69,0.3);
+}
+
+#updateOrderBtn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(40,167,69,0.2);
+}
+
+/* Таблица деталей заказа */
+#orderDetails table {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#orderDetails th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #495057;
+}
+
+#orderDetails td {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .modal-xl {
+        max-width: 95%;
+        margin: 10px;
+    }
+
+    .status-buttons-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Дополнительные стили для улучшения читаемости */
+.form-label {
+    color: #495057;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+
+/* Стили для активных состояний кнопок */
+.btn-group .btn.active {
+    background: linear-gradient(to bottom, #0d6efd, #0b5ed7);
+    border-color: #0a58ca;
+    color: white;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* Анимация появления модального окна */
+.modal.fade .modal-dialog {
+    transform: scale(0.95);
+    transition: transform 0.2s ease-out;
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1);
 }

@@ -83,7 +83,7 @@ export function createOrderElement(order, colClass = 'col-12') {
 
 function getStatusColor(status) {
     const statusColors = {
-        'pending': 'secondary', 'cooking': 'primary', 'ready': 'info', 'finished': 'success', 'cancelled': 'danger', 'problem': 'danger'
+        'pending': 'secondary', 'cooking': 'info', 'ready': 'primary', 'finished': 'success', 'cancelled': 'danger', 'problem': 'danger'
     };
     return statusColors[status] || 'secondary';
 }
