@@ -1,7 +1,7 @@
 // custom_add.js
 
 import storage from './storage.js';
-import * as utils from '../utils.js';
+import * as utils from './utils.js';
 
 let ingredientData;
 
@@ -47,7 +47,7 @@ function initializeForm() {
         e.preventDefault();
         const amount = parseFloat(amountSlider.value);
         addIngredientToCustomMeal(amount);
-        window.location.href = '/custom-meal/';
+        window.location.href = '/custom/';
     });
 
     updateDynamicData(amountSlider.value);

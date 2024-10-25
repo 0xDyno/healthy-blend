@@ -1,8 +1,7 @@
 // cart.js
 
 import storage from './storage.js';
-import * as utils from '../utils.js';
-import {calculateNutritionSummary} from "../utils.js";
+import * as utils from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
     updateCartUI();
@@ -150,7 +149,7 @@ function handleCheckout() {
     }
 
     const {officialMeals, customMeals} = storage.getCartItemsSet();
-    let nutritions = calculateNutritionSummary([...officialMeals, ...customMeals])
+    let nutritions = utils.calculateNutritionSummary([...officialMeals, ...customMeals])
     delete nutritions.total
 
     const cartData = {

@@ -11,7 +11,7 @@ urlpatterns = [
     path("login/", user_login, name="login"),
     path("logout/", user_logout, name="logout"),
 
-    path("custom-meal/", custom_meal, name="custom_meal"),
+    path("custom/", custom_meal, name="custom_meal"),
     path("ingredient/<int:ingredient_id>/", custom_add, name="ingredient_detail"),
     path("cart/", cart, name="cart"),
     path("checkout/", checkout, name="checkout"),

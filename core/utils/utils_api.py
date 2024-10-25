@@ -187,24 +187,31 @@ def get_orders_for_kitchen(orders: list):
 
 def filter_orders(request, orders):
     search = request.GET.get("search", "")
+    table_id = request.GET.get("table_id", "")
+
     order_status = request.GET.get("status", "")
     order_type = request.GET.get("order_type", "")
+
     payment_type = request.GET.get("payment_type", "")
-    table_id = request.GET.get("table_id", "")
+    payment_id = request.GET.get("payment_id", "")
+
     is_paid = request.GET.get("is_paid", "")
     is_refunded = request.GET.get("is_refunded", "")
+
     sort_by = request.GET.get("sort_by", "-created_at")
 
     if search:
         orders = orders.filter(id__icontains=search)
+    if table_id:
+        orders = orders.filter(id__icontains=table_id)
     if order_status:
         orders = orders.filter(order_status=order_status)
     if order_type:
         orders = orders.filter(order_type=order_type)
+    if payment_id:
+        orders = orders.filter(payment_id__icontains=payment_id)
     if payment_type:
         orders = orders.filter(payment_type=payment_type)
-    if table_id:
-        orders = orders.filter(user_id=table_id)
     if is_paid == "true":
         orders = orders.filter(is_paid=True)
     if is_refunded == "true":

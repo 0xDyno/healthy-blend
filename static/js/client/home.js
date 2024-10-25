@@ -1,7 +1,7 @@
 // home.js
 
 import storage from './storage.js';
-import * as utils from '../utils.js';
+import * as utils from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
     const dishesList = document.getElementById('dishesList');
@@ -223,7 +223,7 @@ function editDish(product, selectedCalories) {
 
     utils.recalculateCustomMealSummary(customMealDraft);
     storage.setCustomMealDraft(customMealDraft);
-    window.location.href = '/custom-meal/';
+    window.location.href = '/custom/';
 }
 
 function addToCart(product, amount) {

@@ -1,7 +1,7 @@
 // custom_meal.js
 
 import storage from './storage.js';
-import * as utils from '../utils.js';
+import * as utils from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
     storage.updateCartInfo();           // update common CartItems & CartPrice

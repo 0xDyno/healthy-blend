@@ -1,4 +1,4 @@
-{# orders.html #}
+{# orders_control.html #}
 
 {% extends 'manage/base.html' %}
 
@@ -11,13 +11,8 @@
 {% endblock %}
 
 {% block content %}
-    <!-- Main Content -->
     <div class="content-wrapper">
-        <div class="mb-3 text-center">
-            <button id="toggleView" class="btn btn-dark">Toggle View</button>
-        </div>
-
-        <div id="splitView" class="row h-100">
+        <div class="row h-100">
             <div class="col-6 h-100">
                 <div class="card h-100">
                     <div class="card-header">
@@ -42,70 +37,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- All Orders View -->
-        <div id="allOrdersView" style="display: none;">
-                    <h3>All Orders</h3>
-                    <div class="mb-3">
-                        <input type="text" id="searchInput" placeholder="Search by order ID" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <input type="number" id="tableIdFilter" placeholder="Search by user ID" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <select id="statusFilter" class="form-select">
-                            <option value="">Order Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="cooking">Cooking</option>
-                            <option value="ready">Ready</option>
-                            <option value="finished">Finished</option>
-                            <option value="cancelled">Cancelled</option>
-                            <option value="problem">Problem</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <select id="orderTypeFilter" class="form-select">
-                            <option value="">Order Type</option>
-                            <option value="offline">Offline</option>
-                            <option value="takeaway">Take Away</option>
-                            <option value="online">Online</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <select id="paymentTypeFilter" class="form-select">
-                            <option value="">Payment Type</option>
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                            <option value="qr">QR</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="isPaidFilter">
-                            <label class="form-check-label" for="isPaidFilter">Paid Orders</label>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="isRefundedFilter">
-                            <label class="form-check-label" for="isRefundedFilter">Refunded Orders</label>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <select id="sortBy" class="form-select">
-                            <option value="">Newest First</option>
-                            <option value="created_at_asc">Older First</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 text-center">
-                        <button id="clearFilters" class="btn btn-outline-secondary">
-                            Clear Filters
-                        </button>
-                    </div>
-                    <div id="allOrders" class="row">
-                        <!-- All orders will be dynamically inserted here -->
-                    </div>
         </div>
 
         <!-- Order Details Modal -->
@@ -141,8 +72,7 @@
                                     <label class="form-label">Order Type</label>
                                     <div class="btn-group w-100">
                                         <button type="button" class="btn btn-outline-secondary" data-order-type="offline">Offline</button>
-                                        <button type="button" class="btn btn-outline-secondary" data-order-type="takeaway">Take Away
-                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" data-order-type="takeaway">Take Away</button>
                                         <button type="button" class="btn btn-outline-secondary" data-order-type="online">Online</button>
                                     </div>
                                 </div>
@@ -157,7 +87,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Checkboxes in one row -->
+                                <!-- Checkboxes -->
                                 <div class="mb-3 d-flex justify-content-start gap-4">
                                     <div class="form-check">
                                         <input type="checkbox" class="form-check-input" id="isPaid">
@@ -216,5 +146,5 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script type="module" src="{% static 'js/manage/orders.js' %}"></script>
+    <script type="module" src="{% static 'js/manage/orders_control.js' %}"></script>
 {% endblock %}

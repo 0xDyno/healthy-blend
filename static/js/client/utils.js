@@ -1,6 +1,6 @@
 // utils.js
 
-import storage from './client/storage.js';
+import storage from './storage.js';
 
 export function formatNumber(number, fixed=1) {
     if (number === undefined) {

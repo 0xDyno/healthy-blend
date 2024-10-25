@@ -157,6 +157,7 @@ def user_login(request):
 
 
 @login_required
+@utils.role_redirect(roles=["table"], redirect_url="home", do_redirect=True)
 def user_logout(request):
     logout(request)
     return redirect("login")
@@ -222,13 +223,13 @@ def checkout(request):
 @login_required
 @utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
 def orders_control(request):
-    return render(request, "manage/orders.html")
+    return render(request, "manage/orders_control.html")
 
 
 @login_required
 @utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
 def orders_all(request):
-    return render(request, "manage/orders.html")
+    return render(request, "manage/orders_all.html")
 
 
 @login_required

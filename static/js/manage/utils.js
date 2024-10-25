@@ -1,34 +1,10 @@
-// orders.js
+// utils.js
 
-import * as utils from "../client/utils.js"
-
-document.addEventListener('DOMContentLoaded', function () {
-    utils.updateOrderSummary(false)
-    fetchOrders();
-
-    // Event listeners for search, filters, and sorting
-    document.getElementById('searchInput').addEventListener('input', filterOrders);
-    document.getElementById('tableIdFilter').addEventListener('input', filterOrders);
-    document.getElementById('statusFilter').addEventListener('change', filterOrders);
-    document.getElementById('paymentTypeFilter').addEventListener('change', filterOrders);
-    document.getElementById('orderTypeFilter').addEventListener('change', filterOrders);
-    document.getElementById('isPaidFilter').addEventListener('change', filterOrders);
-    document.getElementById('isRefundedFilter').addEventListener('change', filterOrders);
-    document.getElementById('sortBy').addEventListener('change', sortOrders);
-    document.getElementById('clearFilters').addEventListener('click', clearFilters);
-
-    // Event listener for updating order status
-    document.getElementById('updateOrderBtn').addEventListener('click', updateOrderStatus);
-    document.getElementById('toggleView').addEventListener('click', toggleView);
-});
-
-function fetchOrders() {
+export function fetchOrders(callback) {
     fetch('/api/get/orders/')
         .then(response => response.json())
         .then(data => {
-            displayPendingOrders(data);
-            displayReadyOrders(data);
-            displayAllOrders(data);
+            callback(data);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -36,39 +12,8 @@ function fetchOrders() {
         });
 }
 
-function displayPendingOrders(orders) {
-    const pendingOrders = orders.filter(order => order.order_status === 'pending');
-    const pendingOrdersContainer = document.getElementById('pendingOrders');
-    pendingOrdersContainer.innerHTML = '';
 
-    pendingOrders.reverse().forEach(order => {
-        const orderElement = createOrderElement(order);
-        pendingOrdersContainer.appendChild(orderElement);
-    });
-}
-
-function displayReadyOrders(orders) {
-    const readyOrders = orders.filter(order => order.order_status === 'ready');
-    const readyOrdersContainer = document.getElementById('readyOrders');
-    readyOrdersContainer.innerHTML = '';
-
-    readyOrders.forEach(order => {
-        const orderElement = createOrderElement(order);
-        readyOrdersContainer.appendChild(orderElement);
-    });
-}
-
-function displayAllOrders(orders) {
-    const allOrdersContainer = document.getElementById('allOrders');
-    allOrdersContainer.innerHTML = '';
-
-    orders.forEach(order => {
-        const orderElement = createOrderElement(order, 'col-md-4');
-        allOrdersContainer.appendChild(orderElement);
-    });
-}
-
-function createOrderElement(order, colClass = 'col-12') {
+export function createOrderElement(order, colClass = 'col-12') {
     const orderElement = document.createElement('div');
     orderElement.classList.add(colClass, 'mb-3');
     orderElement.innerHTML = `
@@ -93,54 +38,6 @@ function createOrderElement(order, colClass = 'col-12') {
     return orderElement;
 }
 
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString();
-}
-
-function filterOrders() {
-    const searchInput = document.getElementById('searchInput').value;
-    const statusFilter = document.getElementById('statusFilter').value;
-    const orderTypeFilter = document.getElementById('orderTypeFilter').value;
-    const paymentTypeFilter = document.getElementById('paymentTypeFilter').value;
-    const tableIdFilter = document.getElementById('tableIdFilter').value;
-    const isPaidFilter = document.getElementById('isPaidFilter').checked;
-    const isRefundedFilter = document.getElementById('isRefundedFilter').checked;
-    const sortBy = document.getElementById('sortBy').value;
-
-    // Construct query parameters
-    const params = new URLSearchParams({
-        search: searchInput,
-        status: statusFilter,
-        order_type: orderTypeFilter,
-        payment_type: paymentTypeFilter,
-        table_id: tableIdFilter,
-        is_paid: isPaidFilter,
-        is_refunded: isRefundedFilter,
-        sort_by: sortBy
-    });
-
-    // Fetch filtered data
-    fetch(`/api/get/orders/?${params.toString()}`)
-        .then(response => {
-            // Проверяем, является ли статус ответа успешным (2xx)
-            if (!response.ok) {
-                // Если статус не успешен, выбрасываем ошибку с текстом ответа
-                return response.json().then(err => {
-                    throw new Error(err.details);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            displayAllOrders(data);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(error.message);
-        });
-}
-
 function getStatusColor(status) {
     const statusColors = {
         'pending': 'secondary',
@@ -153,11 +50,12 @@ function getStatusColor(status) {
     return statusColors[status] || 'secondary';
 }
 
-function sortOrders() {
-    filterOrders();
+export function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString();
 }
 
-function displayOrderDetails(orderId) {
+export function displayOrderDetails(orderId) {
     fetch(`/api/get/order/${orderId}/`)
         .then(response => response.json())
         .then(order => {
@@ -261,25 +159,25 @@ function displayOrderDetails(orderId) {
         });
 }
 
-function handleStatusButtonClick(event) {
+export function handleStatusButtonClick(event) {
     const statusButtons = document.querySelectorAll('.status-buttons-container button[data-status]');
     statusButtons.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
 }
 
-function handleOrderTypeButtonClick(event) {
+export function handleOrderTypeButtonClick(event) {
     const orderTypeButtons = document.querySelectorAll('button[data-order-type]');
     orderTypeButtons.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
 }
 
-function handlePaymentTypeButtonClick(event) {
+export function handlePaymentTypeButtonClick(event) {
     const paymentTypeButtons = document.querySelectorAll('button[data-payment-type]');
     paymentTypeButtons.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
 }
 
-function updateOrderStatus() {
+export function updateOrderStatus() {
     const orderId = document.getElementById('orderModal').getAttribute('data-order-id');
     const activeStatusButton = document.querySelector('.status-buttons-container button.active');
     const activeOrderTypeButton = document.querySelector('button[data-order-type].active');
@@ -315,8 +213,13 @@ function updateOrderStatus() {
             // Закрываем модальное окно
             const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
             modal.hide();
-            // Обновляем список заказов
-            fetchOrders();
+
+            // Обновляем список заказов на текущей странице
+            if (window.location.pathname.includes('control')) {
+                import('./orders_control.js').then(module => module.loadControlOrders());
+            } else {
+                import('./orders_all.js').then(module => module.loadAllOrders());
+            }
         })
         .catch(error => {
             console.error('Error:', error);
@@ -324,20 +227,7 @@ function updateOrderStatus() {
         });
 }
 
-function toggleView() {
-    const splitView = document.getElementById('splitView');
-    const allOrdersView = document.getElementById('allOrdersView');
-
-    if (splitView.style.display === 'none') {
-        splitView.style.display = 'flex';
-        allOrdersView.style.display = 'none';
-    } else {
-        splitView.style.display = 'none';
-        allOrdersView.style.display = 'block';
-    }
-}
-
-function getCookie(name) {
+export function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
@@ -352,34 +242,12 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function clearFilters() {
-    // Очистка текстовых полей
-    document.getElementById('searchInput').value = '';
-    document.getElementById('tableIdFilter').value = '';
-
-    // Сброс select элементов
-    document.getElementById('statusFilter').value = '';
-    document.getElementById('orderTypeFilter').value = '';
-    document.getElementById('paymentTypeFilter').value = '';
-    document.getElementById('sortBy').value = '';
-
-    // Сброс чекбоксов
-    document.getElementById('isPaidFilter').checked = false;
-    document.getElementById('isRefundedFilter').checked = false;
-
-    // Сброс даты
-    if (document.getElementById('createdAtFilter')) {
-        document.getElementById('createdAtFilter').value = '';
+export function refreshOrders() {
+    if (document.getElementById('splitView')) {
+        // for control
+        import('./orders_control.js').then(module => module.loadControlOrders());
+    } else {
+        // for all
+        import('./orders_all.js').then(module => module.loadAllOrders());
     }
-
-    // После очистки фильтров, обновляем отображение заказов
-    fetchOrders();
 }
-
-// Добавляем обработчик кликов по карточкам заказов
-document.addEventListener('click', function (event) {
-    if (event.target.closest('.order-card')) {
-        const orderId = event.target.closest('.order-card').getAttribute('data-order-id');
-        displayOrderDetails(orderId);
-    }
-});

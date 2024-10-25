@@ -44,7 +44,7 @@ class OrderProductInline(admin.TabularInline):
 
 class OrderAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "order_status", "is_paid", "is_refunded", "order_type", "payment_type", "total_price", "created_at")
-    list_filter = ("order_status", "order_type", "payment_type")
+    list_filter = ("order_status", "order_type", "payment_type", "is_paid")
     search_fields = ["id", "user__username"]
     inlines = [OrderProductInline]
 

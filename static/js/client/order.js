@@ -1,6 +1,6 @@
 // order.js
 
-import * as utils from '../utils.js';
+import * as utils from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     fetchOrderDetails();
