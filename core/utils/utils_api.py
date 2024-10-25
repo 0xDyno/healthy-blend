@@ -60,6 +60,7 @@ def get_order_general(order: Order):
         "paid_at": order.paid_at,
         "ready_at": order.ready_at,
         "refunded_at": order.refunded_at,
+        "public_note": order.public_note,
     }
     return data_to_send
 

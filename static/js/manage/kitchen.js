@@ -1,5 +1,5 @@
 // kitchen.js
-import {REFRESH_INTERVAL} from "./utils"
+import { REFRESH_INTERVAL } from "./utils.js";
 
 document.addEventListener('DOMContentLoaded', function () {
     // DOM Elements

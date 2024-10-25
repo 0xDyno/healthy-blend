@@ -126,3 +126,29 @@
 .modal-body .form-label {
     font-size: 0.85rem;
 }
+
+/* Стили для карточки заказа */
+.public-note-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.9em;
+    background-color: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.order-dates {
+    font-size: 0.90em;
+}
+
+.table.table-borderless {
+    margin-bottom: 0;
+}
+
+.table.table-borderless td {
+    border: none;
+    padding: 8px;
+}

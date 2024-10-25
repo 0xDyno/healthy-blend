@@ -18,22 +18,63 @@ export function fetchOrders(callback) {
 export function createOrderElement(order, colClass = 'col-12') {
     const orderElement = document.createElement('div');
     orderElement.classList.add(colClass, 'mb-3');
+
+    // Определяем класс и текст для статуса оплаты
+    let paymentStatus, paymentClass;
+    if (order.is_paid && order.paid_at) {
+        paymentStatus = 'Paid';
+        paymentClass = 'text-success';
+    } else if (!order.is_paid && order.paid_at) {
+        paymentStatus = 'Was Paid';
+        paymentClass = 'text-danger';
+    } else {
+        paymentStatus = 'Not Paid';
+        paymentClass = 'text-danger';
+    }
+
     orderElement.innerHTML = `
         <div class="card order-card" data-status="${order.order_status}" data-bs-toggle="modal" data-bs-target="#orderModal" data-order-id="${order.id}">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="card-title">Order #${order.id}</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">Order #${order.id}</h5>
+                    <p class="card-text mb-0"><span class="badge bg-${getStatusColor(order.order_status)}">${order.order_status}</span></p>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="card-text mb-0">${order.user_role} ${order.user_id}</p>
                     ${order.is_refunded ? '<span class="badge bg-danger">Refunded</span>' : ''}
                 </div>
-                <p class="card-text">${order.user_role} ${order.user_id}</p>
-                <p class="card-text"><span class="badge bg-${getStatusColor(order.order_status)}">${order.order_status}</span></p>
-                <p class="card-text">Type: ${order.order_type}</p>
-                <p class="card-text">Payment: ${order.payment_type}</p>
-                <p class="card-text">Total: ${order.total_price} IDR</p>
-                <p class="card-text">Created: ${formatDate(order.created_at)}</p>
-                <p class="card-text ${order.is_paid ? 'text-success' : 'text-danger'}">
-                    ${order.paid_at ? `Paid: ${formatDate(order.paid_at)}` : 'Not Paid'}
-                </p>
+        
+                <table class="table table-borderless text-center mb-3">
+                    <tbody>
+                        <tr>
+                            <td>Order Type</td>
+                            <td>Payment Type</td>
+                            <td>Price</td>
+                        </tr>
+                        <tr>
+                            <td>${order.order_type}</td>
+                            <td>${order.payment_type}</td>
+                            <td>${order.total_price} IDR</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                ${order.public_note ? `
+                    <div class="public-note-truncate mb-3">
+                        ${order.public_note}
+                    </div>
+                ` : ''}
+
+                <div class="d-flex justify-content-between mt-2">
+                    <div class="order-dates">
+                        <div>Created</div>
+                        <div class="text-muted">${formatDate(order.created_at)}</div>
+                    </div>
+                    <div class="order-dates text-end">
+                        <div class="${paymentClass}"><b>${paymentStatus}</b></div>
+                        <div class="text-muted">${order.paid_at ? formatDate(order.paid_at) : ''}</div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -42,12 +83,7 @@ export function createOrderElement(order, colClass = 'col-12') {
 
 function getStatusColor(status) {
     const statusColors = {
-        'pending': 'secondary',
-        'cooking': 'primary',
-        'ready': 'info',
-        'finished': 'success',
-        'cancelled': 'danger',
-        'problem': 'danger'
+        'pending': 'secondary', 'cooking': 'primary', 'ready': 'info', 'finished': 'success', 'cancelled': 'danger', 'problem': 'danger'
     };
     return statusColors[status] || 'secondary';
 }
@@ -196,12 +232,9 @@ export function updateOrderStatus() {
     };
 
     fetch(`/api/update/order/${orderId}/`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify(data)
+        method: 'PUT', headers: {
+            'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')
+        }, body: JSON.stringify(data)
     })
         .then(response => {
             if (!response.ok) {
