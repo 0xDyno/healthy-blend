@@ -68,11 +68,15 @@ export function createOrderElement(order, colClass = 'col-12') {
                 <div class="d-flex justify-content-between mt-2">
                     <div class="order-dates">
                         <div>Created</div>
-                        <div class="text-muted">${formatDate(order.created_at)}</div>
+                        <div class="text-muted">
+                            ${getUserRole() === 'manager' ? formatTime(order.created_at) : formatDate(order.created_at)}
+                        </div>
                     </div>
                     <div class="order-dates text-end">
                         <div class="${paymentClass}"><b>${paymentStatus}</b></div>
-                        <div class="text-muted">${order.paid_at ? formatDate(order.paid_at) : ''}</div>
+                        <div class="text-muted">
+                            ${order.paid_at ? (getUserRole() === 'manager' ? formatTime(order.paid_at) : formatDate(order.paid_at)) : ''}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -89,8 +93,13 @@ function getStatusColor(status) {
 }
 
 export function formatDate(dateString) {
-    if (!dateString) return 'N/A';
+    if (!dateString) return '';
     return new Date(dateString).toLocaleString();
+}
+
+export function formatTime(dateString) {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleTimeString();
 }
 
 export function displayOrderDetails(orderId) {
@@ -277,12 +286,6 @@ export function getCookie(name) {
     return cookieValue;
 }
 
-export function refreshOrders() {
-    if (document.getElementById('splitView')) {
-        // for control
-        import('./orders_control.js').then(module => module.loadControlOrders());
-    } else {
-        // for all
-        import('./orders_all.js').then(module => module.loadAllOrders());
-    }
+export function getUserRole() {
+    return window.currentUserRole || null;
 }

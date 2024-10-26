@@ -17,8 +17,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    {% include 'manage/_navbar.html' %}
-
+    {% block navbar %}{% endblock %}
     <!-- Main Content -->
     <div class="content-wrapper">
         {% block content %}{% endblock %}

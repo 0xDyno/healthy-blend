@@ -135,6 +135,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 LOGIN_URL = "login"
 
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

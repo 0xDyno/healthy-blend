@@ -2,11 +2,59 @@
 
 {% extends 'manage/base.html' %}
 
-{% block title %}Ingredient Management - Restaurant System{% endblock %}
+{% load static %}
 
+{% block title %}Ingredients{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/manage/ingredients.css' %}">
+{% endblock %}
+
+{% block navbar %}
+    {% include "manage/_navbar.html" %}
+{% endblock %}
 {% block content %}
-<div class="container">
-    <h2>Ingredient Management</h2>
-    <p>This feature is coming soon!</p>
-</div>
+
+    {# seatch #}
+    <div class="search-panel">
+        <div class="search-container">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by name...">
+        </div>
+        <div class="type-filters">
+            <button class="type-filter-btn active" data-type="">All</button>
+            <button class="type-filter-btn" data-type="base">Base</button>
+            <button class="type-filter-btn" data-type="protein">Protein</button>
+            <button class="type-filter-btn" data-type="vegetable">Vegetable</button>
+            <button class="type-filter-btn" data-type="dairy">Dairy</button>
+            <button class="type-filter-btn" data-type="fruit">Fruit</button>
+            <button class="type-filter-btn" data-type="topping">Topping</button>
+            <button class="type-filter-btn" data-type="other">Other</button>
+        </div>
+    </div>
+
+    <div class="ingredients-container">
+        <div class="ingredients-grid" id="ingredientsGrid">
+            <!-- Ingredients -->
+        </div>
+    </div>
+
+    <!-- Modal window -->
+    <div class="modal fade" id="ingredientModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalName"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="modalImage" src="" alt="" class="modal-image">
+                    <button id="availabilityButton" class="availability-btn"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script type="module" src="{% static 'js/manage/ingredients.js' %}"></script>
 {% endblock %}

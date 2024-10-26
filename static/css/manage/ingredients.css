@@ -1,0 +1,270 @@
+/* ingredients.css */
+.ingredients-container {
+    margin: 0 auto;
+    padding: 10px;
+}
+
+.ingredients-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    padding: 15px;
+}
+
+.ingredient-card {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.ingredient-card:hover {
+    transform: translateY(-5px);
+}
+
+.ingredient-card.unavailable {
+    background: #f8b8b8;
+    opacity: 0.7;
+}
+
+.ingredient-image {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.ingredient-name {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.ingredient-type {
+    color: #666;
+    font-size: 0.85em;
+}
+
+.availability-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+}
+
+.available {
+    background: #28a745;
+    color: white;
+}
+
+.unavailable {
+    background: #dc3545;
+    color: #ffffff;
+}
+
+/* Modal styles */
+.modal-body img {
+    border-radius: 8px;
+    width: 100%;
+    height: auto;
+}
+
+#availabilityButton.btn-available {
+    background-color: #28a745;
+    color: white;
+}
+
+#availabilityButton.btn-unavailable {
+    background-color: #dc3545;
+    color: white;
+}
+
+.ingredient-card.unavailable .ingredient-name {
+    opacity: 1;
+    color: #000;
+}
+
+.ingredient-name {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: #000;
+}
+
+.modal-dialog {
+    max-width: 320px;
+    margin: 1.75rem auto;
+}
+
+.modal-body img {
+    border-radius: 6px;
+    max-height: 300px;
+    width: 100%;
+    object-fit: cover;
+}
+
+/* Добавить в ingredients.css */
+.search-panel {
+    margin-bottom: 20px;
+    padding: 0 15px;
+}
+
+.search-container {
+    max-width: 600px;
+    margin: 0 auto 15px;
+}
+
+#searchInput {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+}
+
+.type-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.type-filter-btn {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    background: white;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
+}
+
+.type-filter-btn:hover {
+    background: #f0f0f0;
+}
+
+.type-filter-btn.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Добавить в ingredients.css */
+.modal-dialog {
+    max-width: 400px;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 10px;
+}
+
+.modal-header {
+    border-bottom: none;
+    padding: 15px 15px 5px;
+}
+
+.modal-title {
+    font-size: 1em;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+}
+
+.modal-body {
+    padding: 10px 15px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.availability-btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.availability-btn.btn-available {
+    background-color: #28a745;
+    color: white;
+}
+
+.availability-btn.btn-unavailable {
+    background-color: #dc3545;
+    color: white;
+}
+
+.availability-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .ingredients-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+        padding: 10px;
+    }
+
+    .ingredient-image {
+        height: 120px;
+    }
+
+    .ingredient-name {
+        font-size: 1em;
+    }
+
+    .search-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .type-filters {
+        gap: 6px;
+    }
+
+    .type-filter-btn {
+        padding: 4px 10px;
+        font-size: 0.85em;
+    }
+
+    .modal-dialog {
+        max-width: 290px;
+    }
+
+    .modal-image {
+        height: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ingredients-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .ingredient-image {
+        height: 100px;
+    }
+}

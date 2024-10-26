@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="{% static 'css/manage/orders.css' %}">
 {% endblock %}
 
+{% block navbar %}
+    {% include "manage/_navbar.html" %}
+{% endblock %}
 {% block content %}
     <div class="content-wrapper">
         <div class="row h-100">
@@ -147,4 +150,5 @@
 
 {% block extra_js %}
     <script type="module" src="{% static 'js/manage/orders_control.js' %}"></script>
+    <script>window.currentUserRole = "{{ user.role }}";</script>
 {% endblock %}

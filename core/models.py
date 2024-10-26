@@ -76,7 +76,7 @@ class NutritionalValue(models.Model):
 
 
 class Ingredient(models.Model):
-    INGREDIENT_TYPES = (
+    INGREDIENT_TYPES = ( # if update - update kitchen & manage/ingredients
         ("base", "Base"),
         ("protein", "Protein"),
         ("vegetable", "Vegetable"),

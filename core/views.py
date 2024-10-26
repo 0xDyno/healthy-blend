@@ -37,7 +37,7 @@ def api_get_ingredient(request, pk=None):
 @api_view(["GET"])
 @login_required
 def api_get_all_ingredients(request):
-    ingredients = Ingredient.objects.filter()
+    ingredients = Ingredient.objects.all()
     data = [utils_api.get_ingredient_data(ingredient) for ingredient in ingredients]
     return Response(data)
 
@@ -103,7 +103,7 @@ def api_update_order(request, pk):
         return JsonResponse({}, status=status.HTTP_200_OK)
 
     if request.META.get("HTTP_REFERER").endswith("kitchen/"):
-        print(f"User ({request.user.rule}) tried to update Order from {request.META.get('HTTP_REFERER')}")
+        print(f"User ({request.user.role}, id {request.user.id}) tried to update Order from {request.META.get('HTTP_REFERER')}")
         return JsonResponse({"detail": "You can't do it from here"}, status=status.HTTP_403_FORBIDDEN)
 
     data = json.loads(request.body)
@@ -134,9 +134,8 @@ def api_update_ingredient(request, pk):
     except Ingredient.DoesNotExist:
         return JsonResponse({"detail": "Not Found"}, status=status.HTTP_404_NOT_FOUND)
 
-    if request.user.role == "kitchen":
-        ingredient.is_available = not ingredient.is_available
-        ingredient.save()
+    ingredient.is_available = not ingredient.is_available
+    ingredient.save()
 
     return JsonResponse({}, status=status.HTTP_200_OK)
 

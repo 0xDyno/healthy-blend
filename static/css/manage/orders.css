@@ -12,7 +12,7 @@
     transition: all 0.2s ease;
     background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    padding: 12px;
+    padding: 0px;
     position: relative;
 }
 
