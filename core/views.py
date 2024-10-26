@@ -176,7 +176,7 @@ def user_login(request):
                 return redirect("home")
     else:
         form = LoginForm()
-    return render(request, "base/login.html", {"form": form})
+    return render(request, "client/login.html", {"form": form})
 
 
 @login_required

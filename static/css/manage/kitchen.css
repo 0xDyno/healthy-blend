@@ -20,13 +20,6 @@
     display: block;
 }
 
-/* Orders Grid */
-.orders-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 20px;
-}
-
 /* Modal */
 .modal {
     display: none;
@@ -60,25 +53,35 @@
     color: var(--gray-color);
 }
 
+/* Orders Grid */
+.orders-grid {
+    column-count: auto;
+    column-width: 320px;
+    column-gap: 20px;
+}
+
 /* Order Styles */
 .order-card {
+    break-inside: avoid;
+    margin-bottom: 20px;
+    width: 100%;
+    display: inline-block;
     background: white;
     border-radius: 12px;
     padding: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     cursor: pointer;
-    transition: transform 0.2s;
-    display: flex;
-    flex-direction: column;
-    height: fit-content;
-    width: 100%;
+    box-shadow: 10px 10px 10px rgba(0,0,0,0),
+                0 0 0 0 rgba(52, 152, 219, 0);
+    transition: box-shadow 0.5s ease;
 }
 
 .order-card:hover {
-    transform: translateY(-5px);
+    box-shadow: 10px 10px 10px rgba(0,0,0,0.25),
+                0 0 0 0 rgba(52, 152, 219, 0.2)
 }
 
 .order-header {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -134,8 +137,10 @@
 .order-type-badge {
     padding: 4px 8px;
     border-radius: 4px;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: bold;
+    position: absolute;
+    top: 2px;  /* Регулируйте значение по необходимости */
     margin-left: 10px;
 }
 
