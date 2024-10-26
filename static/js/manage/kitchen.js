@@ -4,15 +4,8 @@ import { REFRESH_INTERVAL, getCookie } from "./utils.js";
 
 document.addEventListener('DOMContentLoaded', function () {
     // DOM Elements
-    const ordersBtn = document.getElementById('ordersBtn');
-    const ingredientsBtn = document.getElementById('ingredientsBtn');
     const ordersSection = document.getElementById('ordersSection');
-    const ingredientsSection = document.getElementById('ingredientsSection');
     const orderModal = document.getElementById('orderModal');
-
-    // Navigation Handling
-    ordersBtn.onclick = () => switchSection('orders');
-    ingredientsBtn.onclick = () => switchSection('ingredients');
 
     // Modal Close Handling
     window.onclick = (event) => {
@@ -166,24 +159,6 @@ document.addEventListener('DOMContentLoaded', function () {
             fetchOrders();
         } catch (error) {
             console.error('Error updating order:', error);
-        }
-    }
-
-    // Utility Functions
-    function switchSection(section) {
-        if (section === 'orders') {
-            ordersSection.classList.add('active');
-            ingredientsSection.classList.remove('active');
-            ordersBtn.classList.add('active');
-            ingredientsBtn.classList.remove('active');
-            fetchOrders();
-        } else {
-            ingredientsSection.classList.add('active');
-            ordersSection.classList.remove('active');
-            ingredientsBtn.classList.add('active');
-            ordersBtn.classList.remove('active');
-            // Вызываем событие для обновления ингредиентов
-            window.dispatchEvent(new Event('fetchIngredients'));
         }
     }
 

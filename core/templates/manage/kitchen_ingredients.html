@@ -1,28 +1,26 @@
 {# kitchen_ingredients.html #}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% load static %}
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kitchen Ingredients</title>
+{% extends 'manage/base.html' %}
+
+{% load static %}
+
+{% block title %}Kitchen Ingredients{% endblock %}
+
+{% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/manage/kitchen.css' %}">
     <link rel="stylesheet" href="{% static 'css/manage/ingredients.css' %}">
-</head>
-<body>
-    <nav class="top-nav">
-        <a href="{% url 'kitchen' %}"><button id="ordersBtn" class="nav-btn">Orders</button></a>
-        <button id="ingredientsBtn" class="nav-btn active">Ingredients</button>
-    </nav>
+    <link rel="stylesheet" href="{% static 'css/manage/_navbar.css' %}">
+{% endblock %}
 
-    <main>
-        <section id="ingredientsSection" class="section active">
-            {% include 'manage/_ingredients_content.html' %}
-        </section>
-    </main>
+{% block navbar %}
+    {% include "manage/_navbar_kitchen.html" %}
+{% endblock %}
 
+{% block content %}
+    {% include 'manage/_ingredients_content.html' %}
+{% endblock %}
+
+{% block extra_js %}
     <script type="module" src="{% static 'js/manage/ingredients.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

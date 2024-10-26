@@ -250,8 +250,8 @@ def ingredient_management(request):
 
 @login_required
 @utils.role_redirect(roles=["kitchen", "admin"], redirect_url="home", do_redirect=False)
-def kitchen(request):
-    return render(request, "manage/kitchen.html")
+def kitchen_orders(request):
+    return render(request, "manage/kitchen_orders.html")
 
 
 @login_required

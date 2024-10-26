@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
+
 from core.views import *
 
 urlpatterns = [
@@ -17,12 +18,12 @@ urlpatterns = [
     path("checkout/", checkout, name="checkout"),
     path("last-order/", last_order, name="last_order"),
 
-    path("manage/kitchen/", kitchen, name="kitchen"),
-    path("manage/kitchen/ingredients/", kitchen_ingredients, name="kitchen_ingredients"),
     path("manage/orders/control/", orders_control, name="orders_manage_control"),
     path("manage/orders/all/", orders_all, name="orders_manage_all"),
     path("manage/ingredients/", ingredient_management, name="ingredient_management"),
     path("manage/products/", product_management, name="product_management"),
+    path("kitchen/", kitchen_orders, name="kitchen"),
+    path("kitchen/ingredients/", kitchen_ingredients, name="kitchen_ingredients"),
 
     # API URLs
     path("api/get/products/", api_get_all_products),

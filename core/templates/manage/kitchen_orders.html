@@ -1,20 +1,21 @@
-{# kitchen.html #}
+{# kitchen_orders.html #}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% load static %}
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kitchen Orders</title>
+{% extends 'manage/base.html' %}
+
+{% load static %}
+
+{% block title %}Kitchen Orders{% endblock %}
+
+{% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/manage/kitchen.css' %}">
-</head>
-<body>
-    <nav class="top-nav">
-        <button id="ordersBtn" class="nav-btn active">Orders</button>
-        <a href="{% url 'kitchen_ingredients' %}"><button id="ingredientsBtn" class="nav-btn">Ingredients</button></a>
-    </nav>
+    <link rel="stylesheet" href="{% static 'css/manage/_navbar.css' %}">
+{% endblock %}
 
+{% block navbar %}
+    {% include "manage/_navbar_kitchen.html" %}
+{% endblock %}
+
+{% block content %}
     <main>
         <section id="ordersSection" class="section active">
             <div id="ordersList" class="orders-grid"></div>
@@ -29,8 +30,8 @@
             <button id="orderReadyBtn" class="ready-btn">Mark as Ready</button>
         </div>
     </div>
+{% endblock %}
 
+{% block extra_js %}
     <script type="module" src="{% static 'js/manage/kitchen.js' %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}
