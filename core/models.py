@@ -300,27 +300,27 @@ class Order(models.Model):
         super().clean()
 
         if self.order_status in [Order.COOKING, Order.READY, Order.FINISHED] and not self.is_paid:
-            raise ValidationError(f"The order is not paid. It should be paid before continue.")
+            raise ValidationError("The order is not paid. It should be paid before continuing.")
 
         if self.is_paid and not self.payment_id:
             if self.payment_type != "cash":  # TEMPORARY, until I know how works payment system
-                raise ValidationError(f"Please provide Payment ID for the order.")
+                raise ValidationError("Please provide the Payment ID for the order.")
 
         if self.is_refunded and not self.private_note:
-            raise ValidationError("Please add ID for Refund and describe what has happened. Thank you.")
+            raise ValidationError("Please add an ID for the refund and describe what happened. Thank you.")
 
         if self.order_status == Order.PROBLEM and not self.private_note:
-            raise ValidationError("Please add a few words to the private note about the problem. Thank you.")
+            raise ValidationError("Please add a brief note about the problem to the private notes. Thank you.")
 
         if self.payment_type == "cash" and self.order_type == "online":
-            raise ValidationError(f"It's not possible to pay with Cash for online orders.")
+            raise ValidationError(f"It’s not possible to pay with cash for online orders.")
 
         if not self.user_last_update:
-            raise ValidationError("Please specify the user who is making the update.")
+            raise ValidationError("Please specify the user making the update.")
 
         if self.is_paid and self.order_status == Order.PENDING:
-            raise ValidationError(f"If the order is paid, then it can't be Pending. "
-                                  f"Please change it to {Order.COOKING} or to {Order.PENDING}, if something went wrong.")
+            raise ValidationError("The order has been paid and cannot be marked as \"Pending\". "
+                                  "If something went wrong, please change the status to \"Problem\".")
 
     def save(self, *args, **kwargs):
         super().full_clean()

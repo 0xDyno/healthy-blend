@@ -60,19 +60,23 @@ function filterOrders() {
 
     fetch(`/api/get/orders/?${params.toString()}`)
         .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(err.details);
-                });
+            const data = response.json()
+
+            if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages);
             }
-            return response.json();
+
+            if (!response.ok) {
+                throw new Error();
+            }
+
+            return data.orders;
         })
         .then(data => {
             displayAllOrders(data);
         })
         .catch(error => {
             console.error('Error:', error);
-            alert(error.message);
         });
 }
 

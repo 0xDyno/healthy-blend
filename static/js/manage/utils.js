@@ -4,13 +4,19 @@ export const REFRESH_INTERVAL = 10000;
 
 export function fetchOrders(callback) {
     fetch('/api/get/orders/')
-        .then(response => response.json())
-        .then(data => {
-            callback(data);
+        .then(async response => {
+            const data = await response.json();
+
+            if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages);
+            }
+
+            if (data.orders) {
+                callback(data.orders);
+            }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error fetching orders');
         });
 }
 
@@ -104,8 +110,19 @@ export function formatTime(dateString) {
 
 export function displayOrderDetails(orderId) {
     fetch(`/api/get/order/${orderId}/`)
-        .then(response => response.json())
-        .then(order => {
+        .then(async response => {
+            const data = await response.json()
+
+            if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages)
+            }
+
+            if (!response.ok) {
+                throw new Error()
+            }
+
+            const order = data.order
+
             // Устанавливаем ID заказа в заголовке модального окна
             document.getElementById('modalOrderId').textContent = order.id;
             document.getElementById('modalTableId').textContent = order.user_role + " " + order.user_id;
@@ -202,7 +219,6 @@ export function displayOrderDetails(orderId) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert(error.message);
         });
 }
 
@@ -245,13 +261,19 @@ export function updateOrderStatus() {
             'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')
         }, body: JSON.stringify(data)
     })
-        .then(response => {
+        .then(async response => {
+            const data = await response.json()
+
+            if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages)
+            }
+
             if (!response.ok) {
                 return response.json().then(errorData => {
                     throw new Error(errorData.detail || 'Unknown error');
                 });
             }
-            return response.json();
+            return data;
         })
         .then(data => {
             // Закрываем модальное окно
@@ -267,7 +289,6 @@ export function updateOrderStatus() {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert(error.message);
         });
 }
 

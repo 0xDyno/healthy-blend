@@ -1,6 +1,6 @@
 // kitchen.js
 
-import { REFRESH_INTERVAL, getCookie } from "./utils.js";
+import {REFRESH_INTERVAL, getCookie} from "./utils.js";
 
 document.addEventListener('DOMContentLoaded', function () {
     // DOM Elements
@@ -125,8 +125,13 @@ document.addEventListener('DOMContentLoaded', function () {
     async function fetchOrders() {
         try {
             const response = await fetch('/api/get/orders/kitchen/');
-            const orders = await response.json();
-            renderOrders(orders);
+            const data = await response.json();
+
+            if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages);
+            }
+
+            renderOrders(data.orders);
         } catch (error) {
             console.error('Error fetching orders:', error);
         }
@@ -148,17 +153,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function markOrderReady(orderId) {
         try {
-            await fetch(`/api/update/order/${orderId}/`, {
+            const response = await fetch(`/api/update/order/${orderId}/`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
                 }
             });
-            orderModal.style.display = 'none';
-            fetchOrders();
+
+            const data = await response.json();
+
+            if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages);
+            }
+
+            if (response.ok) {
+                orderModal.style.display = 'none';
+                fetchOrders();
+            }
         } catch (error) {
             console.error('Error updating order:', error);
+            MessageManager.showToast("An error occurred while updating the order", "error");
         }
     }
 

@@ -4,7 +4,7 @@ import {getCookie} from "./utils.js";
 
 let allIngredients = [];
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadIngredients();
 
     document.getElementById('searchInput').addEventListener('input', filterIngredients);
@@ -23,7 +23,13 @@ async function loadIngredients() {
     try {
         const response = await fetch('/api/get/ingredients/');
         allIngredients = await response.json();
+
+        if (allIngredients.messages) {
+            MessageManager.handleAjaxMessages(data.messages);
+        }
+
         displayIngredients(allIngredients);
+
     } catch (error) {
         console.error('Error loading ingredients:', error);
     }
@@ -78,7 +84,7 @@ function showIngredientModal(ingredient) {
     const availabilityButton = document.getElementById('availabilityButton');
     availabilityButton.textContent = ingredient.is_available ?
         'Mark as Unavailable' : 'Mark as Available';
-    availabilityButton.className = `availability-btn ${ingredient.is_available ? 
+    availabilityButton.className = `availability-btn ${ingredient.is_available ?
         'btn-unavailable' : 'btn-available'}`;
 
     availabilityButton.onclick = () => updateIngredientAvailability(ingredient.id, !ingredient.is_available);
@@ -94,13 +100,21 @@ async function updateIngredientAvailability(id, newAvailability) {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
-            body: JSON.stringify({ available: newAvailability })
+            body: JSON.stringify({available: newAvailability})
         });
 
+        const data = await response.json()
+
+        if (data.messages) {
+            MessageManager.handleAjaxMessages(data.messages);
+        }
+
         if (response.ok) {
+            displayIngredients(allIngredients);
             loadIngredients();
             bootstrap.Modal.getInstance(document.getElementById('ingredientModal')).hide();
         }
+
         filterIngredients();
         bootstrap.Modal.getInstance(document.getElementById('ingredientModal')).hide();
     } catch (error) {

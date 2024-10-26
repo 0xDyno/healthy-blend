@@ -6,7 +6,7 @@
 
 {% block title %}Ingredients{% endblock %}
 
-{% block extra_css %}
+{% block css %}
     <link rel="stylesheet" href="{% static 'css/manage/ingredients.css' %}">
 {% endblock %}
 
@@ -18,6 +18,6 @@
     {% include "manage/_ingredients_content.html" %}
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
     <script type="module" src="{% static 'js/manage/ingredients.js' %}"></script>
 {% endblock %}

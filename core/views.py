@@ -54,8 +54,12 @@ def api_get_all_products(request):
 @login_required
 @utils.role_redirect(roles=["admin", "manager"], redirect_url="home", do_redirect=False)
 def api_get_order(request, pk):
-    order = utils_api.get_order_full(Order.objects.get(pk=pk))
-    return Response(order)
+    order = Order.objects.filter(pk=pk).first()
+    if order:
+        return JsonResponse({"order": utils_api.get_order_full(order)}, status=status.HTTP_200_OK)
+    return JsonResponse({"order": "", "messages": [
+        {"level": "error", "message": f"Order #{pk} not found"}
+    ]}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(["GET"])
@@ -63,7 +67,12 @@ def api_get_order(request, pk):
 @utils.role_redirect(roles=["table"], redirect_url="home", do_redirect=False)
 def api_get_order_table(request):
     order = Order.objects.filter(user=request.user).order_by("-created_at").first()
-    return Response([utils_api.get_order_for_table(order)])
+    order = utils_api.get_order_for_table(order)
+    if order:
+        return JsonResponse({"order": order}, status=status.HTTP_200_OK)
+    return JsonResponse({"order": None, "messages": [
+        {"level": "info", "message": "There are no recent orders."}
+    ]}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -71,7 +80,9 @@ def api_get_order_table(request):
 @utils.role_redirect(roles=["admin", "kitchen", "manager"], redirect_url="home", do_redirect=False)
 def api_get_orders_kitchen(request):
     orders = Order.objects.filter(order_status__in=["cooking"]).order_by("paid_at")
-    return Response(utils_api.get_orders_for_kitchen(orders))
+    if orders:
+        return Response({"orders": utils_api.get_orders_for_kitchen(orders)}, status=status.HTTP_200_OK)
+    return JsonResponse({"orders": [], "messages": [{"level": "info", "message": "No orders."}]}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -80,15 +91,23 @@ def api_get_orders_kitchen(request):
 def api_get_orders(request):
     if request.user.role == "admin":
         orders = Order.objects.all()
-    if request.user.role == "manager":
+    elif request.user.role == "manager":
         orders = Order.objects.filter(created_at__date=timezone.now().date())
+    else:
+        return JsonResponse({"messages": [
+            {"info": "error", "message": "You don't have access to this data."}
+        ]}, status.HTTP_403_FORBIDDEN)
+
+    if not orders.exists():
+        return JsonResponse({"orders": []}, status=status.HTTP_200_OK)
 
     try:
         orders = utils_api.filter_orders(request, orders)
-        return Response(utils_api.get_orders_general(orders))
+        return JsonResponse({"orders": utils_api.get_orders_general(orders)})
     except Exception as e:
-        msg = f"Error api/get/orders. Please make a photo and send to the admin. Info:\n{e.__str__()}"
-        return Response({"details": msg}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return JsonResponse({"orders": [], "messages": [
+            {"level": "error", "message": f"Error api/get/orders. Please make a photo and send to the admin. Info:\n{e.__str__()}"}
+        ]})
 
 
 @api_view(["PUT"])
@@ -100,11 +119,11 @@ def api_update_order(request, pk):
     if request.user.role == "kitchen":
         order.order_status = Order.READY
         order.save()
-        return JsonResponse({}, status=status.HTTP_200_OK)
+        return JsonResponse({"messages": [{"level": "success", "message": "Ready! Well done!"}]}, status=status.HTTP_200_OK)
 
     if request.META.get("HTTP_REFERER").endswith("kitchen/"):
-        print(f"User ({request.user.role}, id {request.user.id}) tried to update Order from {request.META.get('HTTP_REFERER')}")
-        return JsonResponse({"detail": "You can't do it from here"}, status=status.HTTP_403_FORBIDDEN)
+        msg = f"{request.user.role.capitalize()} can't update orders from kitchen."
+        return JsonResponse({"messages": [{"level": "warning", "message": msg}]}, status=status.HTTP_200_OK)
 
     data = json.loads(request.body)
 
@@ -119,10 +138,10 @@ def api_update_order(request, pk):
     try:
         order.clean()
     except ValidationError as e:
-        return JsonResponse({"detail": e.messages}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
     order.save()
 
-    return JsonResponse({'message': 'Order updated successfully'}, status=status.HTTP_200_OK)
+    return JsonResponse({"messages": [{"level": "success", "message": f"Order #{order.id} updated."}]}, status=status.HTTP_200_OK)
 
 
 @api_view(["PUT"])
@@ -132,12 +151,12 @@ def api_update_ingredient(request, pk):
     try:
         ingredient = Ingredient.objects.get(pk=pk)
     except Ingredient.DoesNotExist:
-        return JsonResponse({"detail": "Not Found"}, status=status.HTTP_404_NOT_FOUND)
+        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_200_OK)
 
     ingredient.is_available = not ingredient.is_available
     ingredient.save()
 
-    return JsonResponse({}, status=status.HTTP_200_OK)
+    return JsonResponse({"messages": [{"level": "success", "message": f"{ingredient.name} updated."}]}, status=status.HTTP_200_OK)
 
 
 # ------------------------ WEB views ------------------------------------------------------------------------------------------------

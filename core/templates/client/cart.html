@@ -1,13 +1,20 @@
 {# cart.html #}
 
 {% extends 'base/base.html' %}
+
 {% load static %}
 
-{% block title %}Cart - Restaurant System{% endblock %}
+{% block title %}
+    Cart - Restaurant System
+{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+{% endblock %}
 
 {% block content %}
     <div class="container">
-        {% include 'base/nutritions.html' %}
+        {% include 'base/_nutritions.html' %}
 
         <h2>Your Cart</h2>
         <div id="cartItems">
@@ -28,7 +35,6 @@
             </div>
         </div>
     </div>
-
 {% endblock %}
 
 {% block scripts %}

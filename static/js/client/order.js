@@ -9,12 +9,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function fetchOrderDetails() {
     fetch('/api/get/order/table/')
-        .then(response => response.json())
-        .then(data => {
-            if (data.length > 0) {
-                displayOrderDetails(data[0]);
-            } else {
-                console.error('No order data received');
+        .then(async response => {
+            const data = await response.json()
+
+            if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages)
+            }
+
+            if (data.order) {
+                displayOrderDetails(data.order);
             }
         })
         .catch(error => console.error('Error:', error));

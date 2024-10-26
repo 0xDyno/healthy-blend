@@ -1,5 +1,10 @@
 <div class="top-nav">
     <div class="nav-container">
+        {% if user.role == "admin" %}
+            <div class="left-side">
+                <a href="{% url 'orders_manage_control' %}" class="home-link">Orders Control</a>
+            </div>
+        {% endif %}
         <div class="center-links">
             <a href="{% url 'kitchen' %}">Orders</a>
             <a href="{% url 'kitchen_ingredients' %}">Ingredients</a>
