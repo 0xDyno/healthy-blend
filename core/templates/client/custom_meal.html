@@ -1,6 +1,6 @@
 {# custom_meal.html #}
 
-{% extends 'base/base.html' %}
+{% extends 'client/base.html' %}
 {% load static %}
 
 {% block title %}Create Custom Meal - Restaurant System{% endblock %}
@@ -9,7 +9,7 @@
     <div class="container">
         <h2>Create Custom Meal</h2>
 
-        {% include 'base/_nutritions.html' %}
+        {% include 'client/_nutritions.html' %}
 
         <!-- Selected ingredients list -->
         <div id="selectedIngredientsContainer">
