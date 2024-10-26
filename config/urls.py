@@ -18,6 +18,7 @@ urlpatterns = [
     path("last-order/", last_order, name="last_order"),
 
     path("manage/kitchen/", kitchen, name="kitchen"),
+    path("manage/kitchen/ingredients/", kitchen_ingredients, name="kitchen_ingredients"),
     path("manage/orders/control/", orders_control, name="orders_manage_control"),
     path("manage/orders/all/", orders_all, name="orders_manage_all"),
     path("manage/ingredients/", ingredient_management, name="ingredient_management"),

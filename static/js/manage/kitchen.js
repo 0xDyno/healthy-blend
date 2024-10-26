@@ -1,4 +1,5 @@
 // kitchen.js
+
 import { REFRESH_INTERVAL, getCookie } from "./utils.js";
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -8,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const ordersSection = document.getElementById('ordersSection');
     const ingredientsSection = document.getElementById('ingredientsSection');
     const orderModal = document.getElementById('orderModal');
-    const ingredientModal = document.getElementById('ingredientModal');
 
     // Navigation Handling
     ordersBtn.onclick = () => switchSection('orders');
@@ -16,18 +16,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Modal Close Handling
     window.onclick = (event) => {
-        if (event.target === orderModal || event.target === ingredientModal) {
+        if (event.target === orderModal) {
             orderModal.style.display = 'none';
-            ingredientModal.style.display = 'none';
         }
     };
 
-    document.querySelectorAll('.close').forEach(btn => {
-        btn.onclick = () => {
-            orderModal.style.display = 'none';
-            ingredientModal.style.display = 'none';
-        };
-    });
+    document.querySelector('.close').onclick = () => {
+        orderModal.style.display = 'none';
+    };
 
     // Render Functions
     function renderOrders(orders) {
@@ -85,40 +81,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function getTimeSincePayment(paidAt) {
-        const paid = new Date(paidAt);
-        const now = new Date();
-        const diffInMinutes = Math.floor((now - paid) / 1000 / 60);
-
-        if (diffInMinutes < 60) {
-            return `${diffInMinutes}m ago`;
-        } else {
-            const hours = Math.floor(diffInMinutes / 60);
-            const minutes = diffInMinutes % 60;
-            return `${hours}h ${minutes}m ago`;
-        }
-    }
-
-    function renderIngredients(ingredients) {
-        const ingredientsList = document.getElementById('ingredientsList');
-        ingredientsList.innerHTML = ingredients.map(ingredient => `
-            <div class="ingredient-card ${!ingredient.available ? 'unavailable' : ''}" 
-                 data-id="${ingredient.id}">
-                <img src="${ingredient.image}" alt="${ingredient.name}">
-                <h3>${ingredient.name}</h3>
-                <p>${ingredient.ingredient_type}</p>
-                <p class="status">${ingredient.available ? 'Available' : 'Unavailable'}</p>
-            </div>
-        `).join('');
-
-        ingredientsList.querySelectorAll('.ingredient-card').forEach(card => {
-            card.onclick = () => showIngredientDetails(
-                ingredients.find(i => i.id === parseInt(card.dataset.id))
-            );
-        });
-    }
-
-    // Modal Content Functions
     function showOrderDetails(order) {
         const orderTypeBadge = order.order_type !== 'offline' ?
             `<span class="order-type-badge order-type-${order.order_type}">${order.order_type.toUpperCase()}</span>` : '';
@@ -166,28 +128,6 @@ document.addEventListener('DOMContentLoaded', function () {
         orderModal.style.display = 'block';
     }
 
-    function showIngredientDetails(ingredient) {
-        document.getElementById('ingredientDetails').innerHTML = `
-        <div style="display: flex; gap: 20px;">
-            <div style="flex: 1;">
-                <h2>${ingredient.name}</h2>
-                <p>Type: ${ingredient.ingredient_type}</p>
-                <p>${ingredient.description}</p>
-            </div>
-            <div>
-                <img src="${ingredient.image}" alt="${ingredient.name}" 
-                     style="width: 200px; height: 200px; object-fit: cover; border-radius: 8px;">
-            </div>
-        </div>
-    `;
-
-        const statusBtn = document.getElementById('ingredientStatusBtn');
-        statusBtn.textContent = ingredient.available ? 'Mark as Unavailable' : 'Mark as Available';
-        statusBtn.style.backgroundColor = ingredient.available ? 'var(--danger-color)' : 'var(--success-color)';
-        statusBtn.onclick = () => updateIngredientStatus(ingredient.id);
-        ingredientModal.style.display = 'block';
-    }
-
     // API Functions
     async function fetchOrders() {
         try {
@@ -199,13 +139,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    async function fetchIngredients() {
-        try {
-            const response = await fetch('/api/get/ingredients/');
-            const ingredients = await response.json();
-            renderIngredients(ingredients);
-        } catch (error) {
-            console.error('Error fetching ingredients:', error);
+    function getTimeSincePayment(paidAt) {
+        const paid = new Date(paidAt);
+        const now = new Date();
+        const diffInMinutes = Math.floor((now - paid) / 1000 / 60);
+
+        if (diffInMinutes < 60) {
+            return `${diffInMinutes}m ago`;
+        } else {
+            const hours = Math.floor(diffInMinutes / 60);
+            const minutes = diffInMinutes % 60;
+            return `${hours}h ${minutes}m ago`;
         }
     }
 
@@ -225,22 +169,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    async function updateIngredientStatus(ingredientId) {
-        try {
-            await fetch(`/api/update/ingredient/${ingredientId}/`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            });
-            ingredientModal.style.display = 'none';
-            fetchIngredients();
-        } catch (error) {
-            console.error('Error updating ingredient:', error);
-        }
-    }
-
     // Utility Functions
     function switchSection(section) {
         if (section === 'orders') {
@@ -254,7 +182,8 @@ document.addEventListener('DOMContentLoaded', function () {
             ordersSection.classList.remove('active');
             ingredientsBtn.classList.add('active');
             ordersBtn.classList.remove('active');
-            fetchIngredients();
+            // Вызываем событие для обновления ингредиентов
+            window.dispatchEvent(new Event('fetchIngredients'));
         }
     }
 
@@ -265,8 +194,6 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(() => {
         if (ordersSection.classList.contains('active')) {
             fetchOrders();
-        } else {
-            fetchIngredients();
         }
     }, REFRESH_INTERVAL);
 });

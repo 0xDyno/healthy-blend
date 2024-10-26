@@ -6,24 +6,18 @@
     {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kitchen Dashboard</title>
+    <title>Kitchen Orders</title>
     <link rel="stylesheet" href="{% static 'css/manage/kitchen.css' %}">
 </head>
 <body>
     <nav class="top-nav">
         <button id="ordersBtn" class="nav-btn active">Orders</button>
-        <button id="ingredientsBtn" class="nav-btn">Ingredients</button>
+        <a href="{% url 'kitchen_ingredients' %}"><button id="ingredientsBtn" class="nav-btn">Ingredients</button></a>
     </nav>
 
     <main>
-        <!-- Orders Section -->
         <section id="ordersSection" class="section active">
             <div id="ordersList" class="orders-grid"></div>
-        </section>
-
-        <!-- Ingredients Section -->
-        <section id="ingredientsSection" class="section">
-            <div id="ingredientsList" class="ingredients-grid"></div>
         </section>
     </main>
 
@@ -36,15 +30,7 @@
         </div>
     </div>
 
-    <!-- Ingredient Details Modal -->
-    <div id="ingredientModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <div id="ingredientDetails"></div>
-            <button id="ingredientStatusBtn" class="status-btn">Mark as Unavailable</button>
-        </div>
-    </div>
-
     <script type="module" src="{% static 'js/manage/kitchen.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
