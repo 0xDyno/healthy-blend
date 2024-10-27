@@ -93,20 +93,18 @@ def api_get_orders(request):
     elif request.user.role == "manager":
         orders = Order.objects.filter(created_at__date=timezone.now().date())
     else:
-        return JsonResponse({"messages": [
-            {"info": "error", "message": "You don't have access to this data."}
-        ]}, status.HTTP_403_FORBIDDEN)
+        return JsonResponse({"messages": [{"info": "error", "message": "You don't have access to this data."}]}, status.HTTP_403_FORBIDDEN)
 
-    if not orders.exists():
-        return JsonResponse({"orders": []}, status=status.HTTP_200_OK)
+    if orders.exists():
+        try:
+            orders = utils_api.filter_orders(request, orders)
+        except Exception as e:
+            msg = f"Error api/get/orders w/ filtering. Please make a photo and send to the admin. Info:\n{e.__str__()}"
+            return JsonResponse({"orders": [], "messages": [{"level": "error", "message": msg}]})
 
-    try:
-        orders = utils_api.filter_orders(request, orders)
+    if orders:
         return JsonResponse({"orders": utils_api.get_orders_general(orders)})
-    except Exception as e:
-        return JsonResponse({"orders": [], "messages": [
-            {"level": "error", "message": f"Error api/get/orders. Please make a photo and send to the admin. Info:\n{e.__str__()}"}
-        ]})
+    return JsonResponse({"orders": [], "messages": [{"level": "success", "message": "No orders found."}]}, status=status.HTTP_200_OK)
 
 
 @api_view(["PUT"])

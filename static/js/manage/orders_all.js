@@ -59,21 +59,15 @@ function filterOrders() {
     });
 
     fetch(`/api/get/orders/?${params.toString()}`)
-        .then(response => {
-            const data = response.json()
-
+        .then(response => response.json())
+        .then(data => {
             if (data.messages) {
                 MessageManager.handleAjaxMessages(data.messages);
             }
 
-            if (!response.ok) {
-                throw new Error();
+            if (data.orders) {
+                displayAllOrders(data.orders);
             }
-
-            return data.orders;
-        })
-        .then(data => {
-            displayAllOrders(data);
         })
         .catch(error => {
             console.error('Error:', error);
