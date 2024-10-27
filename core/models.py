@@ -28,7 +28,6 @@ class User(AbstractUser):
 class NutritionalValue(models.Model):
     # Per 100 gram
 
-    # Основные нутриенты
     calories = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
     proteins = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
     fats = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
@@ -37,7 +36,6 @@ class NutritionalValue(models.Model):
     sugars = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
     fiber = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
 
-    # Витамины (значения по умолчанию 0)
     vitamin_a = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
     vitamin_c = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
     vitamin_d = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
@@ -50,7 +48,6 @@ class NutritionalValue(models.Model):
     folate = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
     vitamin_b12 = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
 
-    # Минералы и микроэлементы (значения по умолчанию 0)
     calcium = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
     iron = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
     magnesium = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
@@ -76,7 +73,7 @@ class NutritionalValue(models.Model):
 
 
 class Ingredient(models.Model):
-    INGREDIENT_TYPES = ( # if update - update kitchen & manage/ingredients
+    INGREDIENT_TYPES = (  # if update - update kitchen & manage/ingredients
         ("base", "Base"),
         ("protein", "Protein"),
         ("vegetable", "Vegetable"),

@@ -91,9 +91,7 @@ def api_get_orders(request):
     if request.user.role == "admin":
         orders = Order.objects.all()
     elif request.user.role == "manager":
-        # Only for temporary use. DELETE after
-        # orders = Order.objects.filter(created_at__date=timezone.now().date())
-        orders = Order.objects.all()
+        orders = Order.objects.filter(created_at__date=timezone.now().date())
     else:
         return JsonResponse({"messages": [
             {"info": "error", "message": "You don't have access to this data."}
@@ -269,8 +267,8 @@ def ingredient_management(request):
     return render(request, "manage/ingredients.html")
 
 
-@login_required     # DELETE manager after work
-@utils.role_redirect(roles=["kitchen", "admin", "manager"], redirect_url="home", do_redirect=False)
+@login_required
+@utils.role_redirect(roles=["kitchen", "admin"], redirect_url="home", do_redirect=False)
 def kitchen_orders(request):
     return render(request, "manage/kitchen_orders.html")
 

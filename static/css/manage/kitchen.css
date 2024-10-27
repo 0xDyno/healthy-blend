@@ -28,7 +28,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.7);
+    background-color: rgba(0, 0, 0, 0.7);
     z-index: 1000;
     overflow-y: auto;
 }
@@ -41,7 +41,7 @@
     width: 90%;
     max-width: 600px;
     border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .close {
@@ -70,21 +70,22 @@
     border-radius: 12px;
     padding: 15px;
     cursor: pointer;
-    box-shadow: 10px 10px 10px rgba(0,0,0,0),
-                0 0 0 0 rgba(52, 152, 219, 0);
+    box-shadow: 10px 10px 10px rgba(0, 0, 0, 0),
+    0 0 0 0 rgba(52, 152, 219, 0);
     transition: box-shadow 0.5s ease;
 }
 
 .order-card:hover {
-    box-shadow: 10px 10px 10px rgba(0,0,0,0.25),
-                0 0 0 0 rgba(52, 152, 219, 0.2)
+    box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.25),
+    0 0 0 0 rgba(52, 152, 219, 0.2)
 }
 
 .order-header {
-    position: relative;
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 10px;
+    width: 100%;
     padding-bottom: 10px;
     border-bottom: 2px solid #eee;
     margin-bottom: 10px;
@@ -139,10 +140,9 @@
     border-radius: 4px;
     font-size: 0.7rem;
     font-weight: bold;
-    position: absolute;
-    top: 2px;  /* Регулируйте значение по необходимости */
-    margin-left: 10px;
+    display: inline-block;
 }
+
 
 .order-type-takeaway {
     background-color: #f39c12;
@@ -268,4 +268,63 @@
 .modal .ingredient-weight {
     color: black;
     font-weight: inherit;
+}
+
+.modal .order-type-badge {
+    margin-left: 10px;
+    vertical-align: middle;
+    position: relative;
+}
+
+/* Adjust the header flex layout in modal */
+.modal .order-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.order-card .order-header {
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+}
+
+/* Стили для бейджей в модальном окне */
+.modal .order-header {
+    border-bottom: none;
+}
+
+.modal .order-header h4 {
+    font-size: 1.2rem;
+    color: var(--primary-color);
+}
+
+.order-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.order-header-right {
+    margin-left: auto;
+}
+
+.order-type-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.modal .order-header-left {
+    align-items: flex-start;  /* Выравнивание по верхнему краю */
+}
+
+.modal .order-number {
+    margin-right: -5px;  /* Небольшой отступ между номером и бейджем */
 }
