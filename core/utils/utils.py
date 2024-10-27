@@ -1,7 +1,7 @@
 # utils.py
 
 import json
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from functools import wraps
 
 from django.core.exceptions import ValidationError
@@ -174,21 +174,28 @@ def validate_nutritional_summary(nutritional_summary):
     # Get all fields
     model_fields = [field.name for field in NutritionalValue._meta.get_fields() if not field.auto_created]
 
-    # check we have all keys in nutritional_summary
-    for key, value in nutritional_summary.items():
-        if key not in model_fields:
-            raise ValidationError(f"Wrong format. Field '{key}' doesn't exist in nutritions.")
-
-        # Проверка, что значение является числом и больше 0
-        if not isinstance(value, (int, float, Decimal)):
-            raise ValidationError(f"Wrong format. Value for '{key}' should be a number")
-        if value < 0:
-            raise ValidationError(f"Wrong format. Value for '{key}' should be bigger than 0")
-
-    # check we have all fields we need
+    # Check if all required fields are present
     missing_fields = set(model_fields) - set(nutritional_summary.keys())
     if missing_fields:
-        raise ValidationError(f"Wrong format, not all fields provided for nutritions. Missing for: {', '.join(missing_fields)}")
+        raise ValidationError(f"Missing required nutritional values: {', '.join(missing_fields)}")
+
+    # Validate each provided value
+    for key, value in nutritional_summary.items():
+        # Check if field exists in model
+        if key not in model_fields:
+            raise ValidationError(f"Invalid field '{key}' in nutritional values")
+
+        # Check if value is a number
+        if not isinstance(value, (int, float, Decimal)):
+            raise ValidationError(f"Value for '{key}' must be a number")
+
+        # Check if value is non-negative
+        if value < 0:
+            raise ValidationError(f"Value for '{key}' must be non-negative")
+
+        # Check if value is within allowed range
+        if value > 100000:
+            raise ValidationError(f"Value for '{key}' exceeds maximum limit of 100,000 (current value: {value})")
 
 
 @transaction.atomic

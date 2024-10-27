@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.getElementById('orderDetails').innerHTML = `
         <div style="display: flex; align-items: center; margin-bottom: 15px;">
-            <h2>Order Details #${order.id}</h2>
+            <h4>Order #${order.id}</h4>
             ${orderTypeBadge}
         </div>
         ${notesSection}

@@ -14,191 +14,187 @@
     {% include "manage/_navbar.html" %}
 {% endblock %}
 {% block content %}
-    <div class="content-wrapper">
-        <div class="container">
-            <!-- Фильтры сверху -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <input type="text" id="searchInput" placeholder="Search by Order ID" class="form-control">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <select id="statusFilter" class="form-select">
-                                <option value="">Order Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="cooking">Cooking</option>
-                                <option value="ready">Ready</option>
-                                <option value="finished">Finished</option>
-                                <option value="cancelled">Cancelled</option>
-                                <option value="problem">Problem</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <select id="paymentTypeFilter" class="form-select">
-                                <option value="">Payment Type</option>
-                                <option value="cash">Cash</option>
-                                <option value="card">Card</option>
-                                <option value="qr">QR</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="isPaidFilter">
-                                <label class="form-check-label" for="isPaidFilter">Paid Orders</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <input type="text" id="tableIdFilter" placeholder="Search by User ID" class="form-control">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <select id="orderTypeFilter" class="form-select">
-                                <option value="">Order Type</option>
-                                <option value="offline">Offline</option>
-                                <option value="takeaway">Take Away</option>
-                                <option value="online">Online</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <input type="text" id="paymentIdFilter" placeholder="Search by Payment ID" class="form-control">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="isRefundedFilter">
-                                <label class="form-check-label" for="isRefundedFilter">Refunded Orders</label>
-                            </div>
-                        </div>
-
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3 mb-3"></div>
-                        <div class="col-md-3 mb-3">
-                            <select id="sortBy" class="form-select">
-                                <option value="">Newest First</option>
-                                <option value="created_at_asc">Older First</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <button id="clearFilters" class="btn btn-outline-secondary">
-                                Clear Filters
-                            </button>
-                        </div>
-                        <div class="col-md-3 mb-3"></div>
+    <!-- Фильтры сверху -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <input type="text" id="searchInput" placeholder="Search by Order ID" class="form-control">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">Order Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="cooking">Cooking</option>
+                        <option value="ready">Ready</option>
+                        <option value="finished">Finished</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="problem">Problem</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <select id="paymentTypeFilter" class="form-select">
+                        <option value="">Payment Type</option>
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="qr">QR</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="isPaidFilter">
+                        <label class="form-check-label" for="isPaidFilter">Paid Orders</label>
                     </div>
                 </div>
             </div>
-
-            <!-- Заказы -->
             <div class="row">
-                <div class="col-12">
-                    <div id="allOrders" class="row">
-                        <!-- All orders will be dynamically inserted here -->
+                <div class="col-md-3 mb-3">
+                    <input type="text" id="tableIdFilter" placeholder="Search by User ID" class="form-control">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <select id="orderTypeFilter" class="form-select">
+                        <option value="">Order Type</option>
+                        <option value="offline">Offline</option>
+                        <option value="takeaway">Take Away</option>
+                        <option value="online">Online</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <input type="text" id="paymentIdFilter" placeholder="Search by Payment ID" class="form-control">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="isRefundedFilter">
+                        <label class="form-check-label" for="isRefundedFilter">Refunded Orders</label>
                     </div>
                 </div>
+
+            </div>
+            <div class="row">
+                <div class="col-md-3 mb-3"></div>
+                <div class="col-md-3 mb-3">
+                    <select id="sortBy" class="form-select">
+                        <option value="">Newest First</option>
+                        <option value="created_at_asc">Older First</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <button id="clearFilters" class="btn btn-outline-secondary">
+                        Clear Filters
+                    </button>
+                </div>
+                <div class="col-md-3 mb-3"></div>
             </div>
         </div>
+    </div>
 
-        <!-- Order Details Modal (такой же как в orders_control.html) -->
-        <div class="modal fade" id="orderModal" tabindex="-1">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Order #<span id="modalOrderId"></span> - <span id="modalTableId"></span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Заказы -->
+    <div class="row">
+        <div class="col-12">
+            <div id="allOrders" class="row">
+                <!-- All orders will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Order Details Modal (такой же как в orders_control.html) -->
+    <div class="modal fade" id="orderModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Order #<span id="modalOrderId"></span> - <span id="modalTableId"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Order Status Buttons -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="text-center mb-3">Order Status</h5>
+                        <div class="status-buttons-container">
+                            <button type="button" class="btn btn-outline-secondary" data-status="pending">Pending</button>
+                            <button type="button" class="btn btn-outline-primary" data-status="ready">Ready</button>
+                            <button type="button" class="btn btn-outline-danger" data-status="cancelled">Cancelled</button>
+                            <button type="button" class="btn btn-outline-info" data-status="cooking">Cooking</button>
+                            <button type="button" class="btn btn-outline-success" data-status="finished">Finished</button>
+                            <button type="button" class="btn btn-outline-danger" data-status="problem">Problem</button>
+                        </div>
                     </div>
-                    <div class="modal-body">
-                        <!-- Order Status Buttons -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h5 class="text-center mb-3">Order Status</h5>
-                                <div class="status-buttons-container">
-                                    <button type="button" class="btn btn-outline-secondary" data-status="pending">Pending</button>
-                                    <button type="button" class="btn btn-outline-primary" data-status="ready">Ready</button>
-                                    <button type="button" class="btn btn-outline-danger" data-status="cancelled">Cancelled</button>
-                                    <button type="button" class="btn btn-outline-info" data-status="cooking">Cooking</button>
-                                    <button type="button" class="btn btn-outline-success" data-status="finished">Finished</button>
-                                    <button type="button" class="btn btn-outline-danger" data-status="problem">Problem</button>
-                                </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="row">
+                    <!-- Left Column - Control Buttons -->
+                    <div class="col-md-4">
+                        <!-- Order Type -->
+                        <div class="mb-3">
+                            <label class="form-label">Order Type</label>
+                            <div class="btn-group w-100">
+                                <button type="button" class="btn btn-outline-secondary" data-order-type="offline">Offline</button>
+                                <button type="button" class="btn btn-outline-secondary" data-order-type="takeaway">Take Away</button>
+                                <button type="button" class="btn btn-outline-secondary" data-order-type="online">Online</button>
                             </div>
                         </div>
 
-                        <!-- Main Content -->
-                        <div class="row">
-                            <!-- Left Column - Control Buttons -->
-                            <div class="col-md-4">
-                                <!-- Order Type -->
-                                <div class="mb-3">
-                                    <label class="form-label">Order Type</label>
-                                    <div class="btn-group w-100">
-                                        <button type="button" class="btn btn-outline-secondary" data-order-type="offline">Offline</button>
-                                        <button type="button" class="btn btn-outline-secondary" data-order-type="takeaway">Take Away</button>
-                                        <button type="button" class="btn btn-outline-secondary" data-order-type="online">Online</button>
-                                    </div>
-                                </div>
-
-                                <!-- Payment Type -->
-                                <div class="mb-3">
-                                    <label class="form-label">Payment Type</label>
-                                    <div class="btn-group w-100">
-                                        <button type="button" class="btn btn-outline-secondary" data-payment-type="cash">Cash</button>
-                                        <button type="button" class="btn btn-outline-secondary" data-payment-type="card">Card</button>
-                                        <button type="button" class="btn btn-outline-secondary" data-payment-type="qr">QR</button>
-                                    </div>
-                                </div>
-
-                                <!-- Checkboxes -->
-                                <div class="mb-3 d-flex justify-content-start gap-4">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="isPaid">
-                                        <label class="form-check-label" for="isPaid">Is Paid</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="isRefunded">
-                                        <label class="form-check-label" for="isRefunded">Is Refunded</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Right Column - Notes -->
-                            <div class="col-md-8">
-                                <!-- Payment ID -->
-                                <div class="mb-3">
-                                    <label for="paymentId" class="form-label">Payment ID</label>
-                                    <input type="text" class="form-control" id="paymentId">
-                                </div>
-
-                                <!-- Private Note -->
-                                <div class="mb-3">
-                                    <label for="privateNote" class="form-label">Private Note</label>
-                                    <textarea class="form-control" id="privateNote" rows="3"></textarea>
-                                </div>
+                        <!-- Payment Type -->
+                        <div class="mb-3">
+                            <label class="form-label">Payment Type</label>
+                            <div class="btn-group w-100">
+                                <button type="button" class="btn btn-outline-secondary" data-payment-type="cash">Cash</button>
+                                <button type="button" class="btn btn-outline-secondary" data-payment-type="card">Card</button>
+                                <button type="button" class="btn btn-outline-secondary" data-payment-type="qr">QR</button>
                             </div>
                         </div>
 
-                        <!-- Public Note Display -->
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <div class="public-note-display text-muted">
-                                    <small id="publicNoteDisplay"></small>
-                                </div>
+                        <!-- Checkboxes -->
+                        <div class="mb-3 d-flex justify-content-start gap-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="isPaid">
+                                <label class="form-check-label" for="isPaid">Is Paid</label>
                             </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="isRefunded">
+                                <label class="form-check-label" for="isRefunded">Is Refunded</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Notes -->
+                    <div class="col-md-8">
+                        <!-- Payment ID -->
+                        <div class="mb-3">
+                            <label for="paymentId" class="form-label">Payment ID</label>
+                            <input type="text" class="form-control" id="paymentId">
                         </div>
 
-                        <!-- Update Button -->
-                        <div class="row mt-2">
-                            <div class="col-12 text-center">
-                                <button type="button" class="btn btn-success" id="updateOrderBtn">Update Order</button>
-                            </div>
+                        <!-- Private Note -->
+                        <div class="mb-3">
+                            <label for="privateNote" class="form-label">Private Note</label>
+                            <textarea class="form-control" id="privateNote" rows="3"></textarea>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Order Details Table -->
-                        <div class="row mt-4">
-                            <div class="col-12" id="orderDetails">
-                                <!-- Order details table will be inserted here -->
-                            </div>
+                <!-- Public Note Display -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="public-note-display text-muted">
+                            <small id="publicNoteDisplay"></small>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Update Button -->
+                <div class="row mt-2">
+                    <div class="col-12 text-center">
+                        <button type="button" class="btn btn-success" id="updateOrderBtn">Update Order</button>
+                    </div>
+                </div>
+
+                <!-- Order Details Table -->
+                <div class="row mt-4">
+                    <div class="col-12" id="orderDetails">
+                        <!-- Order details table will be inserted here -->
                     </div>
                 </div>
             </div>

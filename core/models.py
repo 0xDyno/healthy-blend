@@ -29,13 +29,13 @@ class NutritionalValue(models.Model):
     # Per 100 gram
 
     # Основные нутриенты
-    calories = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    proteins = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    fats = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    saturated_fats = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    carbohydrates = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    sugars = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    fiber = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    calories = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    proteins = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    fats = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    saturated_fats = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    carbohydrates = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    sugars = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    fiber = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
 
     # Витамины (значения по умолчанию 0)
     vitamin_a = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
@@ -89,7 +89,7 @@ class Ingredient(models.Model):
     description = models.TextField()
     image = models.ImageField(upload_to="ingredients/")
     ingredient_type = models.CharField(max_length=10, choices=INGREDIENT_TYPES, default="other")
-    step = models.DecimalField(max_digits=2, decimal_places=1, default=1, validators=[MinValueValidator(0.05)])
+    step = models.DecimalField(max_digits=2, decimal_places=1, default=1, validators=[MinValueValidator(0.05), MaxValueValidator(5)])
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(500)])
     is_available = models.BooleanField(default=True)
@@ -388,3 +388,23 @@ def create_order_history(sender, instance, **kwargs):
         public_note=instance.public_note,
         private_note=instance.private_note,
     )
+
+
+class Settings(models.Model):
+    service = models.DecimalField(max_digits=3, decimal_places=2, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    tax = models.DecimalField(max_digits=3, decimal_places=2, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    minimum_order_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    working_hours = models.CharField(max_length=255, default="9:00-21:00")
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super(Settings, self).save(*args, **kwargs)
+
+
+class Promo(models.Model):
+    discount = models.DecimalField(max_digits=2, decimal_places=1, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    is_active = models.BooleanField()
+    active_from = models.DateTimeField()
+    active_until = models.DateTimeField()
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="creator")
+    used = models.IntegerField(default=0, validators=[MinValueValidator(0)])

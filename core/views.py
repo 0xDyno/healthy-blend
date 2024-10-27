@@ -10,7 +10,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -92,7 +91,9 @@ def api_get_orders(request):
     if request.user.role == "admin":
         orders = Order.objects.all()
     elif request.user.role == "manager":
-        orders = Order.objects.filter(created_at__date=timezone.now().date())
+        # Only for temporary use. DELETE after
+        # orders = Order.objects.filter(created_at__date=timezone.now().date())
+        orders = Order.objects.all()
     else:
         return JsonResponse({"messages": [
             {"info": "error", "message": "You don't have access to this data."}
@@ -230,7 +231,6 @@ def checkout(request):
         price_with_fee = round(data.get("total_price"))
 
         nutritional_value = NutritionalValue.objects.create(**data.get("nutritional_value"))
-        nutritional_value.save()
         order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=data["payment_type"],
                                      base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
 
@@ -238,9 +238,11 @@ def checkout(request):
         utils.process_custom_meal(custom_meals, order)
         order.save()
 
-        return JsonResponse({"success": True, "redirect_url": f"/last-order/"})
+        return JsonResponse({"messages": [
+            {"level": "success", "message": f"Order {order.id} has been created"}
+        ], "redirect_url": f"/last-order/"}, status=status.HTTP_200_OK)
     except ValidationError as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_200_OK)
 
 
 @login_required
@@ -267,8 +269,8 @@ def ingredient_management(request):
     return render(request, "manage/ingredients.html")
 
 
-@login_required
-@utils.role_redirect(roles=["kitchen", "admin"], redirect_url="home", do_redirect=False)
+@login_required     # DELETE manager after work
+@utils.role_redirect(roles=["kitchen", "admin", "manager"], redirect_url="home", do_redirect=False)
 def kitchen_orders(request):
     return render(request, "manage/kitchen_orders.html")
 
