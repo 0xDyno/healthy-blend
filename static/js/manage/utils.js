@@ -46,7 +46,7 @@ export function createOrderElement(order, colClass = 'col-12') {
                     <p class="card-text mb-0"><span class="badge bg-${getStatusColor(order.order_status)}">${order.order_status}</span></p>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <p class="card-text mb-0">${order.user_role} ${order.user_id}</p>
+                    <p class="card-text mb-0">${order.user_role} (${order.user_nickname})</p>
                     ${order.is_refunded ? '<span class="badge bg-danger">Refunded</span>' : ''}
                 </div>
         
@@ -125,7 +125,7 @@ export function displayOrderDetails(orderId) {
 
             // Устанавливаем ID заказа в заголовке модального окна
             document.getElementById('modalOrderId').textContent = order.id;
-            document.getElementById('modalTableId').textContent = order.user_role + " " + order.user_id;
+            document.getElementById('modalTableId').textContent = `${order.user_role} (${order.user_nickname})`;
 
             // Отображение публичной заметки
             const publicNoteDisplay = document.getElementById('publicNoteDisplay');
