@@ -10,7 +10,7 @@ from django.db import transaction
 from django.shortcuts import redirect
 from django.utils import timezone
 
-from core.models import Product, Ingredient, Order, ProductIngredient, OrderProduct, NutritionalValue, DaySettings
+from core.models import Product, Ingredient, Order, ProductIngredient, OrderProduct, NutritionalValue, DaySettings, Settings
 
 
 def role_redirect(roles, redirect_url, do_redirect=True):
@@ -41,6 +41,9 @@ def big_validator(data: json):
     raw_price_front = data.get("raw_price")
     total_price_front = data.get("total_price")
     payment_type = data.get("payment_type")
+
+    if not Settings.objects.get(pk=1).can_order:
+        raise ValidationError(message="Currently, ordering is not available. We apologize for the inconvenience.")
 
     validate_working_time()
     validate_nutritional_summary(data.get("nutritional_value"))
