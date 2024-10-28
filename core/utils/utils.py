@@ -75,8 +75,10 @@ def big_validator(data: json):
 
 
 def validate_working_time():
-    current_time = timezone.now()
+    current_time = timezone.localtime()
     current_day = current_time.weekday()
+    print(current_time)
+    print(current_day)
 
     day_settings = DaySettings.objects.get(day=current_day)
 
@@ -85,8 +87,10 @@ def validate_working_time():
 
     open_time = timezone.make_aware(datetime.combine(current_time.date(), day_settings.open_hours))
     close_time = timezone.make_aware(datetime.combine(current_time.date(), day_settings.close_hours))
+    print(open_time)
+    print(close_time)
 
-    if open_time < current_time < close_time:
+    if current_time < open_time or current_time > close_time:
         raise ValidationError(f"Orders are only available during working hours: from {day_settings.open_hours} to {day_settings.close_hours}.")
 
     if current_time >= close_time - timedelta(minutes=20):
@@ -185,7 +189,8 @@ def validate_ingredient_availability(ingredients: set):
 
 
 def validate_price(p1, p2, allowed_difference=0.5):
-    """ it doesn't matter divide difference to p1 or p2
+    """it doesn't matter divide difference to p1 or p2
+    :param allowed_difference: in %, default 0.5%
     :return: True if everything Okay. False if difference too big
     """
     difference = abs(float(p1) - float(p2))
@@ -295,8 +300,9 @@ def get_date_today():
 
 
 def get_price_with_tax(price):
-    price_service = price + (price * 0.01)
-    return round(price_service + (price_service * 0.07))
+    settings = Settings.objects.get(pk=1)
+    price_service = price + (price * settings.service)
+    return round(price_service + (price_service * settings.tax))
 
 
 def get_ingredient_type_choices():

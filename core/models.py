@@ -1,7 +1,5 @@
 # models.py
 
-from decimal import Decimal
-
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser
@@ -29,42 +27,42 @@ class User(AbstractUser):
 class NutritionalValue(models.Model):
     # Per 100 gram
 
-    calories = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    proteins = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    fats = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    saturated_fats = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    carbohydrates = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    sugars = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    fiber = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    calories = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    proteins = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    fats = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    saturated_fats = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    carbohydrates = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    sugars = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    fiber = models.FloatField(validators=[MinValueValidator(0)], default=0)
 
-    vitamin_a = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    vitamin_c = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    vitamin_d = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    vitamin_e = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    vitamin_k = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    thiamin = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    riboflavin = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    niacin = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    vitamin_b6 = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    folate = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    vitamin_b12 = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    vitamin_a = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    vitamin_c = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    vitamin_d = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    vitamin_e = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    vitamin_k = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    thiamin = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    riboflavin = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    niacin = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    vitamin_b6 = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    folate = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    vitamin_b12 = models.FloatField(validators=[MinValueValidator(0)], default=0)
 
-    calcium = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    iron = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    magnesium = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    phosphorus = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    potassium = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    sodium = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    zinc = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    copper = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    manganese = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
-    selenium = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)], default=0)
+    calcium = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    iron = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    magnesium = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    phosphorus = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    potassium = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    sodium = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    zinc = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    copper = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    manganese = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    selenium = models.FloatField(validators=[MinValueValidator(0)], default=0)
 
     def to_dict(self, exclude_fields=None):
         if exclude_fields is None:
             exclude_fields = ["id"]
         return {
-            field.name: float(getattr(self, field.name)) if isinstance(getattr(self, field.name), Decimal) else getattr(self, field.name)
+            field.name: getattr(self, field.name)
             for field in self._meta.fields
             if field.name not in exclude_fields
         }
@@ -87,13 +85,13 @@ class Ingredient(models.Model):
     description = models.TextField()
     image = models.ImageField(upload_to="ingredients/")
     ingredient_type = models.CharField(max_length=10, choices=INGREDIENT_TYPES, default="other")
-    step = models.DecimalField(max_digits=2, decimal_places=1, default=1, validators=[MinValueValidator(0.05), MaxValueValidator(5)])
+    step = models.FloatField(default=1, validators=[MinValueValidator(0.05), MaxValueValidator(5)])
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(500)])
     is_available = models.BooleanField(default=True)
 
     price_per_gram = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(999)])
-    price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=3.00, validators=[MinValueValidator(0)])
+    price_multiplier = models.FloatField(default=3.00, validators=[MinValueValidator(0)])
     custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
 
     # for 100g
@@ -138,7 +136,7 @@ class Product(models.Model):
     is_available = models.BooleanField(default=False)  # for Menu if there's no Ingredients
 
     price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
-    price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=3.00, validators=[MinValueValidator(0)])
+    price_multiplier = models.FloatField(default=3.0, validators=[MinValueValidator(0)])
     custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
     weight = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
 
@@ -172,18 +170,18 @@ class Product(models.Model):
         product_ingredients = self.productingredient_set.select_related('ingredient__nutritional_value').all()
 
         if not product_ingredients.exists():
-            return nutritional_value, Decimal('0')
+            return nutritional_value, 0
 
-        total_weight = Decimal(product_ingredients.aggregate(total=Sum("weight_grams"))["total"] or 0)
+        total_weight = product_ingredients.aggregate(total=Sum("weight_grams"))["total"] or 0
 
         for product_ingredient in product_ingredients:
             ingredient = product_ingredient.ingredient
-            weight_ratio = Decimal(product_ingredient.weight_grams) / Decimal("100")
+            weight_ratio = product_ingredient.weight_grams / 100
 
             for field in NutritionalValue._meta.fields:
                 if field.name != "id":
-                    current_value = getattr(nutritional_value, field.name) or Decimal("0")
-                    ingredient_value = getattr(ingredient.nutritional_value, field.name) or Decimal("0")
+                    current_value = getattr(nutritional_value, field.name) or 0
+                    ingredient_value = getattr(ingredient.nutritional_value, field.name) or 0
                     new_value = current_value + (ingredient_value * weight_ratio)
                     setattr(nutritional_value, field.name, round(new_value, 2))
 
@@ -213,7 +211,7 @@ class Product(models.Model):
 class ProductIngredient(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     ingredient = models.ForeignKey("Ingredient", on_delete=models.PROTECT)
-    weight_grams = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)])
+    weight_grams = models.FloatField(validators=[MinValueValidator(0)])
 
     def clean(self):
         super().clean()
@@ -408,8 +406,8 @@ def save_order_id_before_delete(sender, instance, **kwargs):
 
 
 class Settings(models.Model):
-    service = models.DecimalField(max_digits=3, decimal_places=2, validators=[MinValueValidator(0), MaxValueValidator(1)])
-    tax = models.DecimalField(max_digits=3, decimal_places=2, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    service = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
+    tax = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
     minimum_order_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     can_order = models.BooleanField(default=True)
 
@@ -439,7 +437,7 @@ class DaySettings(models.Model):
 
 
 class Promo(models.Model):
-    discount = models.DecimalField(max_digits=2, decimal_places=1, validators=[MinValueValidator(0), MaxValueValidator(1)])
+    discount = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
     is_active = models.BooleanField()
     active_from = models.DateTimeField()
     active_until = models.DateTimeField()

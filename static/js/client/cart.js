@@ -185,11 +185,14 @@ function handleCheckout() {
     })
         .then(response => response.json())
         .then(data => {
+
+            if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages)
+            }
+
             if (data.success) {
                 storage.clearCart();
                 window.location.href = data.redirect_url;
-            } else {
-                alert(data.error);
             }
         })
         .catch(error => console.error('Error:', error));
