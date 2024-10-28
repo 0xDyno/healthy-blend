@@ -35,6 +35,7 @@ urlpatterns = [
     path("api/get/orders/kitchen/", api_get_orders_kitchen),
     path("api/update/order/<int:pk>/", api_update_order),
     path("api/update/ingredient/<int:pk>/", api_update_ingredient),
+    path("api/check/promo/<str:promo_code>/", api_check_promo),
 
 ]
 

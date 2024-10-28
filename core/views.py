@@ -5,6 +5,7 @@ import logging
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
@@ -14,7 +15,7 @@ from django.views.decorators.http import require_POST
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Ingredient, Product, Order, NutritionalValue
+from .models import Ingredient, Product, Order, NutritionalValue, Promo, PromoUsage
 from .forms import LoginForm
 from core.utils import utils_api
 from core.utils import utils
@@ -159,6 +160,17 @@ def api_update_ingredient(request, pk):
     return JsonResponse({"messages": [{"level": "success", "message": f"{ingredient.name} updated."}]}, status=status.HTTP_200_OK)
 
 
+@api_view(["GET"])
+@login_required
+def api_check_promo(request, promo_code):
+    # it's better to make a protection here... limit 20 promo per hour
+    if utils.check_promo(promo_code):
+        return JsonResponse({"messages": [{"level": "success", "message": "Good to go! The promo code is active."}],
+                             "is_active": True}, status=status.HTTP_200_OK)
+    return JsonResponse({"messages": [{"level": "error", "message": "It appears the promo code entered is not valid.",
+                                       "is_active": False}]}, status=status.HTTP_404_NOT_FOUND)
+
+
 # ------------------------ WEB views ------------------------------------------------------------------------------------------------
 
 def user_login(request):
@@ -217,24 +229,29 @@ def last_order(request):
 
 @login_required
 @require_POST
+@transaction.atomic
 @utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
 def checkout(request):
     try:
         data = json.loads(request.body)
+        utils.big_validator(data)
+
         official_meals = data.get("official_meals", [])
         custom_meals = data.get("custom_meals", [])
-
-        utils.big_validator(data)
         price_no_fee = round(data.get("raw_price"))
         price_with_fee = round(data.get("total_price"))
+        promo_code = data.get("promo_code")
 
         nutritional_value = NutritionalValue.objects.create(**data.get("nutritional_value"))
-        order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=data["payment_type"],
-                                     base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
+        order = Order(user=request.user, user_last_update=request.user, payment_type=data["payment_type"],
+                      base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
 
         utils.process_official_meal(official_meals, order)
         utils.process_custom_meal(custom_meals, order)
+
         order.save()
+        promo = utils.check_promo(promo_code)
+        PromoUsage.objects.create(promo=promo, user=request.user, order=order, discounted=round(price_no_fee * promo.discount))
 
         return JsonResponse({"messages": [
             {"level": "success", "message": f"Order {order.id} has been created"}

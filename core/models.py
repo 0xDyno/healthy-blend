@@ -409,6 +409,7 @@ class Settings(models.Model):
     service = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
     tax = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
     minimum_order_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    minimum_blend_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     can_order = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
@@ -437,9 +438,53 @@ class DaySettings(models.Model):
 
 
 class Promo(models.Model):
-    discount = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
-    is_active = models.BooleanField()
+    discount = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(0.5)])
+    promo_code = models.CharField(max_length=20, unique=True)
     active_from = models.DateTimeField()
     active_until = models.DateTimeField()
+    usage_limit = models.IntegerField(validators=[MinValueValidator(0)])
+    used_count = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="creator")
-    used = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+
+    def clean(self):
+        super().clean()
+        if self.used_count > self.usage_limit:
+            raise ValidationError("The used count cannot exceed the usage limit.")
+
+        if self.active_until <= self.active_from:
+            raise ValidationError("The end date cannot be earlier than the start date.")
+
+        if timezone.now() > self.active_until:
+            raise ValidationError("The promo has already expired. Please set a future end date.")
+
+        if not (0 <= self.discount <= 1):
+            raise ValidationError("Discount must be a value between 0 and 1.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+
+    def is_available(self):
+        now = timezone.now()
+        return self.active_from <= now <= self.active_until and self.used_count < self.usage_limit
+
+    @staticmethod
+    def get_active_promos():
+        now = timezone.now()
+        return Promo.objects.filter(active_from__lte=now, active_until__gte=now)
+
+
+class PromoUsage(models.Model):
+    promo = models.ForeignKey(Promo, on_delete=models.CASCADE, null=True, related_name="used_promo")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="used_user")
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, related_name="user_for_order")
+    discounted = models.IntegerField(validators=[MinValueValidator(0)])
+    used_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        if not self.promo.is_available():
+            raise ValidationError("This promo code is no longer available.")
+
+        self.promo.used_count = self.promo.used_count + 1
+        self.promo.save(update_fields=["used_count"])
+        super().save(*args, **kwargs)

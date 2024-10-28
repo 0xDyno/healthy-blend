@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
-from .models import User, NutritionalValue, Ingredient, Product, ProductIngredient, Order, OrderProduct, OrderHistory, Settings, DaySettings
+from .models import User, NutritionalValue, Ingredient, Product, ProductIngredient, Order, OrderProduct, OrderHistory, Settings, \
+    DaySettings, Promo, PromoUsage
 
 
 class CustomUserAdmin(UserAdmin):
@@ -68,6 +69,16 @@ class DaySettingsAdmin(admin.ModelAdmin):
     list_display = ("day", "is_open", "open_hours", "close_hours")
 
 
+class PromoAdmin(admin.ModelAdmin):
+    list_display = ("id", "promo_code", "discount", "usage_limit", "used_count", "active_from", "active_until", "creator")
+    list_filter = ("creator",)
+    search_fields = ["id", "promo_code", "creator"]
+
+
+class PromoUsageAdmin(admin.ModelAdmin):
+    list_display = ("id", "promo", "user", "used_at")
+
+
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(NutritionalValue, NutritionalValueAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
@@ -77,3 +88,5 @@ admin.site.register(OrderHistory, HistoryAdmin)
 admin.site.register(OrderProduct, OrderProductAdmin)
 admin.site.register(Settings, SettingsAdmin)
 admin.site.register(DaySettings, DaySettingsAdmin)
+admin.site.register(Promo, PromoAdmin)
+admin.site.register(PromoUsage, PromoUsageAdmin)
