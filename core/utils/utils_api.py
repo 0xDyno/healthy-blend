@@ -1,6 +1,9 @@
+from datetime import timedelta, datetime
+
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from core.models import Ingredient, Order
+from core.models import Ingredient, Order, DaySettings
 
 
 def get_all_products(products: list):
@@ -186,6 +189,69 @@ def get_order_for_kitchen(order: Order):
 
 def get_orders_for_kitchen(orders: list):
     return [get_order_for_kitchen(order) for order in orders]
+
+
+def can_edit_order(order):
+    current_time = timezone.now()
+    current_day = current_time.weekday()
+
+    # 1. Check Now - working day & working hours
+    today_settings = DaySettings.objects.get(day=current_day)
+
+    if not today_settings.is_open:
+        return False
+
+    today_open_time = timezone.make_aware(datetime.combine(current_time.date(), today_settings.open_hours))
+    today_close_time = timezone.make_aware(datetime.combine(current_time.date(), today_settings.close_hours))
+
+    if not today_open_time <= current_time <= today_close_time:
+        return False
+
+    # 2. Check Order time
+    if order.created_at.date() != current_time.date():
+        return False
+
+    return False
+
+
+def can_edit_order_second_option(order):
+    """
+    Currently. Returns True If:
+    - Today is working Day and Time
+    - Order was created in the last 2 days
+    :param order:
+    :param user:
+    :return:
+    """
+    # Get today time
+    current_time = timezone.now()
+
+    # Get Day when the Order was created
+    order_day_settings = DaySettings.objects.get(day=order.created_at.weekday())
+
+    # If it's - working day -> go next
+    if order_day_settings.is_open:
+        # Get working open TIME for that day
+        order_day_open_time = timezone.make_aware(datetime.combine(order.created_at.date(), order_day_settings.open_hours))
+        # Get working close TIME for that day
+        order_day_close_time = timezone.make_aware(datetime.combine(order.created_at.date(), order_day_settings.close_hours))
+
+        # If current time (when they want to edit) in (open - HERE - close) -> OKay
+        if order_day_open_time <= current_time <= order_day_close_time:
+            return True
+
+    # Same check for next day. If current time in time_range for next day (from the order creation) -Ok
+    next_day_settings = DaySettings.objects.get(day=(order.created_at.weekday() + 1) % 7)
+
+    if next_day_settings.is_open:
+        next_day_open_time = timezone.make_aware(
+            datetime.combine((order.created_at + timedelta(days=1)).date(), next_day_settings.open_hours))
+        next_day_close_time = timezone.make_aware(
+            datetime.combine((order.created_at + timedelta(days=1)).date(), next_day_settings.close_hours))
+
+        return next_day_open_time <= current_time <= next_day_close_time
+
+    return False
 
 
 def filter_orders(request, orders):

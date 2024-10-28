@@ -112,6 +112,10 @@ def api_get_orders_kitchen(request):
 def api_update_order(request, pk):
     order = Order.objects.get(pk=pk)
 
+    if not utils_api.can_edit_order(order) and not (request.user.role == "owner" and request.user.is_superuser):
+        msg = "This order can no longer be edited as it was placed over a day ago."
+        return JsonResponse({"messages": [{"level": "warning", "message": msg}]}, status=status.HTTP_400_BAD_REQUEST)
+
     if request.user.role == "kitchen":
         order.order_status = Order.READY
         order.save()

@@ -411,11 +411,31 @@ class Settings(models.Model):
     service = models.DecimalField(max_digits=3, decimal_places=2, validators=[MinValueValidator(0), MaxValueValidator(1)])
     tax = models.DecimalField(max_digits=3, decimal_places=2, validators=[MinValueValidator(0), MaxValueValidator(1)])
     minimum_order_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    working_hours = models.CharField(max_length=255, default="9:00-21:00")
+    can_order = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         self.pk = 1
         super(Settings, self).save(*args, **kwargs)
+
+
+class DaySettings(models.Model):
+    DAY_CHOICES = [
+        (0, 'Monday'),
+        (1, 'Tuesday'),
+        (2, 'Wednesday'),
+        (3, 'Thursday'),
+        (4, 'Friday'),
+        (5, 'Saturday'),
+        (6, 'Sunday')
+    ]
+
+    day = models.IntegerField(choices=DAY_CHOICES, unique=True)
+    is_open = models.BooleanField(default=True)
+    open_hours = models.TimeField(null=True, blank=True)
+    close_hours = models.TimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.get_day_display()}: {'Open' if self.is_open else 'Closed'}"
 
 
 class Promo(models.Model):
