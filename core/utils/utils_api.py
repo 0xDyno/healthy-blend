@@ -118,7 +118,7 @@ def get_order_full(order):
             ingredient = product_ingredient.ingredient
             ingredient_data = {
                 "name": ingredient.name,
-                "weight_grams": float(product_ingredient.weight_grams),
+                "weight_grams": product_ingredient.weight_grams,
             }
             product_data["ingredients"].append(ingredient_data)
 
@@ -178,7 +178,7 @@ def get_order_for_kitchen(order: Order):
             ingredient_data = {
                 "id": ingredient.id,
                 "name": ingredient.name,
-                "weight_grams": float(product_ingredient.weight_grams),
+                "weight_grams": product_ingredient.weight_grams,
                 "ingredient_type": ingredient.ingredient_type,
             }
             product_data["ingredients"].append(ingredient_data)

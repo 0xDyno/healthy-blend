@@ -183,16 +183,21 @@ function handleCheckout() {
         },
         body: JSON.stringify(cartData),
     })
-        .then(response => response.json())
-        .then(data => {
+        .then(async response => {
+            const data = await response.json()
 
             if (data.messages) {
                 MessageManager.handleAjaxMessages(data.messages)
             }
 
-            if (data.success) {
-                storage.clearCart();
-                window.location.href = data.redirect_url;
+            if (response.ok) {
+
+                setTimeout(() => {
+                    storage.clearCart();
+                    updateCartControls()
+                    window.location.href = data.redirect_url;
+                }, 2000);
+
             }
         })
         .catch(error => console.error('Error:', error));

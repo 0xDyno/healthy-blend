@@ -2,7 +2,6 @@
 
 import json
 from datetime import datetime, timedelta
-from decimal import Decimal
 from functools import wraps
 
 from django.core.exceptions import ValidationError
@@ -67,7 +66,7 @@ def big_validator(data: json):
     price_for_official_meal = validation_result_official.get("total_price")
     price_for_custom_meal = validation_result_custom.get("total_price")
 
-    raw_price_back = float(price_for_official_meal + price_for_custom_meal)
+    raw_price_back = price_for_official_meal + price_for_custom_meal
     total_price_back = get_price_with_tax(raw_price_back)
 
     if not validate_price(raw_price_back, raw_price_front) or not validate_price(total_price_back, total_price_front):
@@ -193,8 +192,8 @@ def validate_price(p1, p2, allowed_difference=0.5):
     :param allowed_difference: in %, default 0.5%
     :return: True if everything Okay. False if difference too big
     """
-    difference = abs(float(p1) - float(p2))
-    percentage_difference = (difference / float(p1)) * 100
+    difference = abs(p1 - p2)
+    percentage_difference = (difference / p1) * 100
     return percentage_difference < allowed_difference
 
 
@@ -216,7 +215,7 @@ def validate_nutritional_summary(nutritional_summary):
             raise ValidationError(f"Invalid field '{key}' in nutritional values")
 
         # Check if value is a number
-        if not isinstance(value, (int, float, Decimal)):
+        if not isinstance(value, (int, float)):
             raise ValidationError(f"Value for '{key}' must be a number")
 
         # Check if value is non-negative
