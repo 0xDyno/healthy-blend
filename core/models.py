@@ -7,7 +7,7 @@ from django.db import models, transaction
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator, MaxLengthValidator
 from django.db.models import Sum, F
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -345,7 +345,9 @@ class OrderProduct(models.Model):
 
 
 class OrderHistory(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="history")
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, related_name="history")
+    order_deleted_id = models.IntegerField(null=True, blank=True)
+
     order_status = models.CharField(max_length=20, choices=Order.STATUS_CHOICES)
     order_type = models.CharField(max_length=20, choices=Order.ORDER_TYPES)
     payment_type = models.CharField(max_length=20, choices=Order.PAYMENT_TYPES)
@@ -362,8 +364,12 @@ class OrderHistory(models.Model):
     private_note = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def is_deleted(self):
+        return bool(self.order_deleted_id)
+
     def __str__(self):
-        return f"OrderHistory for Order {self.order.id} at {self.created_at}"
+        order = f"Order #{self.order.id}" if self.order else f"deleted Order #{self.order_deleted_id}"
+        return f"OrderHistory for {order}."
 
 
 # Creates signal to create OrderHistory when Order saves
@@ -386,6 +392,14 @@ def create_order_history(sender, instance, **kwargs):
         public_note=instance.public_note,
         private_note=instance.private_note,
     )
+
+
+@receiver(pre_delete, sender=Order)
+def save_order_id_before_delete(sender, instance, **kwargs):
+    with transaction.atomic():
+        for history in instance.history.all():
+            history.order_deleted_id = instance.id
+            history.save()
 
 
 class Settings(models.Model):

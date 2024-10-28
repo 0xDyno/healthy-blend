@@ -78,12 +78,14 @@
                         <option value="created_at_asc">Older First</option>
                     </select>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <button id="clearFilters" class="btn btn-outline-secondary">
-                        Clear Filters
-                    </button>
-                </div>
-                <div class="col-md-3 mb-3"></div>
+
+                {% if user.role == "owner" or user.role == "admin" %}
+                    <div class="col-md-3 mb-3"><input type="date" id="filterDate" class="" value="" /></div>
+                    <div class="col-md-3 mb-3"><button id="clearFilters" class="btn btn-outline-secondary">Clear Filters</button></div>
+                {% else %}
+                    <div class="col-md-3 mb-3"><button id="clearFilters" class="btn btn-outline-secondary">Clear Filters</button></div>
+                    <div class="col-md-3 mb-3"></div>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -63,29 +63,6 @@ def api_get_order(request, pk):
 
 @api_view(["GET"])
 @login_required
-@utils.role_redirect(roles=["table"], redirect_url="home", do_redirect=False)
-def api_get_order_table(request):
-    order = Order.objects.filter(user=request.user).order_by("-created_at").first()
-    order = utils_api.get_order_for_table(order)
-    if order:
-        return JsonResponse({"order": order}, status=status.HTTP_200_OK)
-    return JsonResponse({"order": None, "messages": [
-        {"level": "info", "message": "There are no recent orders."}
-    ]}, status=status.HTTP_200_OK)
-
-
-@api_view(["GET"])
-@login_required
-@utils.role_redirect(roles=["owner", "kitchen", "manager"], redirect_url="home", do_redirect=False)
-def api_get_orders_kitchen(request):
-    orders = Order.objects.filter(order_status__in=["cooking"]).order_by("paid_at")
-    if orders:
-        return Response({"orders": utils_api.get_orders_for_kitchen(orders)}, status=status.HTTP_200_OK)
-    return JsonResponse({"orders": [], "messages": [{"level": "info", "message": "No orders."}]}, status=status.HTTP_200_OK)
-
-
-@api_view(["GET"])
-@login_required
 @utils.role_redirect(roles=["owner", "manager"], redirect_url="home", do_redirect=False)
 def api_get_orders(request):
     if request.user.role == "owner":
@@ -105,6 +82,29 @@ def api_get_orders(request):
     if orders:
         return JsonResponse({"orders": utils_api.get_orders_general(orders)})
     return JsonResponse({"orders": [], "messages": [{"level": "success", "message": "No orders found."}]}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@login_required
+@utils.role_redirect(roles=["table"], redirect_url="home", do_redirect=False)
+def api_get_order_table(request):
+    order = Order.objects.filter(user=request.user).order_by("-created_at").first()
+    order = utils_api.get_order_for_table(order)
+    if order:
+        return JsonResponse({"order": order}, status=status.HTTP_200_OK)
+    return JsonResponse({"order": None, "messages": [
+        {"level": "info", "message": "There are no recent orders."}
+    ]}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@login_required
+@utils.role_redirect(roles=["owner", "kitchen", "manager"], redirect_url="home", do_redirect=False)
+def api_get_orders_kitchen(request):
+    orders = Order.objects.filter(order_status__in=["cooking"]).order_by("paid_at")
+    if orders:
+        return Response({"orders": utils_api.get_orders_for_kitchen(orders)}, status=status.HTTP_200_OK)
+    return JsonResponse({"orders": [], "messages": [{"level": "info", "message": "No orders."}]}, status=status.HTTP_200_OK)
 
 
 @api_view(["PUT"])

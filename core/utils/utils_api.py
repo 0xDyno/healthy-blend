@@ -1,3 +1,5 @@
+from django.utils.dateparse import parse_date
+
 from core.models import Ingredient, Order
 
 
@@ -199,6 +201,8 @@ def filter_orders(request, orders):
     is_paid = request.GET.get("is_paid", "")
     is_refunded = request.GET.get("is_refunded", "")
 
+    orders_date = request.GET.get("date", "")
+
     sort_by = request.GET.get("sort_by", "-created_at")
 
     if search:
@@ -217,6 +221,9 @@ def filter_orders(request, orders):
         orders = orders.filter(is_paid=True)
     if is_refunded == "true":
         orders = orders.filter(is_refunded=True)
+    if orders_date:
+        date_obj = parse_date(orders_date)
+        orders = orders.filter(created_at__date=date_obj)
 
     # Apply sorting
     if sort_by == "created_at_asc":

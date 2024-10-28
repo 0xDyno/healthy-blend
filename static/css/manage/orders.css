@@ -268,6 +268,47 @@
     cursor: pointer;
 }
 
+/* Стилизация input type="date" */
+input[type="date"] {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    padding: 7px 15px;
+    transition: all 0.2s;
+    width: 100%;
+    color: #495057;
+}
+
+input[type="date"]:focus {
+    background-color: #fff;
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
+    outline: none;
+}
+
+/* Стилизация календарного значка */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    filter: invert(0.5);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Для Firefox */
+input[type="date"] {
+    -moz-appearance: none;
+}
+
+/* Для Edge */
+input[type="date"]::-ms-clear,
+input[type="date"]::-ms-reveal {
+    display: none;
+}
+
 .public-note-display {
     background: #f8f9fa;
     border: 1px solid #dee2e6;

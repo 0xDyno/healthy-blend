@@ -7,15 +7,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Event listeners for search, filters, and sorting
     document.getElementById('searchInput').addEventListener('input', filterOrders);
-    document.getElementById('tableIdFilter').addEventListener('input', filterOrders);
     document.getElementById('statusFilter').addEventListener('change', filterOrders);
-    document.getElementById('orderTypeFilter').addEventListener('change', filterOrders);
     document.getElementById('paymentTypeFilter').addEventListener('change', filterOrders);
-    document.getElementById('paymentIdFilter').addEventListener('input', filterOrders);
     document.getElementById('isPaidFilter').addEventListener('change', filterOrders);
+
+    document.getElementById('tableIdFilter').addEventListener('input', filterOrders);
+    document.getElementById('orderTypeFilter').addEventListener('change', filterOrders);
+    document.getElementById('paymentIdFilter').addEventListener('input', filterOrders);
     document.getElementById('isRefundedFilter').addEventListener('change', filterOrders);
+
     document.getElementById('sortBy').addEventListener('change', filterOrders);
+    if (utils.getUserRole() === 'owner') {
+        document.getElementById("filterDate").addEventListener('change', filterOrders);
+    }
     document.getElementById('clearFilters').addEventListener('click', clearFilters);
+
     document.getElementById('updateOrderBtn').addEventListener('click', utils.updateOrderStatus);
 });
 
@@ -38,25 +44,34 @@ function displayAllOrders(orders) {
 function filterOrders() {
     const searchInput = document.getElementById('searchInput').value;
     const statusFilter = document.getElementById('statusFilter').value;
-    const orderTypeFilter = document.getElementById('orderTypeFilter').value;
     const paymentTypeFilter = document.getElementById('paymentTypeFilter').value;
-    const paymentIdFilter = document.getElementById('paymentIdFilter').value;
-    const tableIdFilter = document.getElementById('tableIdFilter').value;
     const isPaidFilter = document.getElementById('isPaidFilter').checked;
+
+    const tableIdFilter = document.getElementById('tableIdFilter').value;
+    const orderTypeFilter = document.getElementById('orderTypeFilter').value;
+    const paymentIdFilter = document.getElementById('paymentIdFilter').value;
     const isRefundedFilter = document.getElementById('isRefundedFilter').checked;
+
     const sortBy = document.getElementById('sortBy').value;
 
     const params = new URLSearchParams({
         search: searchInput,
         status: statusFilter,
-        order_type: orderTypeFilter,
         payment_type: paymentTypeFilter,
-        payment_id: paymentIdFilter,
-        table_id: tableIdFilter,
         is_paid: isPaidFilter,
+
+        table_id: tableIdFilter,
+        order_type: orderTypeFilter,
+        payment_id: paymentIdFilter,
         is_refunded: isRefundedFilter,
+
         sort_by: sortBy
     });
+
+    if (utils.getUserRole() === 'owner') {
+        const date = document.getElementById("filterDate").value;
+        params.append("date", date);
+    }
 
     fetch(`/api/get/orders/?${params.toString()}`)
         .then(response => response.json())
@@ -84,6 +99,9 @@ function clearFilters() {
     document.getElementById('sortBy').value = '';
     document.getElementById('isPaidFilter').checked = false;
     document.getElementById('isRefundedFilter').checked = false;
+    if (utils.getUserRole() === 'owner') {
+        document.getElementById('filterDate').value = '';
+    }
 
     if (document.getElementById('createdAtFilter')) {
         document.getElementById('createdAtFilter').value = '';
