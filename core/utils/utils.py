@@ -1,16 +1,16 @@
 # utils.py
 
 import json
-from decimal import Decimal, InvalidOperation
+from datetime import datetime, timedelta
+from decimal import Decimal
 from functools import wraps
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.http import JsonResponse
 from django.shortcuts import redirect
-from rest_framework import status
+from django.utils import timezone
 
-from core.models import Product, Ingredient, Order, ProductIngredient, OrderProduct, NutritionalValue
+from core.models import Product, Ingredient, Order, ProductIngredient, OrderProduct, NutritionalValue, DaySettings
 
 
 def role_redirect(roles, redirect_url, do_redirect=True):
@@ -42,6 +42,7 @@ def big_validator(data: json):
     total_price_front = data.get("total_price")
     payment_type = data.get("payment_type")
 
+    validate_working_time()
     validate_nutritional_summary(data.get("nutritional_value"))
 
     if not official_meals and not custom_meals:
@@ -68,6 +69,27 @@ def big_validator(data: json):
 
     if not validate_price(raw_price_back, raw_price_front) or not validate_price(total_price_back, total_price_front):
         raise ValidationError(message=f"Wrong calculated total Price. Web price: {total_price_front}, off price {total_price_back}")
+
+
+def validate_working_time():
+    current_time = timezone.now()
+    current_day = current_time.weekday()
+
+    day_settings = DaySettings.objects.get(day=current_day)
+
+    if not day_settings.is_open:
+        raise ValidationError("Orders are unavailable on non-working days.")
+
+    open_time = timezone.make_aware(datetime.combine(current_time.date(), day_settings.open_hours))
+    close_time = timezone.make_aware(datetime.combine(current_time.date(), day_settings.close_hours))
+
+    if open_time < current_time < close_time:
+        raise ValidationError(f"Orders are only available during working hours: from {day_settings.open_hours} to {day_settings.close_hours}.")
+
+    if current_time >= close_time - timedelta(minutes=20):
+        raise ValidationError("Orders close 20 minutes before the end of working hours.")
+
+    return True
 
 
 def validate_official_meal(official_meals):
@@ -265,7 +287,6 @@ def process_custom_meal(custom_meals, order: Order):
 
 
 def get_date_today():
-    from datetime import datetime
     current_date = datetime.today()
     return current_date.strftime("%d-%m-%Y %H:%M:%S")
 
