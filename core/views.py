@@ -51,7 +51,7 @@ def api_get_all_products(request):
 
 @api_view(["GET"])
 @login_required
-@utils.role_redirect(roles=["owner", "manager"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
 def api_get_order(request, pk):
     order = Order.objects.filter(pk=pk).first()
     if order:
@@ -63,9 +63,9 @@ def api_get_order(request, pk):
 
 @api_view(["GET"])
 @login_required
-@utils.role_redirect(roles=["owner", "manager"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
 def api_get_orders(request):
-    if request.user.role == "owner":
+    if request.user.role == "owner" or request.user.role == "administrator":
         orders = Order.objects.all()
     elif request.user.role == "manager":
         orders = Order.objects.filter(created_at__date=timezone.now().date())
@@ -86,11 +86,10 @@ def api_get_orders(request):
 
 @api_view(["GET"])
 @login_required
-@utils.role_redirect(roles=["table"], redirect_url="home", do_redirect=False)
-def api_get_order_table(request):
+def api_get_order_last(request):
     order = Order.objects.filter(user=request.user).order_by("-created_at").first()
-    order = utils_api.get_order_for_table(order)
-    if order:
+    if order and order.show_public:
+        order = utils_api.get_order_last(order)
         return JsonResponse({"order": order}, status=status.HTTP_200_OK)
     return JsonResponse({"order": None, "messages": [
         {"level": "info", "message": "There are no recent orders."}
@@ -99,7 +98,7 @@ def api_get_order_table(request):
 
 @api_view(["GET"])
 @login_required
-@utils.role_redirect(roles=["owner", "kitchen", "manager"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["owner", "kitchen", "manager", "administrator"], redirect_url="home", do_redirect=False)
 def api_get_orders_kitchen(request):
     orders = Order.objects.filter(order_status__in=["cooking"]).order_by("paid_at")
     if orders:
@@ -109,7 +108,7 @@ def api_get_orders_kitchen(request):
 
 @api_view(["PUT"])
 @login_required
-@utils.role_redirect(roles=["owner", "manager", "kitchen"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["owner", "manager", "kitchen", "administrator"], redirect_url="home", do_redirect=False)
 def api_update_order(request, pk):
     order = Order.objects.get(pk=pk)
 
@@ -143,7 +142,7 @@ def api_update_order(request, pk):
 
 @api_view(["PUT"])
 @login_required
-@utils.role_redirect(roles=["owner", "manager", "kitchen"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["owner", "manager", "kitchen", "administrator"], redirect_url="home", do_redirect=False)
 def api_update_ingredient(request, pk):
     try:
         ingredient = Ingredient.objects.get(pk=pk)
@@ -208,7 +207,6 @@ def cart(request):
 
 
 @login_required
-@utils.role_redirect(roles=["table"], redirect_url="home", do_redirect=False)
 def last_order(request):
     return render(request, "client/order.html")
 
@@ -242,36 +240,36 @@ def checkout(request):
 
 
 @login_required
-@utils.role_redirect(roles=["owner", "manager"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
 def orders_control(request):
     return render(request, "manage/orders_control.html")
 
 
 @login_required
-@utils.role_redirect(roles=["owner", "manager"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
 def orders_all(request):
     return render(request, "manage/orders_all.html")
 
 
 @login_required
-@utils.role_redirect(roles=["owner", "manager"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
 def product_management(request):
     return render(request, "manage/products.html")
 
 
 @login_required
-@utils.role_redirect(roles=["owner", "manager"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
 def ingredient_management(request):
     return render(request, "manage/ingredients.html")
 
 
 @login_required
-@utils.role_redirect(roles=["kitchen", "owner"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["kitchen", "owner", "administrator"], redirect_url="home", do_redirect=False)
 def kitchen_orders(request):
     return render(request, "manage/kitchen_orders.html")
 
 
 @login_required
-@utils.role_redirect(roles=["kitchen", "owner"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["kitchen", "owner", "administrator"], redirect_url="home", do_redirect=False)
 def kitchen_ingredients(request):
     return render(request, "manage/kitchen_ingredients.html")

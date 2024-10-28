@@ -62,7 +62,7 @@
                 <div class="col-md-3 mb-3">
                     <input type="text" id="paymentIdFilter" placeholder="Search by Payment ID" class="form-control">
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col -md-3 mb-3">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="isRefundedFilter">
                         <label class="form-check-label" for="isRefundedFilter">Refunded Orders</label>
@@ -79,7 +79,7 @@
                     </select>
                 </div>
 
-                {% if user.role == "owner" or user.role == "admin" %}
+                {% if user.role == "owner" or user.role == "administrator" %}
                     <div class="col-md-3 mb-3"><input type="date" id="filterDate" class="" value="" /></div>
                     <div class="col-md-3 mb-3"><button id="clearFilters" class="btn btn-outline-secondary">Clear Filters</button></div>
                 {% else %}

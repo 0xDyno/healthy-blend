@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function fetchOrderDetails() {
-    fetch('/api/get/order/table/')
+    fetch('/api/get/order/last/')
         .then(async response => {
             const data = await response.json()
 

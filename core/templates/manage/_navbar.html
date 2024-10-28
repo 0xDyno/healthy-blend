@@ -10,7 +10,7 @@
             <a href="{% url 'orders_manage_all' %}">Orders All</a>
 {#            <a href="{% url 'product_management' %}">Products</a>#}
             <a href="{% url 'ingredient_management' %}">Ingredients</a>
-            {% if user.role == "owner" %}
+            {% if user.role == "owner" or user.role == "administrator" %}
                 <a href="{% url 'kitchen' %}">Kitchen</a>
             {% endif %}
         </div>

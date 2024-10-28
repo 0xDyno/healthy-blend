@@ -14,19 +14,17 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'home' %}">Home</a>
                         </li>
-                        {% if user.role == 'manager' or user.role == 'owner' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'last_order' %}">Last Order</a>
+                        </li>
+                        {% if user.role == 'manager' or user.role == 'owner' or user.role == "administrator" %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'orders_manage_control' %}">Control Panel</a>
                             </li>
                         {% endif %}
-                        {% if user.role == 'owner' %}
+                        {% if user.is_superuser %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">Admin Panel</a>
-                            </li>
-                        {% endif %}
-                        {% if user.role == "table" %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'last_order' %}">Last Order</a>
                             </li>
                         {% endif %}
                     {% endif %}

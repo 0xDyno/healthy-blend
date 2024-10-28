@@ -1,16 +1,17 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.utils.translation import gettext_lazy as _
 from .models import User, NutritionalValue, Ingredient, Product, ProductIngredient, Order, OrderProduct, OrderHistory
 
 
 class CustomUserAdmin(UserAdmin):
-    list_display = ("username", "id", "role", "is_staff", "is_active")
+    list_display = ("id", "username", "nickname", "role", "is_staff", "is_active")
     list_filter = ("role", "is_staff", "is_active")
     fieldsets = UserAdmin.fieldsets + (
         ("Custom Fields", {"fields": ("role", "nickname")}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
-        ("Custom Fields", {"fields": ("role")}),
+        (_("Custom Fields"), {"fields": ("role",)}),
     )
 
 

@@ -16,14 +16,14 @@ class User(AbstractUser):
     # login/pass, optional - first_name, last_names, email, is_staff, is_active, email
     ROLES = (
         ("owner", "Owner"),
-        ("admin", "Administrator"),
+        ("administrator", "Administrator"),
         ("manager", "Manager"),
         ("table", "Table"),
         ("kitchen", "Kitchen"),
         ("user", "User"),
     )
     nickname = models.CharField(max_length=50, blank=True, default="")
-    role = models.CharField(max_length=10, choices=ROLES, default="other")
+    role = models.CharField(max_length=15, choices=ROLES, default="user")
 
 
 class NutritionalValue(models.Model):
@@ -293,6 +293,8 @@ class Order(models.Model):
     paid_at = models.DateTimeField(null=True, blank=True)
     ready_at = models.DateTimeField(null=True, blank=True)
     refunded_at = models.DateTimeField(null=True, blank=True)
+
+    show_public = models.BooleanField(default=True)
 
     def clean(self):
         super().clean()

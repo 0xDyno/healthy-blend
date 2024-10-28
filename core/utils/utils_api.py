@@ -123,7 +123,7 @@ def get_order_full(order):
     return data_to_send
 
 
-def get_order_for_table(order: Order):
+def get_order_last(order: Order):
     data_to_send = {
         "id": order.id,
         "order_status": order.get_order_status_display(),

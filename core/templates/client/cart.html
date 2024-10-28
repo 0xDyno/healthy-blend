@@ -24,7 +24,7 @@
             <div id="paymentTypeContainer" class="form-group mb-3">
                 <select id="paymentType" class="form-control">
                     <option value="">Payment Type</option>
-                    <option value="cash" {% if request.user.role == "manager" %}selected{% endif %}>Cash</option>
+                    <option value="cash" {% if request.user.role != "table" %}selected{% endif %}>Cash</option>
                     <option value="card">Card</option>
                     <option value="qr">QR</option>
                 </select>
