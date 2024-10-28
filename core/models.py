@@ -299,12 +299,19 @@ class Order(models.Model):
     def clean(self):
         super().clean()
 
-        if self.order_status in [Order.COOKING, Order.READY, Order.FINISHED] and not self.is_paid:
+        if not self.is_paid and self.is_refunded:
+            raise ValidationError("The order can not be refunded if it is not paid.")
+
+        if not self.is_paid and self.order_status in [Order.COOKING, Order.READY, Order.FINISHED]:
             raise ValidationError("The order is not paid. It should be paid before continuing.")
 
         if self.is_paid and not self.payment_id:
             if self.payment_type != "cash":  # TEMPORARY, until I know how works payment system
                 raise ValidationError("Please provide the Payment ID for the order.")
+
+        if self.is_paid and self.order_status == Order.PENDING:
+            raise ValidationError("The order has been paid and cannot be marked as \"Pending\". "
+                                  "If something went wrong, please change the status to \"Problem\".")
 
         if self.is_refunded and not self.private_note:
             raise ValidationError("Please add an ID for the refund and describe what happened. Thank you.")
@@ -317,10 +324,6 @@ class Order(models.Model):
 
         if not self.user_last_update:
             raise ValidationError("Please specify the user making the update.")
-
-        if self.is_paid and self.order_status == Order.PENDING:
-            raise ValidationError("The order has been paid and cannot be marked as \"Pending\". "
-                                  "If something went wrong, please change the status to \"Problem\".")
 
     def save(self, *args, **kwargs):
         super().full_clean()
