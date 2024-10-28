@@ -15,6 +15,7 @@ from django.utils import timezone
 class User(AbstractUser):
     # login/pass, optional - first_name, last_names, email, is_staff, is_active, email
     ROLES = (
+        ("owner", "Owner"),
         ("admin", "Administrator"),
         ("manager", "Manager"),
         ("table", "Table"),

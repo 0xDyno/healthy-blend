@@ -14,12 +14,12 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'home' %}">Home</a>
                         </li>
-                        {% if user.role == 'manager' or user.role == 'admin' %}
+                        {% if user.role == 'manager' or user.role == 'owner' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'orders_manage_control' %}">Control Panel</a>
                             </li>
                         {% endif %}
-                        {% if user.role == 'admin' %}
+                        {% if user.role == 'owner' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">Admin Panel</a>
                             </li>
