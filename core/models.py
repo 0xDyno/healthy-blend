@@ -408,13 +408,14 @@ def save_order_id_before_delete(sender, instance, **kwargs):
 class Setting(models.Model):
     service = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
     tax = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
+    can_order = models.BooleanField(default=True)
+    close_kitchen_before = models.IntegerField(default=20, validators=[MinValueValidator(0), MaxValueValidator(120)])
+
     minimum_order_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     maximum_order_amount = models.IntegerField(default=3000000, validators=[MinValueValidator(0)])
     # weight in grams
     maximum_order_weight = models.IntegerField(default=5000, validators=[MinValueValidator(0)])
-
     minimum_blend_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    can_order = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         self.pk = 1

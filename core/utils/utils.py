@@ -68,7 +68,7 @@ def big_validator(data: json):
     if not official_meals and not custom_meals:
         raise ValidationError(message="The cart is empty")
 
-    settings = Setting.objects.values("service", "tax", "can_order",
+    settings = Setting.objects.values("service", "tax", "can_order", "close_kitchen_before",
                                       "minimum_order_amount", "maximum_order_amount", "maximum_order_weight").first()
 
     # Check ordering is On
@@ -82,7 +82,7 @@ def big_validator(data: json):
     max_order_weight = settings.get("maximum_order_weight")
 
     # Check it's working time
-    validate_working_time()
+    validate_working_time(settings.get("close_kitchen_before"))
 
     # Check max price (min price later)
     if not max_order > total_price_front:
@@ -129,7 +129,7 @@ def big_validator(data: json):
                           back_price=raw_price_back, front_price=raw_price_front, total_front_price=total_price_front)
 
 
-def validate_working_time():
+def validate_working_time(close_kitchen_before: int = 30):
     current_time = timezone.now()
     current_day = current_time.weekday()
 
@@ -144,7 +144,7 @@ def validate_working_time():
     if current_time < open_time or current_time > close_time:
         raise ValidationError(f"Orders are only available during working hours: from {day_setting.open_hours} to {day_setting.close_hours}.")
 
-    if current_time >= close_time - timedelta(minutes=20):
+    if current_time >= close_time - timedelta(minutes=close_kitchen_before):
         raise ValidationError("Orders close 20 minutes before the end of working hours.")
 
     return True
