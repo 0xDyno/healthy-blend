@@ -196,7 +196,7 @@ def can_edit_order(order):
     current_day = current_time.weekday()
 
     # 1. Check Now - working day & working hours
-    today_settings = DaySettings.objects.get(day=current_day)
+    today_settings = DaySetting.objects.get(day=current_day)
 
     if not today_settings.is_open:
         return False
@@ -227,7 +227,7 @@ def can_edit_order_second_option(order):
     current_time = timezone.now()
 
     # Get Day when the Order was created
-    order_day_settings = DaySettings.objects.get(day=order.created_at.weekday())
+    order_day_settings = DaySetting.objects.get(day=order.created_at.weekday())
 
     # If it's - working day -> go next
     if order_day_settings.is_open:
@@ -241,7 +241,7 @@ def can_edit_order_second_option(order):
             return True
 
     # Same check for next day. If current time in time_range for next day (from the order creation) -Ok
-    next_day_settings = DaySettings.objects.get(day=(order.created_at.weekday() + 1) % 7)
+    next_day_settings = DaySetting.objects.get(day=(order.created_at.weekday() + 1) % 7)
 
     if next_day_settings.is_open:
         next_day_open_time = timezone.make_aware(
