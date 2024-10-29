@@ -28,13 +28,14 @@ urlpatterns = [
     # API URLs
     path("api/get/products/", api_get_all_products),
     path("api/get/ingredient/<int:pk>/", api_get_ingredient),
-    path("api/get/ingredients/", api_get_all_ingredients),
+    path("api/get/ingredients/", api_get_ingredients),
     path("api/get/order/last/", api_get_order_last),
     path("api/get/order/<int:pk>/", api_get_order),
     path("api/get/orders/", api_get_orders),
     path("api/get/orders/kitchen/", api_get_orders_kitchen),
     path("api/update/order/<int:pk>/", api_update_order),
     path("api/update/ingredient/<int:pk>/", api_update_ingredient),
+    path("api/create/ingredient/", api_create_ingredient),
     path("api/check/promo/<str:promo_code>/", api_check_promo),
 
 ]

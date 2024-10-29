@@ -29,28 +29,35 @@ logger = logging.getLogger(__name__)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='30/m', method=['GET'])
+@ratelimit(key="user", rate="30/m", method=["GET"])
 @utils.handle_rate_limit
 def api_get_ingredient(request, pk=None):
-    ingredient = get_object_or_404(Ingredient, pk=pk)
-    data = utils_api.get_ingredient_data(ingredient)
+    try:
+        ingredient = Ingredient.objects.get(pk=pk)
+    except Ingredient.DoesNotExist:
+        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
+    ingredient_data = utils_api.get_ingredient_data(ingredient)
 
-    return Response(data)
+    return JsonResponse({"ingredient": ingredient_data}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='30/m', method=['GET'])
+@ratelimit(key="user", rate="30/m", method=["GET"])
 @utils.handle_rate_limit
-def api_get_all_ingredients(request):
-    ingredients = Ingredient.objects.all()
-    data = [utils_api.get_ingredient_data(ingredient) for ingredient in ingredients]
+def api_get_ingredients(request):
+    if request.user.role == "owner" or request.user.role == "administrator":
+        ingredients = Ingredient.objects.all().select_related("nutritional_value")
+        data = [utils_api.get_ingredient_data(ingredient, True) for ingredient in ingredients]
+    else:
+        ingredients = Ingredient.objects.filter(is_menu=True).select_related("nutritional_value")
+        data = [utils_api.get_ingredient_data(ingredient) for ingredient in ingredients]
     return Response(data)
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='30/m', method=['GET'])
+@ratelimit(key="user", rate="30/m", method=["GET"])
 @utils.handle_rate_limit
 def api_get_all_products(request):
     products = Product.objects.filter(is_menu=True)
@@ -61,7 +68,7 @@ def api_get_all_products(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
-@ratelimit(key='user', rate='30/m', method=['GET'])
+@ratelimit(key="user", rate="30/m", method=["GET"])
 @utils.handle_rate_limit
 def api_get_order(request, pk):
     order = Order.objects.filter(pk=pk).first()
@@ -75,7 +82,7 @@ def api_get_order(request, pk):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
-@ratelimit(key='user', rate='30/m', method=['GET'])
+@ratelimit(key="user", rate="30/m", method=["GET"])
 @utils.handle_rate_limit
 def api_get_orders(request):
     if request.user.role == "owner" or request.user.role == "administrator":
@@ -99,7 +106,7 @@ def api_get_orders(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='30/m', method=['GET'])
+@ratelimit(key="user", rate="30/m", method=["GET"])
 @utils.handle_rate_limit
 def api_get_order_last(request):
     order = Order.objects.filter(user=request.user).order_by("-created_at").first()
@@ -114,7 +121,7 @@ def api_get_order_last(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @utils.handle_rate_limit
-@ratelimit(key='user', rate='30/m', method=['GET'])
+@ratelimit(key="user", rate="30/m", method=["GET"])
 @utils.role_redirect(roles=["owner", "kitchen", "manager", "administrator"], redirect_url="home", do_redirect=False)
 def api_get_orders_kitchen(request):
     orders = Order.objects.filter(order_status__in=["cooking"]).order_by("paid_at")
@@ -125,7 +132,7 @@ def api_get_orders_kitchen(request):
 
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='30/m', method=['GET'])
+@ratelimit(key="user", rate="30/m", method=["PUT"])
 @utils.handle_rate_limit
 @utils.role_redirect(roles=["owner", "manager", "kitchen", "administrator"], redirect_url="home", do_redirect=False)
 def api_update_order(request, pk):
@@ -165,24 +172,41 @@ def api_update_order(request, pk):
 
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='30/m', method=['GET'])
+@ratelimit(key="user", rate="30/m", method=["PUT"])
 @utils.handle_rate_limit
 @utils.role_redirect(roles=["owner", "manager", "kitchen", "administrator"], redirect_url="home", do_redirect=False)
 def api_update_ingredient(request, pk):
     try:
         ingredient = Ingredient.objects.get(pk=pk)
     except Ingredient.DoesNotExist:
-        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_200_OK)
-
-    ingredient.is_available = not ingredient.is_available
-    ingredient.save()
+        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
+    if request.user.role != "owner" and request.user.role != "administrator":
+        ingredient.is_available = not ingredient.is_available
+        ingredient.save()
+    else:
+        data = json.loads(request.body)
+        ingredient.name = data.get("name")
+        ingredient.price = data.get("price")
+        ingredient.is_available = data.get("is_available")
+        ingredient.save()
 
     return JsonResponse({"messages": [{"level": "success", "message": f"{ingredient.name} updated."}]}, status=status.HTTP_200_OK)
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@ratelimit(key="user", rate="30/m", method=["POST"])
+@utils.handle_rate_limit
+@utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
+def api_create_ingredient(request):
+    data = json.loads(request.body)
+    ingredient = Ingredient.INGREDIENT_TYPES
+    return JsonResponse({"messages": [{"level": "success", "message": f"Ingredient created... (not)."}]}, status=status.HTTP_200_OK)
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-@ratelimit(key='user', rate='10/m', method=['GET'])
+@ratelimit(key="user", rate="10/m", method=["GET"])
 @utils.handle_rate_limit
 def api_check_promo(request, promo_code):
     if utils.check_promo(promo_code):
@@ -194,7 +218,7 @@ def api_check_promo(request, promo_code):
 
 # ------------------------ WEB views ------------------------------------------------------------------------------------------------
 
-@ratelimit(key='ip', rate='50/h', method=['POST'])
+@ratelimit(key="ip", rate="50/h", method=["POST"])
 @utils.handle_rate_limit
 def user_login(request):
     if request.user.is_authenticated:
@@ -253,8 +277,8 @@ def last_order(request):
 @login_required
 @utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
 @require_POST
-@ratelimit(key='user', rate='5/m', method=['POST'])
-@ratelimit(key='user', rate='100/h', method=['POST'])
+@ratelimit(key="user", rate="5/m", method=["POST"])
+@ratelimit(key="user", rate="100/h", method=["POST"])
 @utils.handle_rate_limit
 @transaction.atomic
 def checkout(request):

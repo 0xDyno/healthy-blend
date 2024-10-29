@@ -17,6 +17,13 @@
     </div>
 </div>
 
+{% if user.role == "owner" or user.role == "administrator" %}
+    <div class="admin-controls">
+        <button id="createIngredientBtn" class="btn btn-primary">Create New Ingredient</button>
+        <button class="menu-filter-btn" data-filter="menu">Show Menu Items</button>
+    </div>
+{% endif %}
+
 <div class="ingredients-container">
     <div class="ingredients-grid" id="ingredientsGrid">
         <!-- Ingredients -->
@@ -24,16 +31,103 @@
 </div>
 
 <!-- Modal window -->
-<div class="modal fade" id="ingredientModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalName"></h5>
-            </div>
-            <div class="modal-body">
-                <img id="modalImage" src="" alt="" class="modal-image">
-                <button id="availabilityButton" class="availability-btn"></button>
+{% if user.role == "owner" or user.role == "administrotor" %}
+    <div class="modal fade" id="ingredientModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalName"></h5>
+                </div>
+                <div class="modal-body">
+                    <form id="ingredientForm">
+                        <div class="form-group">
+                            <label>Name:</label>
+                            <input type="text" id="modalIngredientName" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <textarea id="modalDescription" class="form-control"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Image URL:</label>
+                            <input type="text" id="modalImageUrl" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Type:</label>
+                            <select id="modalType" class="form-control">
+                                <option value="base">Base</option>
+                                <option value="protein">Protein</option>
+                                <option value="vegetable">Vegetable</option>
+                                <option value="dairy">Dairy</option>
+                                <option value="fruit">Fruit</option>
+                                <option value="topping">Topping</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Step:</label>
+                            <input type="number" id="modalStep" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Min Order:</label>
+                            <input type="number" id="modalMinOrder" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Max Order:</label>
+                            <input type="number" id="modalMaxOrder" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Price:</label>
+                            <input type="number" id="modalPrice" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Price per gram:</label>
+                            <input type="number" id="modalPricePerGram" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Custom Price:</label>
+                            <input type="number" id="modalCustomPrice" class="form-control">
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="modalIsMenu" class="form-check-input">
+                            <label class="form-check-label">Is Menu Item</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="modalIsForDish" class="form-check-input">
+                            <label class="form-check-label">Is For Dish</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="modalAvailable" class="form-check-input">
+                            <label class="form-check-label">Available</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary mt-3">Update</button>
+
+                        <div class="nutritional-values mt-4">
+                            <h6>Nutritional Values</h6>
+                            <!-- Nutritional values inputs will be generated dynamically via JavaScript -->
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
+{% else %}
+    <div class="modal fade" id="ingredientModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalName"></h5>
+                </div>
+                <div class="modal-body">
+                    <img id="modalImage" src="" alt="" class="modal-image">
+                    <button id="availabilityButton" class="availability-btn"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% block scripts %}
+    <script>window.currentUserRole = "{{ user.role }}";</script>
+{% endblock %}

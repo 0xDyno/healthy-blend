@@ -88,6 +88,8 @@ class Ingredient(models.Model):
     step = models.FloatField(default=1, validators=[MinValueValidator(0.05), MaxValueValidator(5)])
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(500)])
+    is_for_dish = models.BooleanField(default=True)
+    is_menu = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
 
     price_per_gram = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(999)])
@@ -100,6 +102,14 @@ class Ingredient(models.Model):
     def clean(self):
         if self.max_order < self.min_order:
             raise ValidationError("Max order must be greater than or equal to Min order.")
+        if self.step < 0.1 or self.step > 5:
+            raise ValidationError("Step must be between 0.1 and 5.")
+        if not self.image:
+            raise ValidationError("Please upload an image for the ingredient.")
+        if self.custom_price is not None and self.custom_price < self.price_per_gram:
+            raise ValidationError("Custom price can't be less, than price per gram.")
+        if not self.is_menu and self.is_available:
+            raise ValidationError("The ingredient must be marked as 'menu' to be available. Please update to 'menu' or set as unavailable.")
 
     def save(self, *args, **kwargs):
         self.full_clean()

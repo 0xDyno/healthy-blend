@@ -29,7 +29,7 @@ def get_all_products(products: list):
     return data
 
 
-def get_ingredient_data(ingredient: Ingredient):
+def get_ingredient_data(ingredient: Ingredient, all_info=False):
     data = {
         "id": ingredient.id,
         "name": ingredient.name,
@@ -41,8 +41,13 @@ def get_ingredient_data(ingredient: Ingredient):
         "max_order": ingredient.max_order,
         "available": ingredient.is_available,
         "price": ingredient.custom_price if ingredient.custom_price else ingredient.price_per_gram * ingredient.price_multiplier,
+        "is_for_dish": ingredient.is_for_dish,
         "nutritional_value": ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
     }
+    if all_info:
+        data["is_menu"] = ingredient.is_menu
+        data["price_per_gram"] = ingredient.price_per_gram
+        data["custom_price"] = ingredient.custom_price
     return data
 
 
