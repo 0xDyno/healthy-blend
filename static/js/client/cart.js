@@ -163,6 +163,7 @@ function handleCheckout() {
             amount: item.amount,
             price: item.product.price,
             weight: item.product.weight,
+            do_blend: true,
         })),
         custom_meals: customMeals.map(item => ({
             ingredients: item.product.ingredients.map(ing => ({
@@ -172,6 +173,7 @@ function handleCheckout() {
             amount: item.amount,
             price: item.product.price,
             weight: item.product.weight,
+            do_blend: true,
         }))
     };
 

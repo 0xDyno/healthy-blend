@@ -279,8 +279,10 @@ def checkout(request):
             promo_usage.order = order
             promo_usage.save(update_fields=["order"])
 
-        utils.process_official_meal(official_meals, order)
-        utils.process_custom_meal(custom_meals, order)
+        if official_meals:
+            utils.process_official_meal(official_meals, order)
+        if custom_meals:
+            utils.process_custom_meal(custom_meals, order)
 
         return JsonResponse({"messages": [
             {"level": "success", "message": f"Order {order.id} has been created. Redirecting..."}

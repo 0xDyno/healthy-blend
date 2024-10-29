@@ -292,9 +292,9 @@ def validate_price(service, tax, min_order, promo, back_price, front_price, tota
     return None
 
 
-def validate_price_difference(p1, p2, allowed_difference=0.5):
+def validate_price_difference(p1, p2, allowed_difference=0.1):
     """it doesn't matter divide difference to p1 or p2
-    :param allowed_difference: in %, default 0.5%
+    :param allowed_difference: in %, default 0.1%
     :return: True if everything Okay. False if difference too big
     """
     difference = abs(p1 - p2)
@@ -344,16 +344,12 @@ def get_nutritional_value_fields():
 
 @transaction.atomic
 def process_official_meal(official_meals, order: Order):
-    order_products_to_create = []
-    products_to_create = []
-    product_ingredients_to_create = []
-
-    # Get all official_products with needed ID
+    # Get all official products we need
     meal_ids = [meal.get("id") for meal in official_meals]
     official_products = {prod.id: prod for prod in Product.objects.filter(id__in=meal_ids).select_related('nutritional_value')}
 
     # list with correct names for official_products with N kcal
-    potential_names = [f"{official_products[meal.get('id')].name} {meal.get('calories')}"for meal in official_meals
+    potential_names = [f"{official_products[meal.get('id')].name} {meal.get('calories')} kCal"for meal in official_meals
                        if official_products[meal.get('id')].is_dish()]
 
     # get all products with such names
@@ -369,46 +365,34 @@ def process_official_meal(official_meals, order: Order):
 
         if not official_product.is_dish():
             # If drink - just save
-            order_products_to_create.append(OrderProduct(order=order, product=official_product, amount=amount, price=price))
+            OrderProduct.objects.create(order=order, product=official_product, amount=amount, price=price, do_blend=True)
         else:
-            new_name = f"{official_product.name} {calories}"
-            product = existing_products.get(new_name)
+            name = f"{official_product.name} {calories} kCal"
+            product = existing_products.get(name)
 
             if not product:
-                # Create new product
                 weight_product = round(meal.get("weight"))
                 coefficient = calories / official_product.nutritional_value.calories
 
-                product = Product(name=new_name, description=official_product.description, image=official_product.image, is_menu=False,
+                product = Product(name=name, description=official_product.description, image=official_product.image, is_menu=False,
                                   is_official=True, product_type=official_product.product_type, weight=weight_product)
-                products_to_create.append(product)
+                product.save()
 
                 # Collect required ingredients
                 for original_ingredient in official_product.productingredient_set.all():
                     weight = original_ingredient.weight_grams * coefficient
-                    product_ingredient = ProductIngredient(product=product, ingredient=original_ingredient.ingredient, weight_grams=weight)
-                    product_ingredients_to_create.append(product_ingredient)
+                    ProductIngredient.objects.create(product=product, ingredient=original_ingredient.ingredient, weight_grams=weight)
 
             # Add OrderProduct to the list
-            order_products_to_create.append(OrderProduct(order=order, product=product, amount=amount, price=price, do_blend=do_blend))
-
-    # Bulk creation
-    if products_to_create:
-        Product.objects.bulk_create(products_to_create)
-    if product_ingredients_to_create:
-        ProductIngredient.objects.bulk_create(product_ingredients_to_create)
-    if order_products_to_create:
-        OrderProduct.objects.bulk_create(order_products_to_create)
+            OrderProduct.objects.create(order=order, product=product, amount=amount, price=price, do_blend=do_blend)
 
 
 @transaction.atomic
 def process_custom_meal(custom_meals, order: Order):
-    products_to_create = []
-    product_ingredients_to_create = []
-    order_products_to_create = []
-
     # get IDs of ingredients in Custom Meal and get all Ingredients
-    all_ingredient_ids = {ingredient["id"] for meal in custom_meals for ingredient in meal.get("ingredients", [])}
+    all_ingredient_ids = {ingredient["id"]
+                          for meal in custom_meals
+                          for ingredient in meal.get("ingredients", [])}
     ingredients_dict = {ing.id: ing for ing in Ingredient.objects.filter(id__in=all_ingredient_ids)}
 
     for meal in custom_meals:
@@ -418,43 +402,19 @@ def process_custom_meal(custom_meals, order: Order):
         amount = meal.get("amount")
         do_blend = meal.get("do_blend")
 
-        product = Product(name=name, description=description, is_official=False, product_type="dish", price=price)
+        product = Product.objects.create(name=name, description=description, is_official=False, product_type="dish", price=price)
 
-        # count weight for each product
-        total_weight = sum(ingredient.get("weight", 0) for ingredient in meal.get("ingredients", []))
+        total_weight = 0
+        for ingredient in meal.get("ingredients", []):
+            official_ingredient = ingredients_dict.get(ingredient.get("id"))
+            weight_grams = ingredient.get("weight")
+            total_weight += weight_grams
+
+            ProductIngredient.objects.create(product=product, ingredient=official_ingredient, weight_grams=weight_grams)
+
         product.weight = round(total_weight)
-
-        # add product to creation list
-        products_to_create.append(product)
-
-        # prepare ProductIngredient for the product
-        for ingredient_data in meal.get("ingredients", []):
-            ingredient_id = ingredient_data.get("id")
-            weight_grams = ingredient_data.get("weight")
-
-            official_ingredient = ingredients_dict.get(ingredient_id)
-            if official_ingredient:
-                product_ingredient = ProductIngredient(product=product, ingredient=official_ingredient, weight_grams=weight_grams)
-                product_ingredients_to_create.append(product_ingredient)
-
-        # prepare OrderProduct для этого продукта
-        order_products_to_create.append(OrderProduct(order=order, product=product, amount=amount, price=price, do_blend=do_blend))
-
-    # Bulk create Products
-    Product.objects.bulk_create(products_to_create)
-
-    # Update Product in ProductIngredient
-    for i, product in enumerate(products_to_create):
-        for pi in product_ingredients_to_create:
-            if pi.product == product:
-                pi.product_id = product.id
-
-        # Update Product in OrderProduct
-        order_products_to_create[i].product_id = product.id
-
-    # Bulk create ProductIngredient & OrderProduct
-    ProductIngredient.objects.bulk_create(product_ingredients_to_create)
-    OrderProduct.objects.bulk_create(order_products_to_create)
+        product.save()
+        OrderProduct.objects.create(order=order, product=product, amount=amount, price=price, do_blend=do_blend)
 
 
 def get_date_today():
