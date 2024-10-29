@@ -374,14 +374,15 @@ def process_official_meal(official_meals, order: Order):
                 weight_product = round(meal.get("weight"))
                 coefficient = calories / official_product.nutritional_value.calories
 
-                product = Product(name=name, description=official_product.description, image=official_product.image, is_menu=False,
-                                  is_official=True, product_type=official_product.product_type, weight=weight_product)
-                product.save()
+                product = Product.objects.create(name=name, description=official_product.description, image=official_product.image,
+                                                 is_menu=False, is_official=True, product_type=official_product.product_type,
+                                                 weight=weight_product)
 
                 # Collect required ingredients
                 for original_ingredient in official_product.productingredient_set.all():
-                    weight = original_ingredient.weight_grams * coefficient
+                    weight = round(original_ingredient.weight_grams * coefficient, 1)
                     ProductIngredient.objects.create(product=product, ingredient=original_ingredient.ingredient, weight_grams=weight)
+                product.save()
 
             # Add OrderProduct to the list
             OrderProduct.objects.create(order=order, product=product, amount=amount, price=price, do_blend=do_blend)
@@ -407,7 +408,7 @@ def process_custom_meal(custom_meals, order: Order):
         total_weight = 0
         for ingredient in meal.get("ingredients", []):
             official_ingredient = ingredients_dict.get(ingredient.get("id"))
-            weight_grams = ingredient.get("weight")
+            weight_grams = round(ingredient.get("weight"), 1)
             total_weight += weight_grams
 
             ProductIngredient.objects.create(product=product, ingredient=official_ingredient, weight_grams=weight_grams)

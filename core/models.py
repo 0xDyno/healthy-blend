@@ -183,7 +183,7 @@ class Product(models.Model):
                     current_value = getattr(nutritional_value, field.name) or 0
                     ingredient_value = getattr(ingredient.nutritional_value, field.name) or 0
                     new_value = current_value + (ingredient_value * weight_ratio)
-                    setattr(nutritional_value, field.name, round(new_value, 2))
+                    setattr(nutritional_value, field.name, round(new_value, 1))
 
         return nutritional_value, total_weight
 

@@ -211,7 +211,7 @@ def can_edit_order(order):
     if order.created_at.date() != current_time.date():
         return False
 
-    return False
+    return True
 
 
 def can_edit_order_second_option(order):

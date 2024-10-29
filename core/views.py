@@ -270,7 +270,8 @@ def checkout(request):
         if promo_usage:
             promo_usage.save()
 
-        nutritional_value = NutritionalValue.objects.create(**data.get("nutritional_value"))
+        # Save nutrition info with 1 number after the decimal point
+        nutritional_value = NutritionalValue.objects.create(**{k: round(v, 1) for k, v in data["nutritional_value"].items()})
         order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=data["payment_type"],
                                      base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
 

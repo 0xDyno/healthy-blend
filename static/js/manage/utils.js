@@ -269,23 +269,16 @@ export function updateOrderStatus() {
                 MessageManager.handleAjaxMessages(data.messages)
             }
 
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    throw new Error(errorData.detail || 'Unknown error');
-                });
-            }
-            return data;
-        })
-        .then(data => {
-            // Закрываем модальное окно
-            const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
-            modal.hide();
+            if (response.ok) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
+                modal.hide();
 
-            // Обновляем список заказов на текущей странице
-            if (window.location.pathname.includes('control')) {
-                import('./orders_control.js').then(module => module.loadControlOrders());
-            } else {
-                import('./orders_all.js').then(module => module.loadAllOrders());
+                // Обновляем список заказов на текущей странице
+                if (window.location.pathname.includes('control')) {
+                    import('./orders_control.js').then(module => module.loadControlOrders());
+                } else {
+                    import('./orders_all.js').then(module => module.loadAllOrders());
+                }
             }
         })
         .catch(error => {
