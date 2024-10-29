@@ -345,6 +345,7 @@ class OrderProduct(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     amount = models.IntegerField(validators=[MinValueValidator(1)])
     price = models.IntegerField(validators=[MinValueValidator(0)])
+    do_blend = models.BooleanField(default=True)
 
 
 class OrderHistory(models.Model):
@@ -415,7 +416,7 @@ class Setting(models.Model):
     maximum_order_amount = models.IntegerField(default=3000000, validators=[MinValueValidator(0)])
     # weight in grams
     maximum_order_weight = models.IntegerField(default=5000, validators=[MinValueValidator(0)])
-    minimum_blend_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    minimum_blend_weight = models.IntegerField(default=100, validators=[MinValueValidator(0)])
 
     def save(self, *args, **kwargs):
         self.pk = 1

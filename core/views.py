@@ -258,7 +258,6 @@ def last_order(request):
 @utils.handle_rate_limit
 @transaction.atomic
 def checkout(request):
-
     try:
         data = json.loads(request.body)
         promo_usage = utils.big_validator(data)

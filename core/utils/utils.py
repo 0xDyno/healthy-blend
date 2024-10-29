@@ -69,7 +69,8 @@ def big_validator(data: json):
         raise ValidationError(message="The cart is empty")
 
     settings = Setting.objects.values("service", "tax", "can_order", "close_kitchen_before",
-                                      "minimum_order_amount", "maximum_order_amount", "maximum_order_weight").first()
+                                      "minimum_order_amount", "maximum_order_amount",
+                                      "maximum_order_weight", "minimum_blend_weight").first()
 
     # Check ordering is On
     if not settings.get("can_order"):
@@ -80,6 +81,7 @@ def big_validator(data: json):
     max_order = settings.get("maximum_order_amount")
     min_order = settings.get("minimum_order_amount")
     max_order_weight = settings.get("maximum_order_weight")
+    min_blend_weight = settings.get("minimum_blend_weight")
 
     # Check it's working time
     validate_working_time(settings.get("close_kitchen_before"))
@@ -110,8 +112,8 @@ def big_validator(data: json):
         raise ValidationError("The calculated price cannot be negative. Please review your order details.")
 
     # Check ordered positions
-    validation_result_official = validate_official_meal(official_meals)
-    validation_result_custom = validate_custom_meal(custom_meals)
+    validation_result_official = validate_official_meal(official_meals, min_blend_weight)
+    validation_result_custom = validate_custom_meal(custom_meals, min_blend_weight)
 
     # Check weight
     total_weight = validation_result_official.get("weight") + validation_result_custom.get("weight")
@@ -150,7 +152,7 @@ def validate_working_time(close_kitchen_before: int = 30):
     return True
 
 
-def validate_official_meal(official_meals):
+def validate_official_meal(official_meals, min_blend=0):
     if not official_meals:
         return {"total_price": 0, "ingredients": set(), "weight": 0}
 
@@ -166,6 +168,7 @@ def validate_official_meal(official_meals):
         amount = meal.get("amount")
         calories = meal.get("calories")
         price = meal.get("price")
+        do_blend = meal.get("do_blend")
 
         if not isinstance(meal_id, int):
             raise ValidationError(message="Official Meal - wrong type for id.")
@@ -175,6 +178,8 @@ def validate_official_meal(official_meals):
             raise ValidationError(message="Official Meal - wrong type for calories.")
         if not isinstance(price, (int, float)):
             raise ValidationError(message="Official Meal - wrong type for price.")
+        if not isinstance(do_blend, bool):
+            raise ValidationError(message="Official Meal - wrong type for do_blend.")
 
         product = products.get(meal_id)
 
@@ -187,6 +192,9 @@ def validate_official_meal(official_meals):
 
         weight = product.weight * (calories / product.nutritional_value.calories)
 
+        if do_blend and weight < min_blend:
+            raise ValidationError(message=f"Official Meal - weight is less than minimum allowed for blend, min is {min_blend}g.")
+
         ingredients_set.update(product.ingredients.all())
         total_price += official_price * amount
         total_weight += weight * amount
@@ -194,7 +202,7 @@ def validate_official_meal(official_meals):
     return {"total_price": total_price, "ingredients": ingredients_set, "weight": total_weight}
 
 
-def validate_custom_meal(custom_meals):
+def validate_custom_meal(custom_meals, min_blend=0):
     if not custom_meals:
         return {"total_price": 0, "ingredients": set(), "weight": 0}
 
@@ -208,12 +216,13 @@ def validate_custom_meal(custom_meals):
     total_weight = 0
     ingredients_set = set()
 
-    for custom_meal in custom_meals:
+    for meal in custom_meals:
         product_price = 0
         meal_weight = 0
-        ingredients = custom_meal.get("ingredients", [])
-        amount = custom_meal.get("amount")
-        price = custom_meal.get("price")
+        ingredients = meal.get("ingredients", [])
+        amount = meal.get("amount")
+        price = meal.get("price")
+        do_blend = meal.get("do_blend")
 
         if not isinstance(ingredients, list):
             raise ValidationError(message="Custom Meal - wrong type for ingredients.")
@@ -242,6 +251,9 @@ def validate_custom_meal(custom_meals):
             product_price += ingredient_obj.get_selling_price_for_weight(weight)
             meal_weight += weight
             ingredients_set.add(ingredient_obj)
+
+        if do_blend and meal_weight < min_blend:
+            raise ValidationError(message=f"Custom Meal - weight is less than minimum allowed for blend, min is {min_blend}g.")
 
         if not validate_price_difference(price, product_price):
             raise ValidationError(message="Custom Meal - wrong calculated price on web-site.")
@@ -353,6 +365,7 @@ def process_official_meal(official_meals, order: Order):
         official_product = official_products[meal_id]
         amount = meal.get("amount")
         calories = meal.get("calories")
+        do_blend = meal.get("do_blend")
 
         if not official_product.is_dish():
             # If drink - just save
@@ -377,7 +390,7 @@ def process_official_meal(official_meals, order: Order):
                     product_ingredients_to_create.append(product_ingredient)
 
             # Add OrderProduct to the list
-            order_products_to_create.append(OrderProduct(order=order, product=product, amount=amount, price=price))
+            order_products_to_create.append(OrderProduct(order=order, product=product, amount=amount, price=price, do_blend=do_blend))
 
     # Bulk creation
     if products_to_create:
@@ -403,6 +416,7 @@ def process_custom_meal(custom_meals, order: Order):
         description = f"{name} - {get_date_today()}"
         price = round(meal.get("price"))
         amount = meal.get("amount")
+        do_blend = meal.get("do_blend")
 
         product = Product(name=name, description=description, is_official=False, product_type="dish", price=price)
 
@@ -424,7 +438,7 @@ def process_custom_meal(custom_meals, order: Order):
                 product_ingredients_to_create.append(product_ingredient)
 
         # prepare OrderProduct для этого продукта
-        order_products_to_create.append(OrderProduct(order=order, product=product, amount=amount, price=price))
+        order_products_to_create.append(OrderProduct(order=order, product=product, amount=amount, price=price, do_blend=do_blend))
 
     # Bulk create Products
     Product.objects.bulk_create(products_to_create)
