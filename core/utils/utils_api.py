@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from core.models import Ingredient, Order, DaySettings
+from core.models import Ingredient, Order, DaySetting
 
 
 def get_all_products(products: list):

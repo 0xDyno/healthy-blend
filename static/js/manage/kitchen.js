@@ -135,6 +135,7 @@ document.addEventListener('DOMContentLoaded', function () {
             renderOrders(data.orders);
         } catch (error) {
             console.error('Error fetching orders:', error);
+            MessageManager.handleAjaxMessages([{level: 'error', message: 'No connection.'}]);
         }
     }
 

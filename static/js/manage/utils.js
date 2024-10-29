@@ -17,6 +17,7 @@ export function fetchOrders(callback) {
         })
         .catch(error => {
             console.error('Error:', error);
+            MessageManager.handleAjaxMessages([{level: 'error', message: 'No connection.'}]);
         });
 }
 
@@ -288,6 +289,7 @@ export function updateOrderStatus() {
             }
         })
         .catch(error => {
+            MessageManager.handleAjaxMessages([{level: 'error', message: 'No connection.'}]);
             console.error('Error:', error);
         });
 }

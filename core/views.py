@@ -12,10 +12,12 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django_ratelimit.decorators import ratelimit
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import Ingredient, Product, Order, NutritionalValue, Promo, PromoUsage
+from .models import Ingredient, Product, Order, NutritionalValue
 from .forms import LoginForm
 from core.utils import utils_api
 from core.utils import utils
@@ -26,7 +28,9 @@ logger = logging.getLogger(__name__)
 # ------------------------ API ------------------------------------------------------------------------------------------------
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
+@ratelimit(key='user', rate='30/m', method=['GET'])
+@utils.handle_rate_limit
 def api_get_ingredient(request, pk=None):
     ingredient = get_object_or_404(Ingredient, pk=pk)
     data = utils_api.get_ingredient_data(ingredient)
@@ -35,7 +39,9 @@ def api_get_ingredient(request, pk=None):
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
+@ratelimit(key='user', rate='30/m', method=['GET'])
+@utils.handle_rate_limit
 def api_get_all_ingredients(request):
     ingredients = Ingredient.objects.all()
     data = [utils_api.get_ingredient_data(ingredient) for ingredient in ingredients]
@@ -43,7 +49,9 @@ def api_get_all_ingredients(request):
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
+@ratelimit(key='user', rate='30/m', method=['GET'])
+@utils.handle_rate_limit
 def api_get_all_products(request):
     products = Product.objects.filter(is_menu=True)
     data = utils_api.get_all_products(products)
@@ -51,8 +59,10 @@ def api_get_all_products(request):
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
+@ratelimit(key='user', rate='30/m', method=['GET'])
+@utils.handle_rate_limit
 def api_get_order(request, pk):
     order = Order.objects.filter(pk=pk).first()
     if order:
@@ -63,8 +73,10 @@ def api_get_order(request, pk):
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
+@ratelimit(key='user', rate='30/m', method=['GET'])
+@utils.handle_rate_limit
 def api_get_orders(request):
     if request.user.role == "owner" or request.user.role == "administrator":
         orders = Order.objects.all()
@@ -86,7 +98,9 @@ def api_get_orders(request):
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
+@ratelimit(key='user', rate='30/m', method=['GET'])
+@utils.handle_rate_limit
 def api_get_order_last(request):
     order = Order.objects.filter(user=request.user).order_by("-created_at").first()
     if order and order.show_public:
@@ -98,7 +112,9 @@ def api_get_order_last(request):
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
+@utils.handle_rate_limit
+@ratelimit(key='user', rate='30/m', method=['GET'])
 @utils.role_redirect(roles=["owner", "kitchen", "manager", "administrator"], redirect_url="home", do_redirect=False)
 def api_get_orders_kitchen(request):
     orders = Order.objects.filter(order_status__in=["cooking"]).order_by("paid_at")
@@ -108,7 +124,9 @@ def api_get_orders_kitchen(request):
 
 
 @api_view(["PUT"])
-@login_required
+@permission_classes([IsAuthenticated])
+@ratelimit(key='user', rate='30/m', method=['GET'])
+@utils.handle_rate_limit
 @utils.role_redirect(roles=["owner", "manager", "kitchen", "administrator"], redirect_url="home", do_redirect=False)
 def api_update_order(request, pk):
     order = Order.objects.get(pk=pk)
@@ -146,7 +164,9 @@ def api_update_order(request, pk):
 
 
 @api_view(["PUT"])
-@login_required
+@permission_classes([IsAuthenticated])
+@ratelimit(key='user', rate='30/m', method=['GET'])
+@utils.handle_rate_limit
 @utils.role_redirect(roles=["owner", "manager", "kitchen", "administrator"], redirect_url="home", do_redirect=False)
 def api_update_ingredient(request, pk):
     try:
@@ -161,18 +181,21 @@ def api_update_ingredient(request, pk):
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
+@ratelimit(key='user', rate='10/m', method=['GET'])
+@utils.handle_rate_limit
 def api_check_promo(request, promo_code):
-    # it's better to make a protection here... limit 20 promo per hour
     if utils.check_promo(promo_code):
         return JsonResponse({"messages": [{"level": "success", "message": "Good to go! The promo code is active."}],
                              "is_active": True}, status=status.HTTP_200_OK)
-    return JsonResponse({"messages": [{"level": "error", "message": "It appears the promo code entered is not valid.",
-                                       "is_active": False}]}, status=status.HTTP_404_NOT_FOUND)
+    return JsonResponse({"messages": [{"level": "info", "message": "It appears the promo code entered is not valid.",
+                                       "is_active": False}]}, status=status.HTTP_204_NO_CONTENT)
 
 
 # ------------------------ WEB views ------------------------------------------------------------------------------------------------
 
+@ratelimit(key='ip', rate='50/h', method=['POST'])
+@utils.handle_rate_limit
 def user_login(request):
     if request.user.is_authenticated:
         return redirect("home")
@@ -228,36 +251,47 @@ def last_order(request):
 
 
 @login_required
-@require_POST
-@transaction.atomic
 @utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
+@require_POST
+@ratelimit(key='user', rate='5/m', method=['POST'])
+@ratelimit(key='user', rate='100/h', method=['POST'])
+@utils.handle_rate_limit
+@transaction.atomic
 def checkout(request):
+
     try:
         data = json.loads(request.body)
-        utils.big_validator(data)
+        promo_usage = utils.big_validator(data)
 
         official_meals = data.get("official_meals", [])
         custom_meals = data.get("custom_meals", [])
         price_no_fee = round(data.get("raw_price"))
         price_with_fee = round(data.get("total_price"))
-        promo_code = data.get("promo_code")
+
+        if promo_usage:
+            promo_usage.save()
 
         nutritional_value = NutritionalValue.objects.create(**data.get("nutritional_value"))
-        order = Order(user=request.user, user_last_update=request.user, payment_type=data["payment_type"],
-                      base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
+        order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=data["payment_type"],
+                                     base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
+
+        if promo_usage:
+            promo_usage.user = request.user
+            promo_usage.order = order
+            promo_usage.save(update_fields=["order"])
 
         utils.process_official_meal(official_meals, order)
         utils.process_custom_meal(custom_meals, order)
 
-        order.save()
-        promo = utils.check_promo(promo_code)
-        PromoUsage.objects.create(promo=promo, user=request.user, order=order, discounted=round(price_no_fee * promo.discount))
-
         return JsonResponse({"messages": [
-            {"level": "success", "message": f"Order {order.id} has been created"}
+            {"level": "success", "message": f"Order {order.id} has been created. Redirecting..."}
         ], "redirect_url": f"/last-order/"}, status=status.HTTP_200_OK)
     except ValidationError as e:
-        return JsonResponse({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_200_OK)
+        return JsonResponse({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        print(e)  # logging in the future
+        return JsonResponse({"messages": [{"level": "warning", "message": f"Error occurred. Please try again."}]},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @login_required

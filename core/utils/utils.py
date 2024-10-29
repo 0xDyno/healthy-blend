@@ -4,12 +4,18 @@ import json
 from datetime import datetime, timedelta
 from functools import wraps
 
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import F
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.utils import timezone
 
-from core.models import Product, Ingredient, Order, ProductIngredient, OrderProduct, NutritionalValue, DaySettings, Settings, Promo
+from core.models import Product, Ingredient, Order, ProductIngredient, OrderProduct, NutritionalValue, DaySetting, Setting, Promo, \
+    PromoUsage
+
+NUTRITIONAL_VALUE_FIELDS = None
 
 
 def role_redirect(roles, redirect_url, do_redirect=True):
@@ -31,6 +37,21 @@ def role_redirect(roles, redirect_url, do_redirect=True):
     return decorator
 
 
+def handle_rate_limit(view_func):
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if getattr(request, 'limited', False):
+
+            user_key = f"ratelimit-{request.user.id}"
+            ttl = cache.ttl(user_key)
+
+            return JsonResponse({"messages": [
+                {"level": "error", "message": f"Rate limit exceeded. Please try again in {ttl // 60} minutes."}]}, status=429)
+        return view_func(request, *args, **kwargs)
+
+    return wrapped
+
+
 def big_validator(data: json):
     """ We return, save & use frontend price - if it's less than 0.5% different of official. Customer oriented
     :return: price
@@ -47,12 +68,25 @@ def big_validator(data: json):
     if not official_meals and not custom_meals:
         raise ValidationError(message="The cart is empty")
 
+    settings = Setting.objects.values("service", "tax", "can_order",
+                                      "minimum_order_amount", "maximum_order_amount", "maximum_order_weight").first()
+
     # Check ordering is On
-    if not Settings.objects.get(pk=1).can_order:
+    if not settings.get("can_order"):
         raise ValidationError(message="Currently, ordering is not available. We apologize for the inconvenience.")
+
+    service = settings.get("service")
+    tax = settings.get("tax")
+    max_order = settings.get("maximum_order_amount")
+    min_order = settings.get("minimum_order_amount")
+    max_order_weight = settings.get("maximum_order_weight")
 
     # Check it's working time
     validate_working_time()
+
+    # Check max price (min price later)
+    if not max_order > total_price_front:
+        raise ValidationError(message=f"The order amount exceeds the maximum allowed of {max_order}. Please remove items to meet the limit.")
 
     # Check promo
     if promo_code:
@@ -79,33 +113,36 @@ def big_validator(data: json):
     validation_result_official = validate_official_meal(official_meals)
     validation_result_custom = validate_custom_meal(custom_meals)
 
+    # Check weight
+    total_weight = validation_result_official.get("weight") + validation_result_custom.get("weight")
+    if total_weight > max_order_weight:
+        raise ValidationError(message=f"The order weight ({round(total_weight)}) exceeds the maximum allowed of {max_order_weight}. "
+                                      f"Please remove items to meet the limit.")
+
     # Check all ingredients available
     all_ingredients = validation_result_official.get("ingredients").union(validation_result_custom.get("ingredients"))
     validate_ingredient_availability(all_ingredients)
 
     # Get price calculated on backend and check it
     raw_price_back = validation_result_official.get("total_price") + validation_result_custom.get("total_price")
-    validate_price_promo(raw_price_back, raw_price_front, total_price_front, promo)
+    return validate_price(service=service, tax=tax, min_order=min_order, promo=promo,
+                          back_price=raw_price_back, front_price=raw_price_front, total_front_price=total_price_front)
 
 
 def validate_working_time():
-    current_time = timezone.localtime()
+    current_time = timezone.now()
     current_day = current_time.weekday()
-    print(current_time)
-    print(current_day)
 
-    day_settings = DaySettings.objects.get(day=current_day)
+    day_setting = DaySetting.objects.get(day=current_day)
 
-    if not day_settings.is_open:
+    if not day_setting.is_open:
         raise ValidationError("Orders are unavailable on non-working days.")
 
-    open_time = timezone.make_aware(datetime.combine(current_time.date(), day_settings.open_hours))
-    close_time = timezone.make_aware(datetime.combine(current_time.date(), day_settings.close_hours))
-    print(open_time)
-    print(close_time)
+    open_time = timezone.make_aware(datetime.combine(current_time.date(), day_setting.open_hours))
+    close_time = timezone.make_aware(datetime.combine(current_time.date(), day_setting.close_hours))
 
     if current_time < open_time or current_time > close_time:
-        raise ValidationError(f"Orders are only available during working hours: from {day_settings.open_hours} to {day_settings.close_hours}.")
+        raise ValidationError(f"Orders are only available during working hours: from {day_setting.open_hours} to {day_setting.close_hours}.")
 
     if current_time >= close_time - timedelta(minutes=20):
         raise ValidationError("Orders close 20 minutes before the end of working hours.")
@@ -114,13 +151,21 @@ def validate_working_time():
 
 
 def validate_official_meal(official_meals):
+    if not official_meals:
+        return {"total_price": 0, "ingredients": set(), "weight": 0}
+
+    meal_ids = {meal["id"] for meal in official_meals}
+    products = {product.id: product for product in Product.objects.filter(id__in=meal_ids).prefetch_related('ingredients')}
+
     total_price = 0
+    total_weight = 0
     ingredients_set = set()
-    for official_meal in official_meals:
-        meal_id = official_meal.get("id")
-        amount = official_meal.get("amount")
-        calories = official_meal.get("calories")
-        price = official_meal.get("price")
+
+    for meal in official_meals:
+        meal_id = meal.get("id")
+        amount = meal.get("amount")
+        calories = meal.get("calories")
+        price = meal.get("price")
 
         if not isinstance(meal_id, int):
             raise ValidationError(message="Official Meal - wrong type for id.")
@@ -128,13 +173,11 @@ def validate_official_meal(official_meals):
             raise ValidationError(message="Official Meal - max allowed 10 for one type.")
         if not isinstance(calories, int):
             raise ValidationError(message="Official Meal - wrong type for calories.")
-        # if 100 > calories > 1000:
-        #     raise ValidationError(
-        #         message=f"Official Meal - minimal is 100 kCal, maximum 1000 kCal, your choice: {calories}. Please change it.")
         if not isinstance(price, (int, float)):
             raise ValidationError(message="Official Meal - wrong type for price.")
 
-        product = Product.objects.filter(id=meal_id).first()
+        product = products.get(meal_id)
+
         if product is None:
             raise ValidationError(message="Official Meal - wrong product id.")
 
@@ -142,18 +185,33 @@ def validate_official_meal(official_meals):
         if not validate_price_difference(official_price, price):
             raise ValidationError(message="Official Meal - wrong calculated price on web-site.")
 
+        weight = product.weight * (calories / product.nutritional_value.calories)
+
         ingredients_set.update(product.ingredients.all())
         total_price += official_price * amount
-    return {"total_price": total_price, "ingredients": ingredients_set}
+        total_weight += weight * amount
+
+    return {"total_price": total_price, "ingredients": ingredients_set, "weight": total_weight}
 
 
 def validate_custom_meal(custom_meals):
+    if not custom_meals:
+        return {"total_price": 0, "ingredients": set(), "weight": 0}
+
+    ingredient_ids = set()
+    for meal in custom_meals:
+        ingredient_ids.update(ing["id"] for ing in meal.get("ingredients", []))
+
+    all_ingredients_map = {ingredient.id: ingredient for ingredient in Ingredient.objects.filter(id__in=ingredient_ids)}
+
     total_price = 0
+    total_weight = 0
     ingredients_set = set()
+
     for custom_meal in custom_meals:
         product_price = 0
-
-        ingredients = custom_meal.get("ingredients")
+        meal_weight = 0
+        ingredients = custom_meal.get("ingredients", [])
         amount = custom_meal.get("amount")
         price = custom_meal.get("price")
 
@@ -164,9 +222,6 @@ def validate_custom_meal(custom_meals):
         if not isinstance(price, (int, float)):
             raise ValidationError(message="Custom Meal - wrong type for price.")
 
-        # Get all ingredients and save them to map as k:V -> id:object
-        all_ingredients_map = {ingredient.id: ingredient for ingredient in Ingredient.objects.all()}
-
         for ingredient in ingredients:
             ingredient_id = ingredient.get("id")
             weight = ingredient.get("weight")
@@ -176,65 +231,53 @@ def validate_custom_meal(custom_meals):
             if not isinstance(weight, (int, float)):
                 raise ValidationError(message=f"Custom Meal - wrong type for ingredient id. Received ({type(weight)})")
 
-            if ingredient_id not in all_ingredients_map:
+            ingredient_obj = all_ingredients_map.get(ingredient_id)
+            if not ingredient_obj:
                 raise ValidationError(message="Custom Meal - wrong ingredient id.")
 
-            ingredient_obj = all_ingredients_map.get(ingredient_id)
             if weight > ingredient_obj.max_order or weight < ingredient_obj.min_order:
                 raise ValidationError(message=f"Custom Meal - wrong weight for ingredient, received {weight}, "
                                               f"allowed {ingredient_obj.min_order} - {ingredient_obj.max_order}.")
 
             product_price += ingredient_obj.get_selling_price_for_weight(weight)
-
+            meal_weight += weight
             ingredients_set.add(ingredient_obj)
+
         if not validate_price_difference(price, product_price):
             raise ValidationError(message="Custom Meal - wrong calculated price on web-site.")
 
-        total_price += product_price
-    return {"total_price": total_price, "ingredients": ingredients_set}
+        total_price += product_price * amount
+        total_weight += meal_weight * amount
+
+    return {"total_price": total_price, "ingredients": ingredients_set, "weight": total_weight}
 
 
 def validate_ingredient_availability(ingredients: set):
-    not_available = [ingredient.name for ingredient in ingredients if not ingredient.is_available]
+    unavailable = Ingredient.objects.filter(id__in=[ing.id for ing in ingredients], is_available=False).values_list('name', flat=True)
 
-    if not_available:
-        unavailable_ingredients = ", ".join(not_available)
-        raise ValidationError(f"We're sorry to tell you that following ingredients are not available: {unavailable_ingredients}.")
+    if unavailable:
+        raise ValidationError(f"We're sorry to tell you that following ingredients are not available: {', '.join(unavailable)}.")
 
 
-def validate_price_promo(back_price, front_price, total_front_price, promo):
-    min_amount = Settings.objects.get(pk=1).minimum_order_amount
-
+def validate_price(service, tax, min_order, promo, back_price, front_price, total_front_price):
     if promo:
         discount = back_price * promo.discount
         back_price = back_price - discount
 
     # Get price with tax & service
-    total_back_price = get_price_with_tax(back_price)
+    total_back_price = get_price_with_tax(service, tax, back_price)
 
     if not validate_price_difference(back_price, front_price) or not validate_price_difference(total_back_price, total_front_price):
         raise ValidationError(message=f"Wrong calculated total Price. Web price: {total_front_price}, off price {total_back_price}")
 
     # Check price is > than minimum
-    if front_price < min_amount and not promo:
+    if front_price < min_order and not promo:
         raise ValidationError(message=f"The order amount is below the minimum required. "
-                                      f"Please add more items to reach the minimum order amount of {min_amount}.")
+                                      f"Please add more items to reach the minimum order amount of {min_order}.")
 
-
-def validate_price_no_promo(backend_price, frontend_price):
-    min_amount = Settings.objects.get(pk=1).minimum_order_amount
-
-    # Get price with tax & service
-    total_price_back = get_price_with_tax(backend_price)
-
-    # Check it's same, allowed difference less, than 0.5%
-    if not validate_price_difference(backend_price, frontend_price) or not validate_price_difference(total_price_back, frontend_price):
-        raise ValidationError(message=f"Wrong calculated total Price. Web price: {frontend_price}, off price {total_price_back}")
-
-    # Check price is > than minimum
-    if frontend_price < min_amount:
-        raise ValidationError(message=f"The order amount is below the minimum required. "
-                                      f"Please add more items to reach the minimum order amount of {min_amount}.")
+    if promo:
+        return PromoUsage(promo=promo, discounted=discount)
+    return None
 
 
 def validate_price_difference(p1, p2, allowed_difference=0.5):
@@ -251,7 +294,7 @@ def validate_nutritional_summary(nutritional_summary):
     if not nutritional_summary:
         raise ValidationError(f"Missing nutritions")
     # Get all fields
-    model_fields = [field.name for field in NutritionalValue._meta.get_fields() if not field.auto_created]
+    model_fields = get_nutritional_value_fields()
 
     # Check if all required fields are present
     missing_fields = set(model_fields) - set(nutritional_summary.keys())
@@ -277,70 +320,127 @@ def validate_nutritional_summary(nutritional_summary):
             raise ValidationError(f"Value for '{key}' exceeds maximum limit of 100,000 (current value: {value})")
 
 
+def get_nutritional_value_fields():
+    global NUTRITIONAL_VALUE_FIELDS
+    if NUTRITIONAL_VALUE_FIELDS is None:
+        NUTRITIONAL_VALUE_FIELDS = set(
+            field.name for field in NutritionalValue._meta.get_fields()
+            if not field.auto_created
+        )
+    return NUTRITIONAL_VALUE_FIELDS
+
+
 @transaction.atomic
 def process_official_meal(official_meals, order: Order):
+    order_products_to_create = []
+    products_to_create = []
+    product_ingredients_to_create = []
+
+    # Get all official_products with needed ID
+    meal_ids = [meal.get("id") for meal in official_meals]
+    official_products = {prod.id: prod for prod in Product.objects.filter(id__in=meal_ids).select_related('nutritional_value')}
+
+    # list with correct names for official_products with N kcal
+    potential_names = [f"{official_products[meal.get('id')].name} {meal.get('calories')}"for meal in official_meals
+                       if official_products[meal.get('id')].is_dish()]
+
+    # get all products with such names
+    existing_products = {prod.name: prod for prod in Product.objects.filter(name__in=potential_names, is_official=True)}
+
     for meal in official_meals:
         meal_id = meal.get("id")
         price = round(meal.get("price"))
-        official_product = Product.objects.filter(id=meal_id).first()
-
+        official_product = official_products[meal_id]
         amount = meal.get("amount")
         calories = meal.get("calories")
-        coefficient = calories / official_product.nutritional_value.calories
 
         if not official_product.is_dish():
-            # if it's drink - just connect with Order
-            OrderProduct.objects.create(order=order, product=official_product, amount=amount, price=price)
+            # If drink - just save
+            order_products_to_create.append(OrderProduct(order=order, product=official_product, amount=amount, price=price))
         else:
             new_name = f"{official_product.name} {calories}"
+            product = existing_products.get(new_name)
 
-            # Check if we have SAME product
-            product = Product.objects.filter(name=new_name, is_official=True, product_type=official_product.product_type).first()
-
-            # If we don't have - let's create
             if not product:
+                # Create new product
                 weight_product = round(meal.get("weight"))
-                product = Product.objects.create(name=new_name, description=official_product.description, image=official_product.image,
-                                                 is_menu=False, is_official=True, product_type=official_product.product_type,
-                                                 weight=weight_product)
-                # Add ingredients & weight
-                for original_ingredient in official_product.productingredient_set.all():
-                    weight_grams = original_ingredient.weight_grams * coefficient
-                    ProductIngredient.objects.create(product=product, ingredient=original_ingredient.ingredient, weight_grams=weight_grams)
+                coefficient = calories / official_product.nutritional_value.calories
 
-            # Connect with order
-            OrderProduct.objects.create(order=order, product=product, amount=amount, price=price)
+                product = Product(name=new_name, description=official_product.description, image=official_product.image, is_menu=False,
+                                  is_official=True, product_type=official_product.product_type, weight=weight_product)
+                products_to_create.append(product)
+
+                # Collect required ingredients
+                for original_ingredient in official_product.productingredient_set.all():
+                    weight = original_ingredient.weight_grams * coefficient
+                    product_ingredient = ProductIngredient(product=product, ingredient=original_ingredient.ingredient, weight_grams=weight)
+                    product_ingredients_to_create.append(product_ingredient)
+
+            # Add OrderProduct to the list
+            order_products_to_create.append(OrderProduct(order=order, product=product, amount=amount, price=price))
+
+    # Bulk creation
+    if products_to_create:
+        Product.objects.bulk_create(products_to_create)
+    if product_ingredients_to_create:
+        ProductIngredient.objects.bulk_create(product_ingredients_to_create)
+    if order_products_to_create:
+        OrderProduct.objects.bulk_create(order_products_to_create)
 
 
 @transaction.atomic
 def process_custom_meal(custom_meals, order: Order):
+    products_to_create = []
+    product_ingredients_to_create = []
+    order_products_to_create = []
+
+    # get IDs of ingredients in Custom Meal and get all Ingredients
+    all_ingredient_ids = {ingredient["id"] for meal in custom_meals for ingredient in meal.get("ingredients", [])}
+    ingredients_dict = {ing.id: ing for ing in Ingredient.objects.filter(id__in=all_ingredient_ids)}
+
     for meal in custom_meals:
         name = "Custom Meal"
         description = f"{name} - {get_date_today()}"
         price = round(meal.get("price"))
-
-        product = Product.objects.create(name=name, description=description, is_official=False, product_type="dish", price=price)
         amount = meal.get("amount")
 
-        # get IDs of ingredients in Custom Meal
-        received_ingredients = meal.get("ingredients")
-        received_ingredient_ids = [ingredient_id.get("id") for ingredient_id in received_ingredients]
+        product = Product(name=name, description=description, is_official=False, product_type="dish", price=price)
 
-        # get Ingredients we need by ID from DB, then make it dict k:V - id:obj
-        official_ingredients = Ingredient.objects.filter(id__in=received_ingredient_ids)
-        official_ingredient_dict = {ingredient.id: ingredient for ingredient in official_ingredients}
-
-        # creat ProductIngredient
-        total_weight = 0
-        for ingredient in received_ingredients:
-            official_ingredient = official_ingredient_dict.get(ingredient.get("id"))
-            weight_grams = ingredient.get("weight")
-            total_weight += weight_grams
-            ProductIngredient.objects.create(product=product, ingredient=official_ingredient, weight_grams=weight_grams)
-
+        # count weight for each product
+        total_weight = sum(ingredient.get("weight", 0) for ingredient in meal.get("ingredients", []))
         product.weight = round(total_weight)
-        product.save()
-        OrderProduct.objects.create(order=order, product=product, amount=amount, price=price)
+
+        # add product to creation list
+        products_to_create.append(product)
+
+        # prepare ProductIngredient for the product
+        for ingredient_data in meal.get("ingredients", []):
+            ingredient_id = ingredient_data.get("id")
+            weight_grams = ingredient_data.get("weight")
+
+            official_ingredient = ingredients_dict.get(ingredient_id)
+            if official_ingredient:
+                product_ingredient = ProductIngredient(product=product, ingredient=official_ingredient, weight_grams=weight_grams)
+                product_ingredients_to_create.append(product_ingredient)
+
+        # prepare OrderProduct для этого продукта
+        order_products_to_create.append(OrderProduct(order=order, product=product, amount=amount, price=price))
+
+    # Bulk create Products
+    Product.objects.bulk_create(products_to_create)
+
+    # Update Product in ProductIngredient
+    for i, product in enumerate(products_to_create):
+        for pi in product_ingredients_to_create:
+            if pi.product == product:
+                pi.product_id = product.id
+
+        # Update Product in OrderProduct
+        order_products_to_create[i].product_id = product.id
+
+    # Bulk create ProductIngredient & OrderProduct
+    ProductIngredient.objects.bulk_create(product_ingredients_to_create)
+    OrderProduct.objects.bulk_create(order_products_to_create)
 
 
 def get_date_today():
@@ -348,10 +448,9 @@ def get_date_today():
     return current_date.strftime("%d-%m-%Y %H:%M:%S")
 
 
-def get_price_with_tax(price):
-    settings = Settings.objects.get(pk=1)
-    price_service = price + (price * settings.service)
-    return round(price_service + (price_service * settings.tax))
+def get_price_with_tax(service, tax, price):
+    price_service = price + (price * service)
+    return round(price_service + (price_service * tax))
 
 
 def get_ingredient_type_choices():
@@ -359,8 +458,15 @@ def get_ingredient_type_choices():
 
 
 def check_promo(promo_code):
-    if len(promo_code) <= 20:
-        promo = Promo.objects.filter(promo_code=promo_code).first()
-        if promo and promo.is_available():
-            return promo
-    return None
+    """
+    Check if promo code exists and available for use.
+    Returns Promo object if available, None otherwise.
+    """
+    if not promo_code and len(promo_code) > 20:
+        return None
+
+    now = timezone.now()
+    try:
+        return Promo.objects.get(promo_code=promo_code, active_from__lte=now, active_until__gte=now, used_count__lt=F('usage_limit'))
+    except Promo.DoesNotExist:
+        return None

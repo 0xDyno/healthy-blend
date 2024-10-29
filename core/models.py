@@ -405,19 +405,30 @@ def save_order_id_before_delete(sender, instance, **kwargs):
             history.save()
 
 
-class Settings(models.Model):
+class Setting(models.Model):
     service = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
     tax = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
     minimum_order_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    maximum_order_amount = models.IntegerField(default=3000000, validators=[MinValueValidator(0)])
+    # weight in grams
+    maximum_order_weight = models.IntegerField(default=5000, validators=[MinValueValidator(0)])
+
     minimum_blend_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     can_order = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         self.pk = 1
-        super(Settings, self).save(*args, **kwargs)
+        super(Setting, self).save(*args, **kwargs)
 
 
-class DaySettings(models.Model):
+class DaySetting(models.Model):
+    """
+    Time handling conventions:
+    - All times are stored in UTC
+    - Frontend is responsible for local time conversion
+    - API accepts and returns UTC timestamps
+    - Database queries should use UTC for comparisons
+    """
     DAY_CHOICES = [
         (0, 'Monday'),
         (1, 'Tuesday'),
@@ -482,9 +493,12 @@ class PromoUsage(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean()
-        if not self.promo.is_available():
-            raise ValidationError("This promo code is no longer available.")
+        with transaction.atomic():
+            if not self.pk:
+                promo = Promo.objects.select_for_update().get(pk=self.promo.pk)
+                if not promo.promo.is_available():
+                    raise ValidationError("This promo code is no longer available.")
 
-        self.promo.used_count = self.promo.used_count + 1
-        self.promo.save(update_fields=["used_count"])
-        super().save(*args, **kwargs)
+                promo.used_count = promo.used_count + 1
+                promo.save(update_fields=["used_count"])
+            super().save(*args, **kwargs)

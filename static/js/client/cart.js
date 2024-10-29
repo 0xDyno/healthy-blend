@@ -185,19 +185,14 @@ function handleCheckout() {
     })
         .then(async response => {
             const data = await response.json()
-
-            if (data.messages) {
-                MessageManager.handleAjaxMessages(data.messages)
-            }
-
             if (response.ok) {
-
-                setTimeout(() => {
-                    storage.clearCart();
-                    updateCartControls()
-                    window.location.href = data.redirect_url;
-                }, 2000);
-
+                storage.clearCart();
+                updateCartControls()
+                window.location.href = data.redirect_url;
+            } else {
+                if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages)
+                }
             }
         })
         .catch(error => console.error('Error:', error));
