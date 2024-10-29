@@ -390,3 +390,41 @@ input[type="date"]::-ms-reveal {
 .modal.show .modal-dialog {
     transform: scale(1);
 }
+
+.status-circle {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin: 0 auto;
+}
+
+.status-circle.true {
+    background-color: #28a745;
+}
+
+.status-circle.false {
+    background-color: #dc3545;
+}
+
+.column-narrow {
+    min-width: 80px;
+    text-align: center;
+}
+
+.table-right-columns {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.table-right-columns th:first-child,
+.table-right-columns td:first-child {
+    width: auto;
+    text-align: left;
+}
+
+.table-right-columns th:not(:first-child),
+.table-right-columns td:not(:first-child) {
+    width: 80px;
+    text-align: center;
+}

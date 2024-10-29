@@ -110,6 +110,7 @@ def get_order_full(order):
             "price": order_product.price,
             "amount": order_product.amount,
             "is_official": product.is_official,
+            "do_blend": order_product.do_blend,
             "nutritional_value": product.nutritional_value.to_dict() if product.nutritional_value else None,
             "ingredients": [],
         }
@@ -148,6 +149,7 @@ def get_order_last(order: Order):
             "product_name": order_product.product.name,
             "price": order_product.price,
             "amount": order_product.amount,
+            "do_blend": order_product.do_blend,
             "is_official": order_product.product.is_official,
         }
         data_to_send["products"].append(product_data)
@@ -170,6 +172,7 @@ def get_order_for_kitchen(order: Order):
             "product_name": product.name,
             "amount": order_product.amount,
             "is_official": product.is_official,
+            "do_blend": order_product.do_blend,
             "ingredients": [],
         }
 

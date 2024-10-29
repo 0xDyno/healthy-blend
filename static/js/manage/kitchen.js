@@ -48,7 +48,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 ${order.products.map(product => `
                     <div class="product-item">
                         <div class="product-header">
-                            <span class="product-name">${product.product_name}</span>
+                            <span class="product-name">
+                                <span class="status-circle ${product.do_blend ? 'true' : 'false'}"></span>
+                                ${product.product_name}
+                            </span>
                             <span class="product-amount">×${product.amount}</span>
                         </div>
                         <div class="ingredients-list">
@@ -103,7 +106,10 @@ document.addEventListener('DOMContentLoaded', function () {
             ${order.products.map(product => `
                 <div class="product-item">
                     <div class="product-header">
-                        <span class="product-name">${product.product_name}</span>
+                        <span class="product-name">
+                            <span class="status-circle ${product.do_blend ? 'true' : 'false'}"></span>
+                            ${product.product_name}
+                        </span>
                         <span class="product-amount">×${product.amount}</span>
                     </div>
                     <div class="ingredients-list">

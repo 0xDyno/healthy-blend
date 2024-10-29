@@ -140,13 +140,14 @@ export function displayOrderDetails(orderId) {
             // Отображаем детали заказа
             const orderDetailsContainer = document.getElementById('orderDetails');
             orderDetailsContainer.innerHTML = `
-                <table class="table">
+                <table class="table table-right-columns">
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th class="text-center">Amount</th>
-                            <th class="text-center">Price</th>
-                            <th class="text-center">Total</th>
+                            <th class="column-narrow">Amount</th>
+                            <th class="column-narrow">Blend</th>
+                            <th class="column-narrow">Price</th>
+                            <th class="column-narrow">Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -155,16 +156,19 @@ export function displayOrderDetails(orderId) {
                                 <td>${product.name}<br>
                                     <small>${product.ingredients.map(ing => `${ing.name} (${ing.weight_grams}g)`).join(', ')}</small>
                                 </td>
-                                <td class="text-center">${product.amount}</td>
-                                <td class="text-center">${product.price}</td>
-                                <td class="text-center">${product.price * product.amount}</td>
+                                <td class="column-narrow">${product.amount}</td>
+                                <td class="column-narrow">
+                                    <span class="status-circle ${product.do_blend ? 'true' : 'false'}"></span>
+                                </td>
+                                <td class="column-narrow">${product.price}</td>
+                                <td class="column-narrow">${product.price * product.amount}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="3" class="text-end"><strong>Total:</strong></td>
-                            <td class="text-center"><strong>${order.total_price}</strong></td>
+                            <td colspan="3" class="text-end border-0"><strong>Total:</strong></td>
+                            <td class="column-narrow border-0"><strong>${order.total_price}</strong></td>
                         </tr>
                     </tfoot>
                 </table>
