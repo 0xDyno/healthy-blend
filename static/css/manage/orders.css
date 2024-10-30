@@ -517,3 +517,95 @@ input[type="date"]::-ms-reveal {
         padding: 12px 16px;
     }
 }
+
+/* Стили для переключателей */
+.toggle-switch-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+}
+
+.toggle-switch-checkbox {
+    display: none;
+}
+
+.toggle-switch-label {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.toggle-switch-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #e9ecef;
+    border-radius: 13px;
+    transition: all 0.2s ease;
+}
+
+.toggle-switch-switch {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 22px;
+    height: 22px;
+    background-color: white;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Стили для активного состояния isPaidFilter */
+#isPaidFilter:checked + .toggle-switch-label .toggle-switch-inner {
+    background-color: #a8e6cf;
+}
+
+#isPaidFilter:checked + .toggle-switch-label .toggle-switch-switch {
+    transform: translateX(24px);
+    background-color: #2d6a4f;
+}
+
+/* Стили для активного состояния isRefundedFilter */
+#isRefundedFilter:checked + .toggle-switch-label .toggle-switch-inner {
+    background-color: #ffb5b5;
+}
+
+#isRefundedFilter:checked + .toggle-switch-label .toggle-switch-switch {
+    transform: translateX(24px);
+    background-color: #943737;
+}
+
+/* Стили для текста */
+.toggle-switch-text {
+    font-size: 0.9rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+/* Эффекты при наведении */
+.toggle-switch-label:hover .toggle-switch-inner {
+    background-color: #dee2e6;
+}
+
+#isPaidFilter:checked + .toggle-switch-label:hover .toggle-switch-inner {
+    background-color: #98d8c1;
+}
+
+#isRefundedFilter:checked + .toggle-switch-label:hover .toggle-switch-inner {
+    background-color: #ffa8a8;
+}
+
+/* Медиа-запрос для мобильных устройств */
+@media (max-width: 768px) {
+    .toggle-switch-container {
+        justify-content: flex-start;
+        padding: 8px 0;
+    }
+}
