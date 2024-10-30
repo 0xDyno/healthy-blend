@@ -118,7 +118,3 @@ document.addEventListener('click', function (event) {
         utils.displayOrderDetails(orderId);
     }
 });
-
-export function refreshOrders() {
-    loadAllOrders();
-}

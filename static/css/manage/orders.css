@@ -428,3 +428,92 @@ input[type="date"]::-ms-reveal {
     width: 80px;
     text-align: center;
 }
+
+.status-buttons-row {
+    display: flex;
+    gap: 15px;
+    margin: 10px 0;
+    width: 100%;
+}
+
+.status-button {
+    flex: 1;
+    padding: 10px 16px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.status-button:hover {
+    background-color: #f1f3f5;
+}
+
+/* Стили для активной кнопки Is Paid */
+.status-button[data-field="isPaid"].active {
+    background-color: #a8e6cf; /* Мягкий зеленый */
+    border-color: #8ed7b8;
+    color: #2d6a4f;
+}
+
+.status-button[data-field="isPaid"].active:hover {
+    background-color: #98d8c1;
+    border-color: #7ec9aa;
+}
+
+/* Стили для активной кнопки Is Refunded */
+.status-button[data-field="isRefunded"].active {
+    background-color: #ffb5b5; /* Мягкий красный */
+    border-color: #ffa0a0;
+    color: #943737;
+}
+
+.status-button[data-field="isRefunded"].active:hover {
+    background-color: #ffa8a8;
+    border-color: #ff9292;
+}
+
+/* Эффект при нажатии */
+.status-button:active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+}
+
+/* Анимация при переключении */
+.status-button {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Стили для текста внутри кнопки */
+.status-button .status-text {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Медиа-запрос для мобильных устройств */
+@media (max-width: 768px) {
+    .status-buttons-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .status-button {
+        width: 100%;
+        padding: 12px 16px;
+    }
+}

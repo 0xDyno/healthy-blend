@@ -22,11 +22,6 @@
                                 <a class="nav-link" href="{% url 'orders_manage_control' %}">Control Panel</a>
                             </li>
                         {% endif %}
-                        {% if user.is_superuser %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">Admin Panel</a>
-                            </li>
-                        {% endif %}
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">

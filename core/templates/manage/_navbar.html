@@ -4,11 +4,14 @@
     <div class="nav-container">
         <div class="left-side">
             <a href="{% url 'home' %}" class="home-link">Home</a>
+            {% if user.is_superuser %}
+                | <a href="{% url 'admin:index' %}" class="home-link" target="_blank">Admin</a>
+            {% endif %}
         </div>
         <div class="center-links">
             <a href="{% url 'orders_manage_control' %}">Orders Control</a>
             <a href="{% url 'orders_manage_all' %}">Orders All</a>
-{#            <a href="{% url 'product_management' %}">Products</a>#}
+            {# <a href="{% url 'product_management' %}">Products</a> #}
             <a href="{% url 'ingredient_management' %}">Ingredients</a>
             {% if user.role == "owner" or user.role == "administrator" %}
                 <a href="{% url 'kitchen' %}">Kitchen</a>

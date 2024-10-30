@@ -176,8 +176,7 @@ export function displayOrderDetails(orderId) {
 
             // Установка значений в форме
             document.getElementById('paymentId').value = order.payment_id || '';
-            document.getElementById('isPaid').checked = order.is_paid;
-            document.getElementById('isRefunded').checked = order.is_refunded;
+            setupStatusButtons(order);
             document.getElementById('privateNote').value = order.private_note || '';
 
             // Обработка статуса заказа
@@ -308,4 +307,48 @@ export function getCookie(name) {
 
 export function getUserRole() {
     return window.currentUserRole || null;
+}
+
+export function handlePaymentStatusButtonClick(event) {
+    const button = event.currentTarget;
+    const fieldId = button.dataset.field;
+    const checkbox = document.getElementById(fieldId);
+
+    button.classList.toggle('active');
+    checkbox.checked = button.classList.contains('active');
+}
+
+function setupStatusButtons(order) {
+    const statusButtons = document.querySelectorAll('.status-button');
+
+    statusButtons.forEach(button => {
+        const fieldId = button.dataset.field;
+        const checkbox = document.getElementById(fieldId);
+
+        // Установка начального состояния
+        let isActive = false;
+        switch (fieldId) {
+            case 'isPaid':
+                isActive = order.is_paid;
+                break;
+            case 'isRefunded':
+                isActive = order.is_refunded;
+                break;
+        }
+
+        // Обновление состояния кнопки и скрытого чекбокса
+        if (isActive) {
+            button.classList.add('active');
+            checkbox.checked = true;
+        } else {
+            button.classList.remove('active');
+            checkbox.checked = false;
+        }
+
+        // Удаление старого обработчика событий (если есть)
+        button.removeEventListener('click', handlePaymentStatusButtonClick);
+
+        // Добавление нового обработчика событий
+        button.addEventListener('click', handlePaymentStatusButtonClick);
+    });
 }
