@@ -4,13 +4,13 @@ import json
 from datetime import datetime, timedelta
 from functools import wraps
 
-from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.utils import timezone
+from django_ratelimit.exceptions import Ratelimited
 
 from core.models import Product, Ingredient, Order, ProductIngredient, OrderProduct, NutritionalValue, DaySetting, Setting, Promo, \
     PromoUsage
@@ -39,17 +39,13 @@ def role_redirect(roles, redirect_url, do_redirect=True):
 
 def handle_rate_limit(view_func):
     @wraps(view_func)
-    def wrapped(request, *args, **kwargs):
-        if getattr(request, 'limited', False):
-
-            user_key = f"ratelimit-{request.user.id}"
-            ttl = cache.ttl(user_key)
-
+    def wrapped_view(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except Ratelimited:
             return JsonResponse({"messages": [
-                {"level": "error", "message": f"Rate limit exceeded. Please try again in {ttl // 60} minutes."}]}, status=429)
-        return view_func(request, *args, **kwargs)
-
-    return wrapped
+                {"level": "error", "message": "Too many requests. Please try again in a minute."}]}, status=429)
+    return wrapped_view
 
 
 def big_validator(data: json):
@@ -186,6 +182,9 @@ def validate_official_meal(official_meals, min_blend=0):
         if product is None:
             raise ValidationError(message="Official Meal - wrong product id.")
 
+        if not product.is_available():
+            raise ValidationError(message="Official Meal - product is not available.")
+
         official_price = product.get_price_for_calories(calories)
         if not validate_price_difference(official_price, price):
             raise ValidationError(message="Official Meal - wrong calculated price on web-site.")
@@ -266,9 +265,11 @@ def validate_custom_meal(custom_meals, min_blend=0):
 
 def validate_ingredient_availability(ingredients: set):
     unavailable = Ingredient.objects.filter(id__in=[ing.id for ing in ingredients], is_available=False).values_list('name', flat=True)
-
     if unavailable:
         raise ValidationError(f"We're sorry to tell you that following ingredients are not available: {', '.join(unavailable)}.")
+    not_menu = Ingredient.objects.filter(id__in=[ing.id for ing in ingredients], is_menu=False).values_list('name', flat=True)
+    if not_menu:
+        raise ValidationError(f"Following ingredients are not allowed to be ordered: {', '.join(not_menu)}.")
 
 
 def validate_price(service, tax, min_order, promo, back_price, front_price, total_front_price):

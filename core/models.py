@@ -119,6 +119,19 @@ class Ingredient(models.Model):
             raise ValidationError("Step must be between 0.1 and 5.")
         if self.selling_price is not None and self.selling_price < self.purchase_price:
             raise ValidationError("Selling price must be greater than or equal to the Purchase.")
+        self.check_official_products_usage()
+
+    def check_official_products_usage(self):
+        """
+        Checks if the ingredient is used in any official products before removing it from menu.
+        Raises ValidationError if the ingredient is used in official products.
+        """
+        if not self.is_menu and self.pk:  # Check only when removing from menu and not for new ingredients
+            official_products = Product.objects.filter(is_menu=True, ingredients__id=self.pk).values_list('name', flat=True)
+
+            if official_products.exists():
+                products_list = ", ".join(official_products)
+                raise ValidationError(f"Cannot remove ingredient from menu as it is used in official products: {products_list}")
 
     def save(self, *args, **kwargs):
         if not self.nutritional_value:
@@ -242,7 +255,7 @@ class Product(models.Model):
         return nutritional_value, total_weight
 
     def calculate_base_price(self):
-        total_price = self.productingredient_set.aggregate(total=Sum(F("ingredient__selling_price") * F("weight_grams")))["total"] or 0
+        total_price = self.productingredient_set.aggregate(total=Sum(F("ingredient__purchase_price") * F("weight_grams")))["total"] or 0
         return round(total_price)
 
     def get_selling_price(self):
