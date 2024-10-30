@@ -76,6 +76,13 @@ class NutritionalValue(models.Model):
 
 
 class Ingredient(models.Model):
+    class Meta:
+        indexes = [
+            models.Index(fields=["is_menu"]),
+            models.Index(fields=["is_available"]),
+            models.Index(fields=["is_menu", "is_available"]),
+        ]
+
     INGREDIENT_TYPES = (  # if update - update kitchen & manage/ingredients
         ("base", "Base"),
         ("protein", "Protein"),
@@ -114,10 +121,11 @@ class Ingredient(models.Model):
             raise ValidationError("Selling price must be greater than or equal to the Purchase.")
 
     def save(self, *args, **kwargs):
-        self.full_clean()
         if not self.nutritional_value:
             self.nutritional_value = NutritionalValue.objects.create()
-        self.clean()
+        self.full_clean()
+        if self.is_menu:
+            self.recalculate_products_availability()
         super().save(*args, **kwargs)
 
     def get_selling_price_for_weight(self, weight):
@@ -128,6 +136,34 @@ class Ingredient(models.Model):
         if self.selling_price is not None and self.selling_price > 0:
             return self.selling_price
         return round(self.purchase_price * self.price_multiplier)
+
+    def recalculate_products_availability(self):
+        # Get ALL products which MENU and have this ingredient
+        affected_products = Product.objects.filter(is_menu=True, ingredients=self).select_related('nutritional_value')
+
+        if not self.is_available:
+            # If not available - get ALL products that doesn't have this ingredient in lack_of_ingredients
+            products_to_update = affected_products.exclude(lack_of_ingredients=self)
+
+            # Add this ingredient to lack_of_ingredients & set product is_available to False
+            for product in products_to_update:
+                product.lack_of_ingredients.add(self)
+                if product.is_available:
+                    product.is_available = False
+                    product.save(update_fields=['is_available'])
+
+        else:
+            # Get ALL products that have this ingredient in lack_of_ingredients
+            products_with_lack = affected_products.filter(lack_of_ingredients=self)
+
+            # delete from lack_of_ingredients
+            for product in products_with_lack:
+                product.lack_of_ingredients.remove(self)
+
+                # If lack_of_ingredients is empty and product is_enabled, change product is_available to True
+                if not product.lack_of_ingredients.exists() and product.is_enabled:
+                    product.is_available = True
+                    product.save(update_fields=['is_available'])
 
     def __str__(self):
         return f"Ingredient ({self.id}): {self.name}"
@@ -146,6 +182,7 @@ class Product(models.Model):
     is_menu = models.BooleanField(default=False)  # for Menu
     is_official = models.BooleanField()  # True - copy of Menu w/ different kCal, False - custom meal
     is_available = models.BooleanField(default=False)  # for Menu if there's no Ingredients
+    is_enabled = models.BooleanField(default=False)  # admin can disable the product
 
     price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
     price_multiplier = models.FloatField(default=3.0, validators=[MinValueValidator(0)])
@@ -153,6 +190,7 @@ class Product(models.Model):
     weight = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
 
     ingredients = models.ManyToManyField("Ingredient", through="ProductIngredient")
+    lack_of_ingredients = models.ManyToManyField("Ingredient", related_name="products_lacking", blank=True)
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.PROTECT, related_name="product")
 
     def clean(self):
@@ -166,7 +204,11 @@ class Product(models.Model):
             self.nutritional_value
         except AttributeError:
             self.nutritional_value = NutritionalValue.objects.create()
+
         self.full_clean()
+        if self.is_menu and self.is_enabled and self.lack_of_ingredients.exists() == 0:
+            self.is_available = True
+
         super().save(*args, **kwargs)
 
         if self.productingredient_set.exists():
@@ -235,8 +277,6 @@ class ProductIngredient(models.Model):
             raise ValidationError(
                 f"Weight is too small for ingredient \"{self.ingredient.name}\", "
                 f"allowed {self.ingredient.min_order}g min, you have {self.weight_grams}")
-        if not self.ingredient.is_available:
-            raise ValidationError(f"Ingredient {self.ingredient.name} is not available")
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -253,6 +293,8 @@ class Order(models.Model):
             models.Index(fields=['is_refunded']),
             models.Index(fields=['created_at']),
             models.Index(fields=['user_id']),
+            models.Index(fields=['created_at', 'user_id']),
+            models.Index(fields=['order_status', 'paid_at']),
         ]
 
     PENDING = "pending"

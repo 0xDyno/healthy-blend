@@ -331,7 +331,7 @@ function setupAdminModal(ingredient) {
         modalDescription: ingredient?.description || '',
         modalType: ingredient?.ingredient_type || 'other',
         modalStep: ingredient?.step || 1,
-        modalMinOrder: ingredient?.min_order || 1,
+        modalMinOrder: ingredient?.min_order || 0,
         modalMaxOrder: ingredient?.max_order || 500,
         modalPurchasePrice: ingredient?.purchase_price || 0,
         modalSellingPrice: ingredient?.selling_price || '',

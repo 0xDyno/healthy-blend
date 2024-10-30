@@ -414,7 +414,7 @@ def process_custom_meal(custom_meals, order: Order):
             ProductIngredient.objects.create(product=product, ingredient=official_ingredient, weight_grams=weight_grams)
 
         product.weight = round(total_weight)
-        product.save()
+        product.save()      # important to update price & nutrition values
         OrderProduct.objects.create(order=order, product=product, amount=amount, price=price, do_blend=do_blend)
 
 
