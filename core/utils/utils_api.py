@@ -42,7 +42,7 @@ def get_ingredient_data(ingredient: Ingredient):
         "max_order": ingredient.max_order,
         "is_available": ingredient.is_available,
         "price": ingredient.selling_price if ingredient.selling_price else ingredient.purchase_price * ingredient.price_multiplier,
-        "is_dish": ingredient.is_dish,
+        "is_dish_ingredient": ingredient.is_dish_ingredient,
         "nutritional_value": ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
     }
 
@@ -74,7 +74,7 @@ def get_ingredient_data_full(ingredient: Ingredient):
         "min_order": ingredient.min_order,
         "max_order": ingredient.max_order,
         "is_available": ingredient.is_available,
-        "is_dish": ingredient.is_dish,
+        "is_dish_ingredient": ingredient.is_dish_ingredient,
         "is_menu": ingredient.is_menu,
         "purchase_price": ingredient.purchase_price,
         "selling_price": ingredient.selling_price,

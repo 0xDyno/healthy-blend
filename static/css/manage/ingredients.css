@@ -325,7 +325,7 @@
     content: 'Unavailable';
 }
 
-.status-button#modalIsDishBtn .status-value::after {
+.status-button#modalIsDishIngredientBtn .status-value::after {
     content: 'Not Dish';
 }
 
@@ -341,7 +341,7 @@
     content: 'Available';
 }
 
-.status-button#modalIsDishBtn.active .status-value::after {
+.status-button#modalIsDishIngredientBtn.active .status-value::after {
     content: 'Dish';
 }
 

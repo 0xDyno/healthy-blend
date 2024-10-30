@@ -22,7 +22,7 @@ class NutritionalValueAdmin(admin.ModelAdmin):
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "is_menu", "is_available", "is_dish", "purchase_price", "selling_price", "min_order", "max_order")
+    list_display = ("id", "name", "is_menu", "is_available", "is_dish_ingredient", "purchase_price", "selling_price", "min_order", "max_order")
     list_filter = ("is_available",)
     search_fields = ["name"]
 

@@ -228,8 +228,8 @@ function setupStatusButtons(ingredient) {
                 case 'modalIsAvailable':
                     isActive = ingredient.is_available;
                     break;
-                case 'modalIsDish':
-                    isActive = ingredient.is_dish;
+                case 'modalIsDishIngredient':
+                    isActive = ingredient.is_dish_ingredient;
                     break;
             }
         }
@@ -336,7 +336,7 @@ function setupAdminModal(ingredient) {
         modalPurchasePrice: ingredient?.purchase_price || 0,
         modalSellingPrice: ingredient?.selling_price || '',
         modalIsMenu: ingredient?.is_menu || false,
-        modalIsDish: ingredient?.is_dish || false,
+        modalIsDishIngredient: ingredient?.is_dish_ingredient || false,
         modalIsAvailable: ingredient?.is_available || false
     };
 
@@ -412,7 +412,7 @@ async function handleFormSubmit(e) {
         purchase_price: parseInt(document.getElementById('modalPurchasePrice').value),
         selling_price: document.getElementById('modalSellingPrice').value || null,
         is_menu: document.getElementById('modalIsMenu').checked,
-        is_dish: document.getElementById('modalIsDish').checked,
+        is_dish_ingredient: document.getElementById('modalIsDishIngredient').checked,
         is_available: document.getElementById('modalIsAvailable').checked,
         nutritional_value: nutritionalValue
     };

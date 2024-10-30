@@ -99,7 +99,7 @@ class Ingredient(models.Model):
     step = models.FloatField(default=1, validators=[MinValueValidator(0.05), MaxValueValidator(5)])
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(500)])
-    is_dish = models.BooleanField(default=True)
+    is_dish_ingredient = models.BooleanField(default=True)
     is_menu = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
 
