@@ -3,7 +3,7 @@
 export const REFRESH_INTERVAL = 10000;
 
 export function fetchOrders(callback) {
-    fetch('/api/get/orders/')
+    fetch('/api/control/get/orders/')
         .then(async response => {
             const data = await response.json();
 
@@ -110,7 +110,7 @@ export function formatTime(dateString) {
 }
 
 export function displayOrderDetails(orderId) {
-    fetch(`/api/get/order/${orderId}/`)
+    fetch(`/api/control/get/order/${orderId}/`)
         .then(async response => {
             const data = await response.json()
 
@@ -261,7 +261,7 @@ export function updateOrderStatus() {
         private_note: document.getElementById('privateNote').value
     };
 
-    fetch(`/api/update/order/${orderId}/`, {
+    fetch(`/api/control/update/order/${orderId}/`, {
         method: 'PUT', headers: {
             'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')
         }, body: JSON.stringify(data)

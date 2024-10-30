@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // API Functions
     async function fetchOrders() {
         try {
-            const response = await fetch('/api/get/orders/kitchen/');
+            const response = await fetch('/api/control/get/orders/kitchen/');
             const data = await response.json();
 
             if (data.messages) {
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function markOrderReady(orderId) {
         try {
-            const response = await fetch(`/api/update/order/${orderId}/`, {
+            const response = await fetch(`/api/control/update/order/${orderId}/`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

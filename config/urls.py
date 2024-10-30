@@ -36,11 +36,11 @@ urlpatterns = [
     path("api/control/update/ingredient/<int:pk>/", api_update_ingredient),
     path("api/control/create/ingredient/", api_create_ingredient),
 
-    path("api/get/orders/", api_get_orders),
-    path("api/get/order/<int:pk>/", api_get_order),
-    path("api/get/orders/kitchen/", api_get_orders_kitchen),
-    path("api/update/order/<int:pk>/", api_update_order),
-    path("api/check/promo/<str:promo_code>/", api_check_promo),
+    path("api/control/get/orders/", api_get_orders),  #
+    path("api/control/get/order/<int:pk>/", api_get_order),  #
+    path("api/control/get/orders/kitchen/", api_get_orders_kitchen),  #
+    path("api/control/update/order/<int:pk>/", api_update_order),  #
+    path("api/control/check/promo/<str:promo_code>/", api_check_promo),  #
 ]
 
 if settings.DEBUG:

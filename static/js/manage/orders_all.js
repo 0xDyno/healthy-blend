@@ -75,7 +75,7 @@ function filterOrders() {
         params.append("date", date);
     }
 
-    fetch(`/api/get/orders/?${params.toString()}`)
+    fetch(`/api/control/get/orders/?${params.toString()}`)
         .then(response => response.json())
         .then(data => {
             if (data.messages) {
