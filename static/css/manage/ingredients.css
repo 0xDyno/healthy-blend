@@ -1,5 +1,4 @@
-/* ingredients.css */
-
+/* Base Container Styles */
 .ingredients-container {
     margin: 0 auto;
     padding: 10px;
@@ -12,6 +11,54 @@
     padding: 15px;
 }
 
+/* Search Panel Styles */
+.search-panel {
+    margin-bottom: 20px;
+    padding: 0 15px;
+}
+
+.search-container {
+    max-width: 600px;
+    margin: 0 auto 15px;
+}
+
+#searchInput {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+}
+
+/* Filter Buttons */
+.type-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.type-filter-btn {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    background: white;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
+}
+
+.type-filter-btn:hover {
+    background: #f0f0f0;
+}
+
+.type-filter-btn.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Ingredient Card Styles */
 .ingredient-card {
     background: white;
     border-radius: 8px;
@@ -39,6 +86,13 @@
     margin-bottom: 8px;
 }
 
+.ingredient-name-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
 .ingredient-name {
     font-size: 1.1em;
     font-weight: bold;
@@ -48,8 +102,10 @@
 .ingredient-type {
     color: #666;
     font-size: 0.85em;
+    text-transform: capitalize;
 }
 
+/* Availability Badge */
 .availability-badge {
     position: absolute;
     top: 8px;
@@ -67,114 +123,39 @@
 
 .unavailable {
     background: #dc3545;
-    color: #ffffff;
-}
-
-/* Modal styles */
-.modal-body img {
-    border-radius: 8px;
-    width: 100%;
-    height: auto;
-}
-
-#availabilityButton.btn-available {
-    background-color: #28a745;
     color: white;
 }
 
-#availabilityButton.btn-unavailable {
-    background-color: #dc3545;
-    color: white;
-}
-
-.ingredient-card.unavailable .ingredient-name {
-    opacity: 1;
-    color: #000;
-}
-
-.ingredient-name {
-    font-size: 1.1em;
-    font-weight: bold;
-    margin-bottom: 4px;
-    color: #000;
-}
-
+/* Modal Styles */
 .modal-dialog {
     max-width: 320px;
     margin: 1.75rem auto;
 }
 
-.modal-body img {
-    border-radius: 6px;
-    max-height: 300px;
-    width: 100%;
-    object-fit: cover;
-}
-
-/* Добавить в ingredients.css */
-.search-panel {
-    margin-bottom: 20px;
-    padding: 0 15px;
-}
-
-.search-container {
-    max-width: 600px;
-    margin: 0 auto 15px;
-}
-
-#searchInput {
-    width: 100%;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    padding: 8px 12px;
-}
-
-.type-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    padding: 10px 0;
-}
-
-.type-filter-btn {
-    padding: 6px 12px;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    background: white;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.9em;
-}
-
-.type-filter-btn:hover {
-    background: #f0f0f0;
-}
-
-.type-filter-btn.active {
-    background: #007bff;
-    color: white;
-    border-color: #007bff;
-}
-
-/* Добавить в ingredients.css */
-.modal-dialog {
-    max-width: 400px;
+.modal-dialog-admin {
+    max-width: 800px;
+    min-width: 650px;
+    width: 90%;
+    margin: 1.75rem auto;
 }
 
 .modal-content {
     border: none;
     border-radius: 10px;
+    background-color: #f5f7fa; /* Светло-серый фон */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
 .modal-header {
     border-bottom: none;
     padding: 15px 15px 5px;
+    background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
 }
 
 .modal-title {
-    font-size: 1em;
+    font-size: 1.2em;
+    color: #333;
     font-weight: bold;
     width: 100%;
     text-align: center;
@@ -186,39 +167,275 @@
     flex-direction: column;
     align-items: center;
     gap: 12px;
+    background: linear-gradient(135deg, #f8fafc, #f1f4f8); /* Мягкий градиентный фон */
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
 }
 
-.modal-image {
+/* Image Upload Styles */
+.image-container {
+    position: relative;
     width: 100%;
-    height: 200px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.image-upload-label {
+    position: relative;
+    display: block;
+    cursor: pointer;
+    margin: 0;
+}
+
+#modalPreviewImage {
+    width: 100%;
+    height: 250px;
     object-fit: cover;
     border-radius: 8px;
 }
 
-.availability-btn {
-    width: 100%;
-    padding: 10px;
-    border: none;
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
     border-radius: 8px;
-    font-size: 1em;
+}
+
+.image-overlay span {
+    color: white;
+    font-size: 14px;
+}
+
+.image-upload-label:hover .image-overlay {
+    opacity: 1;
+}
+
+.image-placeholder {
+    width: 100%;
+    height: 250px;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.image-placeholder i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.image-placeholder span {
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+.image-upload-label:hover .image-placeholder {
+    border-color: #007bff;
+    color: #007bff;
+    background-color: #f1f8ff;
+}
+
+/* Form Styles */
+.form-group {
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 15px;
+}
+
+/* Стили для инпутов */
+.form-control {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background-color: #ffffff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.15);
+}
+
+.form-group label {
     font-weight: 500;
+    color: #333;
+    margin-bottom: 0.3rem;
+}
+
+#modalDescription {
+    resize: none;
+}
+
+/* Status Buttons */
+.status-buttons-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin: 1.5rem 0;
+}
+
+.status-button {
+    flex: 1;
+    height: 40px;
+    padding: 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 30px;
+    background-color: #ffa5a5; /* красный фон для неактивного состояния */
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.availability-btn.btn-available {
-    background-color: #28a745;
-    color: white;
-}
-
-.availability-btn.btn-unavailable {
-    background-color: #dc3545;
-    color: white;
-}
-
-.availability-btn:hover {
-    opacity: 0.9;
+.status-button:hover {
     transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+.status-button .status-value {
+    text-align: center;
+    width: 100%;
+}
+
+.status-button .status-value::after {
+    content: 'Not Menu';
+}
+
+.status-button#modalIsAvailableBtn .status-value::after {
+    content: 'Unavailable';
+}
+
+.status-button#modalIsDishBtn .status-value::after {
+    content: 'Not Dish';
+}
+
+.status-button.active {
+    background-color: #5eff82;
+}
+
+.status-button.active .status-value::after {
+    content: 'Menu';
+}
+
+.status-button#modalIsAvailableBtn.active .status-value::after {
+    content: 'Available';
+}
+
+.status-button#modalIsDishBtn.active .status-value::after {
+    content: 'Dish';
+}
+
+.submit-btn {
+    width: auto !important;
+    min-width: 500px;
+    padding: 8px 24px;
+    border-radius: 20px;
+    margin: 0 auto;
+    display: block;
+}
+
+.status-button.active {
+    background-color: #5eff82;
+}
+
+/* Nutritional Grid */
+.nutritional-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.nutritional-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.nutritional-item label {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+    color: #666;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+
+
+.nutritional-item input {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Admin Controls */
+.admin-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+#createIngredientBtn,
+.menu-filter-btn {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    background: white;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
+}
+
+#createIngredientBtn:hover,
+.menu-filter-btn:hover {
+    background: #f0f0f0;
+}
+
+.menu-filter-btn.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Menu Indicator */
+.menu-indicator {
+    width: 10px;
+    height: 10px;
+    background-color: #28a745;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: -2px;
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+    .nutritional-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
 @media (max-width: 768px) {
@@ -230,10 +447,6 @@
 
     .ingredient-image {
         height: 120px;
-    }
-
-    .ingredient-name {
-        font-size: 1em;
     }
 
     .search-container {
@@ -254,12 +467,27 @@
         max-width: 290px;
     }
 
-    .modal-image {
-        height: 180px;
+    .modal-dialog-admin {
+        min-width: 95%;
+        width: 95%;
+        margin: 1rem auto;
+    }
+
+    .status-buttons-row {
+        flex-direction: column;
+    }
+
+    .status-button {
+        width: 100%;
+        padding: 0.75rem;
+    }
+
+    .nutritional-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 576px) {
     .ingredients-grid {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         gap: 10px;
@@ -268,4 +496,55 @@
     .ingredient-image {
         height: 100px;
     }
+
+    .nutritional-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ingredient-info-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ingredient-type, .custom-price {
+    font-size: 0.85em;
+    color: #666;
+}
+
+.custom-price {
+    font-weight: 500;
+}
+
+/* User Modal Styles */
+.user-view img.ingredient-image {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.availability-btn {
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-available {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-unavailable {
+    background-color: #dc3545;
+    color: white;
+}
+
+.availability-btn:hover {
+    opacity: 0.9;
 }

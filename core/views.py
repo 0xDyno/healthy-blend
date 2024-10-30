@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -27,32 +27,90 @@ logger = logging.getLogger(__name__)
 
 # ------------------------ API ------------------------------------------------------------------------------------------------
 
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-@ratelimit(key="user", rate="30/m", method=["GET"])
-@utils.handle_rate_limit
-def api_get_ingredient(request, pk=None):
-    try:
-        ingredient = Ingredient.objects.get(pk=pk)
-    except Ingredient.DoesNotExist:
-        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
-    ingredient_data = utils_api.get_ingredient_data(ingredient)
-
-    return JsonResponse({"ingredient": ingredient_data}, status=status.HTTP_200_OK)
-
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @ratelimit(key="user", rate="30/m", method=["GET"])
 @utils.handle_rate_limit
 def api_get_ingredients(request):
+    """
+    Uses for Customers to choose from ingredients for custom meal
+    :return: All ingredients that are in the menu.
+    """
+    ingredients = Ingredient.objects.filter(is_menu=True).select_related("nutritional_value")
+    if ingredients:
+        return JsonResponse({"ingredients": utils_api.get_ingredient_data(ingredients)}, status=status.HTTP_200_OK)
+    return JsonResponse({"ingredients": [], "messages": [
+        {"level": "info", "message": "No ingredients found."}]}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@ratelimit(key="user", rate="30/m", method=["GET"])
+@utils.handle_rate_limit
+def api_get_ingredient(request, pk=None):
+    """
+    Uses for Customers to build custom meal
+    :return: Ingredient data by PK if it's menu.
+    """
+    try:
+        ingredient = Ingredient.objects.get(pk=pk, is_menu=True)
+    except Ingredient.DoesNotExist:
+        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
+    return JsonResponse({"ingredient": utils_api.get_ingredient_data(ingredient)}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["owner", "administrator", "manager", "kitchen"], redirect_url="home", do_redirect=False)
+@ratelimit(key="user", rate="30/m", method=["GET"])
+@utils.handle_rate_limit
+def api_get_ingredient_control(request, pk=None):
+    """
+    Uses in Control Panel to manage ingredients.
+    If Admin - ingredient with full info
+    If not - ingredient if it's menu and basic info (name, type, img, is_available)
+    :param request:
+    :param pk:
+    :return:
+    """
+    try:
+        if request.user.role == "owner" or request.user.role == "administrator":
+            ingredient = Ingredient.objects.get(pk=pk)
+            ingredient_data = utils_api.get_ingredient_data_full(ingredient)
+        else:
+            ingredient = Ingredient.objects.get(pk=pk, is_menu=True)
+            ingredient_data = utils_api.get_ingredient_data_lite(ingredient)
+    except Ingredient.DoesNotExist:
+        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
+
+    return JsonResponse({"ingredient": ingredient_data}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["owner", "administrator", "manager", "kitchen"], redirect_url="home", do_redirect=False)
+@ratelimit(key="user", rate="30/m", method=["GET"])
+@utils.handle_rate_limit
+def api_get_ingredients_control(request):
+    """
+    Uses in Control Panel to manage ingredients.
+    If Admin - all ingredients, basic info + is_menu + selling price
+    If not - only meny ingredients, basic info
+    :param request:
+    :return:
+    """
     if request.user.role == "owner" or request.user.role == "administrator":
-        ingredients = Ingredient.objects.all().select_related("nutritional_value")
-        data = [utils_api.get_ingredient_data(ingredient, True) for ingredient in ingredients]
+        ingredients = Ingredient.objects.all()
+        ingredients = [utils_api.get_ingredient_data_lite(ingredient, admin=True) for ingredient in ingredients]
     else:
-        ingredients = Ingredient.objects.filter(is_menu=True).select_related("nutritional_value")
-        data = [utils_api.get_ingredient_data(ingredient) for ingredient in ingredients]
-    return Response(data)
+        ingredients = Ingredient.objects.filter(is_menu=True)
+        ingredients = [utils_api.get_ingredient_data_lite(ingredient) for ingredient in ingredients]
+
+    if ingredients:
+        return JsonResponse({"ingredients": ingredients}, status=status.HTTP_200_OK)
+    return JsonResponse({"ingredients": [], "messages": [
+        {"level": "info", "message": "No ingredients found."}]}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(["GET"])
@@ -178,19 +236,36 @@ def api_update_order(request, pk):
 def api_update_ingredient(request, pk):
     try:
         ingredient = Ingredient.objects.get(pk=pk)
+
+        if request.user.role != "owner" and request.user.role != "administrator":
+            ingredient.is_available = not ingredient.is_available
+            ingredient.save()
+        else:
+            data = json.loads(request.POST.get('data'))
+            if 'image' in request.FILES:
+                data['image'] = request.FILES['image']
+
+            nutritional_data = data.pop('nutritional_value')
+            utils.validate_nutritional_summary(nutritional_data)
+
+            for field, value in nutritional_data.items():
+                setattr(ingredient.nutritional_value, field, value)
+            ingredient.nutritional_value.save()
+
+            for field, value in data.items():
+                setattr(ingredient, field, value)
+
+            ingredient.save()
+
+        return JsonResponse({"messages": [{"level": "success", "message": f"{ingredient.name} updated."}]}, status=status.HTTP_200_OK)
     except Ingredient.DoesNotExist:
         return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
-    if request.user.role != "owner" and request.user.role != "administrator":
-        ingredient.is_available = not ingredient.is_available
-        ingredient.save()
-    else:
-        data = json.loads(request.body)
-        ingredient.name = data.get("name")
-        ingredient.price = data.get("price")
-        ingredient.is_available = data.get("is_available")
-        ingredient.save()
-
-    return JsonResponse({"messages": [{"level": "success", "message": f"{ingredient.name} updated."}]}, status=status.HTTP_200_OK)
+    except ValidationError as e:
+        return JsonResponse({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        print(e)  # logging in the future
+        return JsonResponse({"messages": [{"level": "error", "message": f"Error occurred. Please try again."}]},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["POST"])
@@ -199,9 +274,26 @@ def api_update_ingredient(request, pk):
 @utils.handle_rate_limit
 @utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
 def api_create_ingredient(request):
-    data = json.loads(request.body)
-    ingredient = Ingredient.INGREDIENT_TYPES
-    return JsonResponse({"messages": [{"level": "success", "message": f"Ingredient created... (not)."}]}, status=status.HTTP_200_OK)
+    try:
+        data = json.loads(request.POST.get('data'))
+        if 'image' in request.FILES:
+            data['image'] = request.FILES['image']
+
+        nutritional_value = data.pop('nutritional_value')
+        utils.validate_nutritional_summary(nutritional_value)
+
+        nutritional_value = NutritionalValue.objects.create(**nutritional_value)
+        id_ = Ingredient.objects.create(**data, nutritional_value=nutritional_value).id
+
+        return JsonResponse({"messages": [{"level": "success", "message": f"Ingredient #{id_} created"}]}, status=status.HTTP_200_OK)
+    except Ingredient.DoesNotExist:
+        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
+    except ValidationError as e:
+        return JsonResponse({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        print(e)  # logging in the future
+        return JsonResponse({"messages": [{"level": "error", "message": f"Error occurred. Please try again."}]},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["GET"])

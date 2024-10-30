@@ -67,6 +67,10 @@ class NutritionalValue(models.Model):
             if field.name not in exclude_fields
         }
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Nutritional Value (ID: {self.id})"
 
@@ -83,33 +87,31 @@ class Ingredient(models.Model):
     )
     name = models.CharField(max_length=100)
     description = models.TextField()
-    image = models.ImageField(upload_to="ingredients/")
+    image = models.ImageField(upload_to="ingredients/", null=True)
     ingredient_type = models.CharField(max_length=10, choices=INGREDIENT_TYPES, default="other")
     step = models.FloatField(default=1, validators=[MinValueValidator(0.05), MaxValueValidator(5)])
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
     max_order = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(500)])
-    is_for_dish = models.BooleanField(default=True)
+    is_dish = models.BooleanField(default=True)
     is_menu = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
 
-    price_per_gram = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(999)])
+    purchase_price = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(999)])
     price_multiplier = models.FloatField(default=3.00, validators=[MinValueValidator(0)])
-    custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+    selling_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
 
     # for 100g
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.PROTECT, related_name="ingredient")
 
     def clean(self):
+        if self.is_menu and (not self.image or not self.name or not self.description):
+            raise ValidationError("Menu ingredients must have an image, name, and description.")
         if self.max_order < self.min_order:
             raise ValidationError("Max order must be greater than or equal to Min order.")
         if self.step < 0.1 or self.step > 5:
             raise ValidationError("Step must be between 0.1 and 5.")
-        if not self.image:
-            raise ValidationError("Please upload an image for the ingredient.")
-        if self.custom_price is not None and self.custom_price < self.price_per_gram:
-            raise ValidationError("Custom price can't be less, than price per gram.")
-        if not self.is_menu and self.is_available:
-            raise ValidationError("The ingredient must be marked as 'menu' to be available. Please update to 'menu' or set as unavailable.")
+        if self.selling_price is not None and self.selling_price < self.purchase_price:
+            raise ValidationError("Selling price must be greater than or equal to the Purchase.")
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -123,9 +125,9 @@ class Ingredient(models.Model):
         return round(price)
 
     def get_selling_price(self):
-        if self.custom_price is not None and self.custom_price > 0:
-            return self.custom_price
-        return round(self.price_per_gram * self.price_multiplier)
+        if self.selling_price is not None and self.selling_price > 0:
+            return self.selling_price
+        return round(self.purchase_price * self.price_multiplier)
 
     def __str__(self):
         return f"Ingredient ({self.id}): {self.name}"
@@ -147,7 +149,7 @@ class Product(models.Model):
 
     price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
     price_multiplier = models.FloatField(default=3.0, validators=[MinValueValidator(0)])
-    custom_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+    selling_price = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
     weight = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
 
     ingredients = models.ManyToManyField("Ingredient", through="ProductIngredient")
@@ -198,12 +200,12 @@ class Product(models.Model):
         return nutritional_value, total_weight
 
     def calculate_base_price(self):
-        total_price = self.productingredient_set.aggregate(total=Sum(F("ingredient__price_per_gram") * F("weight_grams")))["total"] or 0
+        total_price = self.productingredient_set.aggregate(total=Sum(F("ingredient__selling_price") * F("weight_grams")))["total"] or 0
         return round(total_price)
 
     def get_selling_price(self):
-        if self.custom_price is not None and self.custom_price > 0:
-            return self.custom_price
+        if self.selling_price is not None and self.selling_price > 0:
+            return self.selling_price
         return self.price * self.price_multiplier
 
     def get_price_for_calories(self, calories):

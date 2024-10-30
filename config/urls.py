@@ -25,19 +25,22 @@ urlpatterns = [
     path("kitchen/", kitchen_orders, name="kitchen"),
     path("kitchen/ingredients/", kitchen_ingredients, name="kitchen_ingredients"),
 
-    # API URLs
+    # API URLs - customer
     path("api/get/products/", api_get_all_products),
-    path("api/get/ingredient/<int:pk>/", api_get_ingredient),
     path("api/get/ingredients/", api_get_ingredients),
+    path("api/get/ingredient/<int:pk>/", api_get_ingredient),
     path("api/get/order/last/", api_get_order_last),
-    path("api/get/order/<int:pk>/", api_get_order),
+    # APU URLs - control
+    path("api/control/get/ingredients/", api_get_ingredients_control),
+    path("api/control/get/ingredient/<int:pk>/", api_get_ingredient_control),
+    path("api/control/update/ingredient/<int:pk>/", api_update_ingredient),
+    path("api/control/create/ingredient/", api_create_ingredient),
+
     path("api/get/orders/", api_get_orders),
+    path("api/get/order/<int:pk>/", api_get_order),
     path("api/get/orders/kitchen/", api_get_orders_kitchen),
     path("api/update/order/<int:pk>/", api_update_order),
-    path("api/update/ingredient/<int:pk>/", api_update_ingredient),
-    path("api/create/ingredient/", api_create_ingredient),
     path("api/check/promo/<str:promo_code>/", api_check_promo),
-
 ]
 
 if settings.DEBUG:

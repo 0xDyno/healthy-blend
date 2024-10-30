@@ -1,6 +1,6 @@
 {# _ingredients_content.html #}
 
-{# seatch #}
+{# search #}
 <div class="search-panel">
     <div class="search-container">
         <input type="text" id="searchInput" class="form-control" placeholder="Search by name...">
@@ -31,102 +31,160 @@
 </div>
 
 <!-- Modal window -->
-{% if user.role == "owner" or user.role == "administrotor" %}
-    <div class="modal fade" id="ingredientModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalName"></h5>
+<div class="modal fade" id="ingredientModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered {% if user.role == 'owner' or user.role == 'administrator' %}modal-dialog-admin{% endif %}">
+        <div class="modal-content">
+            <!-- Лоадер -->
+            <div id="modalLoader" class="modal-loader" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
+            </div>
+
+            <!-- Основной контент модального окна -->
+            <div id="modalContent">
+                <div class="modal-header">
+                    {% if user.role == "owner" or user.role == "administrator" %}
+                        <h5 class="modal-title">Edit Ingredient #<span id="ingredientId"></span></h5>
+                    {% else %}
+                        <h5 class="modal-title" id="modalName"></h5>
+                    {% endif %}
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
                 <div class="modal-body">
-                    <form id="ingredientForm">
-                        <div class="form-group">
-                            <label>Name:</label>
-                            <input type="text" id="modalIngredientName" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Description:</label>
-                            <textarea id="modalDescription" class="form-control"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Image URL:</label>
-                            <input type="text" id="modalImageUrl" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Type:</label>
-                            <select id="modalType" class="form-control">
-                                <option value="base">Base</option>
-                                <option value="protein">Protein</option>
-                                <option value="vegetable">Vegetable</option>
-                                <option value="dairy">Dairy</option>
-                                <option value="fruit">Fruit</option>
-                                <option value="topping">Topping</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Step:</label>
-                            <input type="number" id="modalStep" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Min Order:</label>
-                            <input type="number" id="modalMinOrder" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Max Order:</label>
-                            <input type="number" id="modalMaxOrder" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Price:</label>
-                            <input type="number" id="modalPrice" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Price per gram:</label>
-                            <input type="number" id="modalPricePerGram" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Custom Price:</label>
-                            <input type="number" id="modalCustomPrice" class="form-control">
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" id="modalIsMenu" class="form-check-input">
-                            <label class="form-check-label">Is Menu Item</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" id="modalIsForDish" class="form-check-input">
-                            <label class="form-check-label">Is For Dish</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" id="modalAvailable" class="form-check-input">
-                            <label class="form-check-label">Available</label>
-                        </div>
+                    {% if user.role == "owner" or user.role == "administrator" %}
+                        <form id="ingredientForm">
+                            <div class="row mb-4">
+                                <!-- Первый ряд: картинка и имя/описание -->
+                                <div class="col-md-5">
+                                    <div class="image-container">
+                                        <label for="modalImageUpload" class="image-upload-label">
+                                            <img id="modalPreviewImage" src="" alt="Ingredient" class="img-fluid mb-2">
+                                            <div class="image-placeholder">
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                                <span>Drop an image here<br>or click to upload</span>
+                                            </div>
+                                            <div class="image-overlay">
+                                                <span>Click to change image</span>
+                                            </div>
+                                        </label>
+                                        <input type="file" id="modalImageUpload" class="d-none" accept="image/*">
+                                        <input type="hidden" id="modalImageUrl">
+                                    </div>
+                                </div>
+                                <div class="col-md-7">
+                                    <div class="form-group mb-2">
+                                        <label>Name:</label>
+                                        <input type="text" id="modalIngredientName" class="form-control" required>
+                                    </div>
+                                    <div class="form-group mb-2">
+                                        <label>Description:</label>
+                                        <textarea id="modalDescription" class="form-control" rows="4"></textarea>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <button type="submit" class="btn btn-primary mt-3">Update</button>
+                            <!-- Второй ряд: тип и цены -->
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Type:</label>
+                                        <select id="modalType" class="form-control" required>
+                                            <option value="base">Base</option>
+                                            <option value="protein">Protein</option>
+                                            <option value="vegetable">Vegetable</option>
+                                            <option value="dairy">Dairy</option>
+                                            <option value="fruit">Fruit</option>
+                                            <option value="topping">Topping</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Purchase Price / 1g:</label>
+                                        <input type="number" id="modalPurchasePrice" class="form-control" required min="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Selling Price / 1g:</label>
+                                        <input type="number" id="modalSellingPrice" class="form-control" min="0">
+                                    </div>
+                                </div>
+                            </div>
 
-                        <div class="nutritional-values mt-4">
-                            <h6>Nutritional Values</h6>
-                            <!-- Nutritional values inputs will be generated dynamically via JavaScript -->
+                            <!-- Третий ряд: параметры заказа -->
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Min Order (g):</label>
+                                        <input type="number" id="modalMinOrder" class="form-control" required min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Max Order (g):</label>
+                                        <input type="number" id="modalMaxOrder" class="form-control" required min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Step (g):</label>
+                                        <input type="number" id="modalStep" class="form-control" required min="0.1" step="0.1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Статусы -->
+                            <div class="status-buttons-row">
+                                <button type="button" class="status-button" id="modalIsMenuBtn" data-field="modalIsMenu">
+                                    <span class="status-text"></span>
+                                    <span class="status-value"></span>
+                                </button>
+                                <button type="button" class="status-button" id="modalIsAvailableBtn" data-field="modalIsAvailable">
+                                    <span class="status-text"></span>
+                                    <span class="status-value"></span>
+                                </button>
+                                <button type="button" class="status-button" id="modalIsDishBtn" data-field="modalIsDish">
+                                    <span class="status-text"></span>
+                                    <span class="status-value"></span>
+                                </button>
+                                <!-- Скрытые чекбоксы для хранения значений -->
+                                <input type="checkbox" id="modalIsMenu" class="d-none">
+                                <input type="checkbox" id="modalIsAvailable" class="d-none">
+                                <input type="checkbox" id="modalIsDish" class="d-none">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary submit-btn mt-4" id="submitButton">Update</button>
+
+                            <!-- Пищевая ценность -->
+                            <div class="nutritional-values mt-4">
+                                <h6 class="mb-3">Nutritional Values (per 100g)</h6>
+                                <div class="nutritional-grid">
+                                    <!-- Будет заполнено динамически через JavaScript -->
+                                </div>
+                            </div>
+                        </form>
+                    {% else %}
+                        <!-- Отображение для обычных пользователей -->
+                        <div class="user-view">
+                            <div style="position: relative;">
+                                <img src="" alt="" id="modalImage" class="ingredient-image">
+                                <span class="availability-badge" id="modalAvailabilityStatus"></span>
+                            </div>
+                            <div class="ingredient-info">
+                                <div class="ingredient-type" id="modalType"></div>
+                            </div>
                         </div>
-                    </form>
+                        <button id="toggleAvailabilityBtn" class="availability-btn w-100 mt-3"></button>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-{% else %}
-    <div class="modal fade" id="ingredientModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalName"></h5>
-                </div>
-                <div class="modal-body">
-                    <img id="modalImage" src="" alt="" class="modal-image">
-                    <button id="availabilityButton" class="availability-btn"></button>
-                </div>
-            </div>
-        </div>
-    </div>
-{% endif %}
+</div>
 
 {% block scripts %}
     <script>window.currentUserRole = "{{ user.role }}";</script>

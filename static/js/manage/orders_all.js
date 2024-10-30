@@ -2,6 +2,8 @@
 
 import * as utils from "./utils.js";
 
+const is_admin = utils.getUserRole() === 'owner' || utils.getUserRole() === 'administrator'
+
 document.addEventListener('DOMContentLoaded', function () {
     loadAllOrders();
 
@@ -17,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('isRefundedFilter').addEventListener('change', filterOrders);
 
     document.getElementById('sortBy').addEventListener('change', filterOrders);
-    if (utils.getUserRole() === 'owner' || utils.getUserRole() === 'administrator') {
+    if (is_admin) {
         document.getElementById("filterDate").addEventListener('change', filterOrders);
     }
     document.getElementById('clearFilters').addEventListener('click', clearFilters);
@@ -68,7 +70,7 @@ function filterOrders() {
         sort_by: sortBy
     });
 
-    if (utils.getUserRole() === 'owner' || utils.getUserRole() === 'administrator') {
+    if (is_admin) {
         const date = document.getElementById("filterDate").value;
         params.append("date", date);
     }
@@ -99,7 +101,7 @@ function clearFilters() {
     document.getElementById('sortBy').value = '';
     document.getElementById('isPaidFilter').checked = false;
     document.getElementById('isRefundedFilter').checked = false;
-    if (utils.getUserRole() === 'owner' || utils.getUserRole() === 'administrator') {
+    if (is_admin) {
         document.getElementById('filterDate').value = '';
     }
 

@@ -29,8 +29,9 @@ def get_all_products(products: list):
     return data
 
 
-def get_ingredient_data(ingredient: Ingredient, all_info=False):
-    data = {
+def get_ingredient_data(ingredient: Ingredient):
+    """ Uses to make orders by Customers"""
+    return {
         "id": ingredient.id,
         "name": ingredient.name,
         "description": ingredient.description,
@@ -39,16 +40,46 @@ def get_ingredient_data(ingredient: Ingredient, all_info=False):
         "step": ingredient.step,
         "min_order": ingredient.min_order,
         "max_order": ingredient.max_order,
-        "available": ingredient.is_available,
-        "price": ingredient.custom_price if ingredient.custom_price else ingredient.price_per_gram * ingredient.price_multiplier,
-        "is_for_dish": ingredient.is_for_dish,
+        "is_available": ingredient.is_available,
+        "price": ingredient.selling_price if ingredient.selling_price else ingredient.purchase_price * ingredient.price_multiplier,
+        "is_dish": ingredient.is_dish,
         "nutritional_value": ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
     }
-    if all_info:
+
+
+def get_ingredient_data_lite(ingredient: Ingredient, admin=False):
+    """ Uses to show base info on Control Panel"""
+    data = {
+        "id": ingredient.id,
+        "name": ingredient.name,
+        "image": ingredient.image.url,
+        "ingredient_type": ingredient.ingredient_type,
+        "is_available": ingredient.is_available,
+    }
+    if admin:
         data["is_menu"] = ingredient.is_menu
-        data["price_per_gram"] = ingredient.price_per_gram
-        data["custom_price"] = ingredient.custom_price
+        data["selling_price"] = ingredient.selling_price
     return data
+
+
+def get_ingredient_data_full(ingredient: Ingredient):
+    """ Uses to show Full info on Control Panel"""
+    return {
+        "id": ingredient.id,
+        "name": ingredient.name,
+        "description": ingredient.description,
+        "image": ingredient.image.url,
+        "ingredient_type": ingredient.ingredient_type,
+        "step": ingredient.step,
+        "min_order": ingredient.min_order,
+        "max_order": ingredient.max_order,
+        "is_available": ingredient.is_available,
+        "is_dish": ingredient.is_dish,
+        "is_menu": ingredient.is_menu,
+        "purchase_price": ingredient.purchase_price,
+        "selling_price": ingredient.selling_price,
+        "nutritional_value": ingredient.nutritional_value.to_dict() if ingredient.nutritional_value else None,
+    }
 
 
 def get_order_general(order: Order):
