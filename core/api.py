@@ -1,9 +1,9 @@
 import json
 import logging
 
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django_ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -250,10 +250,7 @@ def update_order_control(request, pk):
     order.is_refunded = data.get("is_refunded")
     order.private_note = data.get("private_note")
     order.user_last_update = request.user
-    try:
-        order.clean()
-    except ValidationError as e:
-        return Response({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
+    order.clean()
     order.save()
 
     return Response({"messages": [{"level": "success", "message": f"Order #{order.id} updated."}]}, status=status.HTTP_200_OK)
@@ -291,8 +288,6 @@ def update_ingredient_control(request, pk):
         return Response({"messages": [{"level": "success", "message": f"{ingredient.name} updated."}]}, status=status.HTTP_200_OK)
     except Ingredient.DoesNotExist:
         return Response({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
-    except ValidationError as e:
-        return Response({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["POST"])
@@ -315,8 +310,6 @@ def create_ingredient_control(request):
         return Response({"messages": [{"level": "success", "message": f"Ingredient #{id_} created"}]}, status=status.HTTP_200_OK)
     except Ingredient.DoesNotExist:
         return Response({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
-    except ValidationError as e:
-        return Response({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET"])
@@ -352,8 +345,14 @@ def get_promo(request, pk):
 @utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["PUT"])
 @utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
-def update_promo(request, pk):
-    print("EDIT:", request.body)
+def update_promo(request, pk=None):
+    try:
+        promo = utils_api.update_promo(Promo.objects.get(pk=pk), request)
+    except Promo.DoesNotExist:
+        return Response({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
+    promo.save()
+
+    return Response({"messages": [{"level": "success", "message": f"Promo #{promo.id} updated."}]}, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
@@ -361,8 +360,11 @@ def update_promo(request, pk):
 @utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["POST"])
 @utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
-def create_promo(request, pk):
-    print("CREATE:", request.body)
+def create_promo(request):
+    promo = utils_api.update_promo(Promo(), request)
+    promo.creator = request.user
+    promo.save()
+    return Response({"messages": [{"level": "success", "message": f"Promo #{promo.id} created."}]}, status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET"])
@@ -390,31 +392,27 @@ def check_promo(request, promo_code):
 @ratelimit(key="user", rate="100/h", method=["POST"])
 @transaction.atomic
 def checkout(request):
-    try:
-        promo_usage = utils.big_validator(request.data)
+    promo_usage = utils.big_validator(request.data)
 
-        official_meals = request.data.get("official_meals", [])
-        custom_meals = request.data.get("custom_meals", [])
-        price_no_fee = round(request.data.get("raw_price"))
-        price_with_fee = round(request.data.get("total_price"))
+    official_meals = request.data.get("official_meals", [])
+    custom_meals = request.data.get("custom_meals", [])
+    price_no_fee = round(request.data.get("raw_price"))
+    price_with_fee = round(request.data.get("total_price"))
 
-        # Save nutrition info with 1 number after the decimal point
-        nutritional_value = NutritionalValue.objects.create(**{k: round(v, 1) for k, v in request.data["nutritional_value"].items()})
-        order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=request.data["payment_type"],
-                                     base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
+    # Save nutrition info with 1 number after the decimal point
+    nutritional_value = NutritionalValue.objects.create(**{k: round(v, 1) for k, v in request.data["nutritional_value"].items()})
+    order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=request.data["payment_type"],
+                                 base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
 
-        if promo_usage:
-            promo_usage.user = request.user
-            promo_usage.order = order
-            promo_usage.save()
+    if promo_usage:
+        promo_usage.user = request.user
+        promo_usage.order = order
+        promo_usage.save()
 
-        if official_meals:
-            utils.process_official_meal(official_meals, order)
-        if custom_meals:
-            utils.process_custom_meal(custom_meals, order)
+    if official_meals:
+        utils.process_official_meal(official_meals, order)
+    if custom_meals:
+        utils.process_custom_meal(custom_meals, order)
 
-        return Response({"messages": [
-            {"level": "success", "message": f"Order {order.id} has been created. Redirecting..."}
-        ], "redirect_url": f"/last-order/"}, status=status.HTTP_200_OK)
-    except ValidationError as e:
-        return Response({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"messages": [{"level": "success", "message": f"Order {order.id} has been created. Redirecting..."}],
+                     "redirect_url": f"/last-order/"}, status=status.HTTP_200_OK)

@@ -2,7 +2,7 @@ from datetime import timedelta, datetime
 
 from django.db.models import Q
 from django.utils import timezone
-from django.utils.dateparse import parse_date
+from django.utils.dateparse import parse_date, parse_datetime
 
 from core.models import Ingredient, Order, DaySetting, PromoUsage
 
@@ -446,3 +446,15 @@ def get_promo_data(promo, full=False):
         data["discounted_total"] = total_discounted
         data['usage_history'] = usage_list
     return data
+
+
+def update_promo(promo, request):
+    promo.promo_code = request.data.get("promo_code")
+    promo.discount = request.data.get("discount")
+    promo.usage_limit = request.data.get("usage_limit")
+    promo.is_enabled = request.data.get("is_enabled")
+    promo.is_finished = request.data.get("is_finished")
+    promo.active_from = parse_datetime(request.data.get('active_from'))
+    promo.active_until = parse_datetime(request.data.get('active_until'))
+
+    return promo

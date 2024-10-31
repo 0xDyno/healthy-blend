@@ -51,7 +51,7 @@ urlpatterns = [
 
     path("api/control/get/promos/", api.get_promos),
     path("api/control/get/promo/<int:pk>/", api.get_promo),
-    path("api/control/update/promo/", api.update_promo),
+    path("api/control/update/promo/<int:pk>/", api.update_promo),
     path("api/control/create/promo/", api.create_promo),
 ]
 

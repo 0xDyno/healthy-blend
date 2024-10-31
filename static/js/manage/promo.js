@@ -143,12 +143,12 @@ function createPromoCard(promo) {
                     <th>Ends</th>
                 </tr>
                 <tr>
-                    <td>${new Date(promo.active_from).toLocaleDateString()}</td>
-                    <td>${new Date(promo.active_until).toLocaleDateString()}</td>
+                    <td>${formatDate(promo.active_from)}</td>
+                    <td>${formatDate(promo.active_until)}</td>
                 </tr>
                 <tr>
-                    <td>${new Date(promo.active_from).toLocaleTimeString()}</td>
-                    <td>${new Date(promo.active_until).toLocaleTimeString()}</td>
+                    <td>${formatTime(promo.active_from)}</td>
+                    <td>${formatTime(promo.active_until)}</td>
                 </tr>
             </table>
         </div>
@@ -198,12 +198,15 @@ async function showPromoModal(promo) {
 }
 
 function setupModalForNewPromo() {
+    document.getElementById('promoForm').dataset.promoId = '';
+
     document.getElementById('promoTitle').textContent = 'Create New Promo';
     document.getElementById('promoId').textContent = '';
     document.getElementById('submitButton').textContent = 'Create';
     document.getElementById('modalActiveStatus').style.display = 'none';
 
-    setupStatusButtons({ is_enabled: true });
+    setupStatusButtons({is_enabled: true});
+    setupFinishedButton({is_finished: false});
 
     // Set default dates
     const now = new Date();
@@ -224,8 +227,8 @@ function setupModalForExistingPromo(promo) {
     document.getElementById('modalDiscount').value = promo.discount * 100;
     document.getElementById('modalUsageLimit').value = promo.usage_limit;
     document.getElementById('modalUsedCount').value = promo.used_count;
-    document.getElementById('modalActiveFrom').value = new Date(promo.active_from).toISOString().slice(0, 16);
-    document.getElementById('modalActiveUntil').value = new Date(promo.active_until).toISOString().slice(0, 16);
+    document.getElementById('modalActiveFrom').value = formatForDateTimeLocal(promo.active_from);
+    document.getElementById('modalActiveUntil').value = formatForDateTimeLocal(promo.active_until);
     document.getElementById('modalCreator').value = promo.creator;
 
     // Setup enabled checkbox and active status
@@ -260,7 +263,7 @@ function setupModalForExistingPromo(promo) {
                 <td>${entry.order_id}</td>
                 <td>${entry.order_base_price}</td>
                 <td>${entry.discounted}</td>
-                <td>${new Date(entry.used_at).toLocaleString()}</td>
+                <td>${formatDateTime(entry.used_at)}</td>
             </tr>
         `).join('');
     }
@@ -353,12 +356,15 @@ async function handleFormSubmit(e) {
     const promoId = form.dataset.promoId;
     const isNew = !promoId;
 
+    const activeFromLocal = document.getElementById('modalActiveFrom').value;
+    const activeUntilLocal = document.getElementById('modalActiveUntil').value;
+
     const promoData = {
         promo_code: document.getElementById('modalPromoCode').value,
         discount: parseFloat(document.getElementById('modalDiscount').value) / 100,
         usage_limit: parseInt(document.getElementById('modalUsageLimit').value),
-        active_from: document.getElementById('modalActiveFrom').value,
-        active_until: document.getElementById('modalActiveUntil').value,
+        active_from: localToUTC(activeFromLocal),
+        active_until: localToUTC(activeUntilLocal),
         is_enabled: document.getElementById('modalIsEnabled').checked,
         is_finished: document.getElementById('modalIsFinished').checked,
     };
@@ -410,60 +416,32 @@ document.getElementById('promoModal').addEventListener('hidden.bs.modal', functi
     }
 });
 
-// Validation functions
-function validatePromoForm() {
-    const promoCode = document.getElementById('modalPromoCode').value;
-    const discount = parseFloat(document.getElementById('modalDiscount').value);
-    const usageLimit = parseInt(document.getElementById('modalUsageLimit').value);
-    const activeFrom = new Date(document.getElementById('modalActiveFrom').value);
-    const activeUntil = new Date(document.getElementById('modalActiveUntil').value);
+// dateUtils
 
-    // Basic validation
-    if (!promoCode || promoCode.trim() === '') {
-        MessageManager.showError('Promo code cannot be empty');
-        return false;
-    }
-
-    if (isNaN(discount) || discount < 0 || discount > 50) {
-        MessageManager.showError('Discount must be between 0 and 50');
-        return false;
-    }
-
-    if (isNaN(usageLimit) || usageLimit < 0) {
-        MessageManager.showError('Usage limit must be a positive number');
-        return false;
-    }
-
-    if (activeFrom >= activeUntil) {
-        MessageManager.showError('Active until date must be after active from date');
-        return false;
-    }
-
-    return true;
+export function formatForDateTimeLocal(utcDate) {
+    const date = new Date(utcDate);
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
 }
 
-// Utility functions
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+export function convertLocalToUTC(localDate) {
+    const date = new Date(localDate);
+    return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toISOString();
 }
 
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(amount);
+export function formatDateTime(utcDate) {
+    return new Date(utcDate).toLocaleString();
 }
 
-// Export if needed
-export {
-    loadPromos,
-    showPromoModal,
-    handleFormSubmit
-};
+export function formatDate(utcDate) {
+    return new Date(utcDate).toLocaleDateString();
+}
+
+export function formatTime(utcDate) {
+    return new Date(utcDate).toLocaleTimeString();
+}
+
+export function localToUTC(localDate) {
+    return new Date(localDate).toISOString();
+}
