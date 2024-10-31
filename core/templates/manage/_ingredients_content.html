@@ -7,12 +7,12 @@
     </div>
     <div class="type-filters">
         <button class="type-filter-btn active" data-type="">All</button>
-        <button class="type-filter-btn" data-type="base">Base</button>
-        <button class="type-filter-btn" data-type="protein">Protein</button>
-        <button class="type-filter-btn" data-type="vegetable">Vegetable</button>
+        <button class="type-filter-btn" data-type="base">Bases</button>
+        <button class="type-filter-btn" data-type="protein">Proteins</button>
+        <button class="type-filter-btn" data-type="vegetable">Vegetables</button>
         <button class="type-filter-btn" data-type="dairy">Dairy</button>
-        <button class="type-filter-btn" data-type="fruit">Fruit</button>
-        <button class="type-filter-btn" data-type="topping">Topping</button>
+        <button class="type-filter-btn" data-type="fruit">Fruits</button>
+        <button class="type-filter-btn" data-type="topping">Toppings</button>
         <button class="type-filter-btn" data-type="other">Other</button>
     </div>
 </div>
@@ -45,11 +45,14 @@
             <div id="modalContent">
                 <div class="modal-header">
                     {% if user.role == "owner" or user.role == "administrator" %}
-                        <h5 class="modal-title">Edit Ingredient #<span id="ingredientId"></span></h5>
+                        <h5 class="modal-title">
+                            <span id="ingredientName"></span>
+                            <small class="text-muted"><span id="ingredientId"></span></small>
+                            <span id="ingredientId"></span>
+                        </h5>
                     {% else %}
                         <h5 class="modal-title" id="modalName"></h5>
                     {% endif %}
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">

@@ -299,7 +299,8 @@ function setupUserModal(ingredient) {
 
 function setupAdminModal(ingredient) {
     const isNew = !ingredient;
-    document.getElementById('ingredientId').textContent = isNew ? '' : ingredient.id;
+    document.getElementById('ingredientName').textContent = isNew ? 'Create new Ingredient' : ingredient.name;
+    document.getElementById('ingredientId').textContent = isNew ? '' : '#' + ingredient.id;
 
     const submitButton = document.getElementById('submitButton');
     if (submitButton) {

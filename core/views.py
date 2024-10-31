@@ -8,7 +8,7 @@ from .forms import LoginForm
 from core.utils import utils
 
 
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="ip", rate="50/h", method=["POST"])
 @ratelimit(key="ip", rate="5/m", method=["POST"])
 def user_login(request):
@@ -81,6 +81,12 @@ def orders_control_all(request):
 @utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
 def product_control(request):
     return render(request, "manage/products.html")
+
+
+@login_required
+@utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
+def promo_control(request):
+    return render(request, "manage/promo.html")
 
 
 @login_required

@@ -22,13 +22,6 @@
     margin: 0 auto 15px;
 }
 
-#searchInput {
-    width: 100%;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    padding: 8px 12px;
-}
-
 /* Filter Buttons */
 .type-filters {
     display: flex;
@@ -154,11 +147,9 @@
 }
 
 .modal-title {
-    font-size: 1.2em;
-    color: #333;
-    font-weight: bold;
-    width: 100%;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .modal-body {
@@ -355,7 +346,8 @@
 }
 
 .status-button.active {
-    background-color: #5eff82;
+    background-color: #28a745;
+    color: #ffffff;
 }
 
 /* Nutritional Grid */

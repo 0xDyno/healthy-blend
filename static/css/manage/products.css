@@ -285,10 +285,13 @@
 
 /* Toggle Button Styles */
 #toggleEnableBtn {
-    width: 100%;
-    padding: 10px;
+    width: auto !important;
+    min-width: 500px;
+    padding: 8px 24px;
+    border-radius: 20px;
+    margin: 0 auto;
+    display: block;
     border: none;
-    border-radius: 8px;
     font-weight: 500;
     transition: all 0.2s ease;
 }

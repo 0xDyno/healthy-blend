@@ -70,13 +70,13 @@ class DaySettingAdmin(admin.ModelAdmin):
 
 
 class PromoAdmin(admin.ModelAdmin):
-    list_display = ("id", "promo_code", "discount", "usage_limit", "used_count", "active_from", "active_until", "creator")
+    list_display = ("id", "promo_code", "discount", "used_count", "usage_limit", "active_from", "active_until", "creator")
     list_filter = ("creator",)
     search_fields = ["id", "promo_code", "creator"]
 
 
 class PromoUsageAdmin(admin.ModelAdmin):
-    list_display = ("id", "promo", "user", "used_at")
+    list_display = ("id", "promo", "order", "user", "used_at")
 
 
 admin.site.register(User, CustomUserAdmin)

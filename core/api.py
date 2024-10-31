@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Ingredient, Product, Order, NutritionalValue
+from .models import Ingredient, Product, Order, NutritionalValue, Promo
 from core.utils import utils_api
 from core.utils import utils
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_all_products(request):
     products = Product.objects.filter(is_menu=True)
@@ -32,7 +32,7 @@ def get_all_products(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "administrator", "manager"], redirect_url="home", do_redirect=False)
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_all_products_control(request):
     if request.user.role == "owner" or request.user.role == "administrator":
@@ -41,8 +41,7 @@ def get_all_products_control(request):
         products = Product.objects.filter(is_menu=True)
 
     if products:
-        filtered_products = utils_api.filter_products(request, products)
-        products = [utils_api.get_products_data(product) for product in filtered_products]
+        products = [utils_api.get_products_data(product) for product in products]
         return Response({"products": products}, status=status.HTTP_200_OK)
     return Response({"products": [], "messages": [{"level": "info", "message": "No products found."}]}, status=status.HTTP_404_NOT_FOUND)
 
@@ -50,7 +49,7 @@ def get_all_products_control(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "administrator", "manager"], redirect_url="home", do_redirect=False)
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_product_control(request, pk=None):
     product = Product.objects.filter(pk=pk).first()
@@ -67,7 +66,7 @@ def get_product_control(request, pk=None):
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "administrator", "manager"], redirect_url="home", do_redirect=False)
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def update_product_control(request, pk=None):
     product = Product.objects.filter(pk=pk).first()
@@ -81,7 +80,7 @@ def update_product_control(request, pk=None):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_ingredients(request):
     """
@@ -98,7 +97,7 @@ def get_ingredients(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_ingredient(request, pk=None):
     """
@@ -115,7 +114,7 @@ def get_ingredient(request, pk=None):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "administrator", "manager", "kitchen"], redirect_url="home", do_redirect=False)
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_ingredient_control(request, pk=None):
     """
@@ -142,7 +141,7 @@ def get_ingredient_control(request, pk=None):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "administrator", "manager", "kitchen"], redirect_url="home", do_redirect=False)
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_ingredients_control(request):
     """
@@ -168,7 +167,7 @@ def get_ingredients_control(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "manager", "administrator"], redirect_url="home", do_redirect=False)
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_order_control(request, pk):
     order = Order.objects.filter(pk=pk).first()
@@ -182,7 +181,7 @@ def get_order_control(request, pk):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["owner", "manager", "administrator", "kitchen"], redirect_url="home", do_redirect=False)
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_orders_control(request):
     if request.META.get("HTTP_REFERER").endswith("kitchen/orders/"):
@@ -207,7 +206,7 @@ def get_orders_control(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_order_last(request):
     order = Order.objects.filter(user=request.user).order_by("-created_at").first()
@@ -221,7 +220,7 @@ def get_order_last(request):
 
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["PUT"])
 @utils.role_redirect(roles=["owner", "manager", "kitchen", "administrator"], redirect_url="home", do_redirect=False)
 def update_order_control(request, pk):
@@ -261,7 +260,7 @@ def update_order_control(request, pk):
 
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["PUT"])
 @utils.role_redirect(roles=["owner", "manager", "kitchen", "administrator"], redirect_url="home", do_redirect=False)
 def update_ingredient_control(request, pk):
@@ -297,7 +296,7 @@ def update_ingredient_control(request, pk):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="30/m", method=["POST"])
 @utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
 def create_ingredient_control(request):
@@ -321,45 +320,92 @@ def create_ingredient_control(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-@utils.handle_rate_limit
+@utils.handle_errors
+@ratelimit(key="user", rate="30/m", method=["GET"])
+@utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
+def get_promos(request):
+    promos = Promo.objects.all()
+    promos = [utils_api.get_promo_data(promo) for promo in promos]
+
+    if promos:
+        return Response({"promos": promos}, status=status.HTTP_200_OK)
+    return Response({"promos": [], "messages": [
+        {"level": "info", "message": "No promos found."}]}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@utils.handle_errors
+@ratelimit(key="user", rate="30/m", method=["GET"])
+@utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
+def get_promo(request, pk):
+    promo = Promo.objects.filter(pk=pk).first()
+    if promo:
+        return Response({"promo": utils_api.get_promo_data(promo, full=True)}, status=status.HTTP_200_OK)
+    return Response({"promos": [], "messages": [
+        {"level": "info", "message": f"Promo #{pk} not found."}]}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+@utils.handle_errors
+@ratelimit(key="user", rate="30/m", method=["PUT"])
+@utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
+def update_promo(request, pk):
+    print("EDIT:", request.body)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@utils.handle_errors
+@ratelimit(key="user", rate="30/m", method=["POST"])
+@utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
+def create_promo(request, pk):
+    print("CREATE:", request.body)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@utils.handle_errors
 @ratelimit(key="user", rate="10/m", method=["GET"])
 def check_promo(request, promo_code):
-    if utils.check_promo(promo_code):
-        return Response({"messages": [{"level": "success", "message": "Good to go! The promo code is active."}],
-                         "is_active": True}, status=status.HTTP_200_OK)
-    return Response({"messages": [{"level": "info", "message": "It appears the promo code entered is not valid.",
-                                   "is_active": False}]}, status=status.HTTP_204_NO_CONTENT)
+    promo = utils.check_promo(promo_code)
+    if promo:
+        discount = round(promo.discount * 100)
+        return Response({
+            "messages": [{"level": "success", "message": f"Good to go, you have -{discount}%! The promo code is active."}],
+            "is_active": True,
+            "discount": promo.discount,
+        }, status=status.HTTP_200_OK)
+    return Response({"messages": [{"level": "info", "message": "It appears the promo code entered is not valid."}],
+                     "is_active": False}, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
-@utils.handle_rate_limit
+@utils.handle_errors
 @ratelimit(key="user", rate="5/m", method=["POST"])
 @ratelimit(key="user", rate="100/h", method=["POST"])
 @transaction.atomic
 def checkout(request):
     try:
-        data = json.loads(request.body)
-        promo_usage = utils.big_validator(data)
+        promo_usage = utils.big_validator(request.data)
 
-        official_meals = data.get("official_meals", [])
-        custom_meals = data.get("custom_meals", [])
-        price_no_fee = round(data.get("raw_price"))
-        price_with_fee = round(data.get("total_price"))
-
-        if promo_usage:
-            promo_usage.save()
+        official_meals = request.data.get("official_meals", [])
+        custom_meals = request.data.get("custom_meals", [])
+        price_no_fee = round(request.data.get("raw_price"))
+        price_with_fee = round(request.data.get("total_price"))
 
         # Save nutrition info with 1 number after the decimal point
-        nutritional_value = NutritionalValue.objects.create(**{k: round(v, 1) for k, v in data["nutritional_value"].items()})
-        order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=data["payment_type"],
+        nutritional_value = NutritionalValue.objects.create(**{k: round(v, 1) for k, v in request.data["nutritional_value"].items()})
+        order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=request.data["payment_type"],
                                      base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
 
         if promo_usage:
             promo_usage.user = request.user
             promo_usage.order = order
-            promo_usage.save(update_fields=["order"])
+            promo_usage.save()
 
         if official_meals:
             utils.process_official_meal(official_meals, order)

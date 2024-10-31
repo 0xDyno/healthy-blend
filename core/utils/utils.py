@@ -37,7 +37,7 @@ def role_redirect(roles, redirect_url, do_redirect=True):
     return decorator
 
 
-def handle_rate_limit(view_func):
+def handle_errors(view_func):
     @wraps(view_func)
     def wrapped_view(request, *args, **kwargs):
         try:
@@ -185,7 +185,7 @@ def validate_official_meal(official_meals, min_blend=0):
         if product is None:
             raise ValidationError(message="Official Meal - wrong product id.")
 
-        if not product.is_available():
+        if not product.is_available:
             raise ValidationError(message="Official Meal - product is not available.")
 
         official_price = product.get_price_for_calories(calories)
@@ -292,7 +292,7 @@ def validate_price(service, tax, min_order, promo, back_price, front_price, tota
                                       f"Please add more items to reach the minimum order amount of {min_order}.")
 
     if promo:
-        return PromoUsage(promo=promo, discounted=discount)
+        return PromoUsage.objects.create(promo=promo, discounted=round(discount), user=None, order=None)
     return None
 
 
@@ -446,6 +446,7 @@ def check_promo(promo_code):
 
     now = timezone.now()
     try:
-        return Promo.objects.get(promo_code=promo_code, active_from__lte=now, active_until__gte=now, used_count__lt=F('usage_limit'))
+        return Promo.objects.get(promo_code=promo_code, active_from__lte=now, active_until__gte=now,
+                                 used_count__lt=F('usage_limit'), is_enabled=True)
     except Promo.DoesNotExist:
         return None

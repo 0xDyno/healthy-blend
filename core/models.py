@@ -483,6 +483,7 @@ class Setting(models.Model):
     service = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
     tax = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
     can_order = models.BooleanField(default=True)
+    timezone = models.CharField(max_length=50, default="Asia/Makassar")
     close_kitchen_before = models.IntegerField(default=20, validators=[MinValueValidator(0), MaxValueValidator(120)])
 
     minimum_order_amount = models.IntegerField(default=0, validators=[MinValueValidator(0)])
@@ -524,8 +525,16 @@ class DaySetting(models.Model):
 
 
 class Promo(models.Model):
+    class Meta:
+        indexes = [
+            models.Index(fields=['active_from', 'active_until']),
+            models.Index(fields=['promo_code']),
+            models.Index(fields=['active_from', 'active_until', 'is_enabled', 'used_count', 'usage_limit'])
+        ]
     discount = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(0.5)])
     promo_code = models.CharField(max_length=20, unique=True)
+    is_enabled = models.BooleanField(default=False)
+    is_finished = models.BooleanField(default=False)
     active_from = models.DateTimeField()
     active_until = models.DateTimeField()
     usage_limit = models.IntegerField(validators=[MinValueValidator(0)])
@@ -540,29 +549,38 @@ class Promo(models.Model):
         if self.active_until <= self.active_from:
             raise ValidationError("The end date cannot be earlier than the start date.")
 
-        if timezone.now() > self.active_until:
+        if timezone.now() > self.active_until and self.is_enabled:
             raise ValidationError("The promo has already expired. Please set a future end date.")
 
-        if not (0 <= self.discount <= 1):
-            raise ValidationError("Discount must be a value between 0 and 1.")
+        if not (0 <= self.discount <= 0.5):
+            raise ValidationError("Discount must be a value between 0 and 0.5.")
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        if self.pk is not None:  # of Promo is finished - there's no way to change it
+            original = Promo.objects.get(pk=self.pk)
+            if original.is_finished:
+                raise ValidationError("This promo cannot be edited because it is already marked as finished.")
 
-    def is_available(self):
+        if self.is_finished:
+            self.is_enabled = False
+
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def is_active(self):
         now = timezone.now()
-        return self.active_from <= now <= self.active_until and self.used_count < self.usage_limit
+        return self.active_from <= now <= self.active_until and self.used_count < self.usage_limit and self.is_enabled
 
     @staticmethod
     def get_active_promos():
         now = timezone.now()
-        return Promo.objects.filter(active_from__lte=now, active_until__gte=now)
+        return Promo.objects.filter(active_from__lte=now, active_until__gte=now, is_enabled=True, used_count__lt=F('usage_limit'))
 
 
 class PromoUsage(models.Model):
-    promo = models.ForeignKey(Promo, on_delete=models.CASCADE, null=True, related_name="used_promo")
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="used_user")
-    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, related_name="user_for_order")
+    promo = models.ForeignKey(Promo, on_delete=models.CASCADE, related_name="used_promo")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="used_user")
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, blank=True, related_name="used_for_order")
     discounted = models.IntegerField(validators=[MinValueValidator(0)])
     used_at = models.DateTimeField(auto_now_add=True)
 
@@ -571,7 +589,7 @@ class PromoUsage(models.Model):
         with transaction.atomic():
             if not self.pk:
                 promo = Promo.objects.select_for_update().get(pk=self.promo.pk)
-                if not promo.promo.is_available():
+                if not promo.is_active():
                     raise ValidationError("This promo code is no longer available.")
 
                 promo.used_count = promo.used_count + 1

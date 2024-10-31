@@ -14,6 +14,7 @@
             <a href="{% url 'ingredients_control' %}">Ingredients</a>
              <a href="{% url 'products_control' %}">Products</a>
             {% if user.role == "owner" or user.role == "administrator" %}
+                <a href="{% url 'promo_control' %}">Promo</a>
                 <a href="{% url 'kitchen' %}">Kitchen</a>
             {% endif %}
         </div>

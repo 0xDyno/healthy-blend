@@ -29,6 +29,14 @@
                     <option value="qr">QR</option>
                 </select>
             </div>
+            <div id="promoCodeContainer" class="form-group mb-3">
+                <div class="input-group">
+                    <input type="text" id="promoCode" class="form-control" placeholder="Enter promo code">
+                    <div class="input-group-append">
+                        <button id="checkPromoButton" class="btn btn-outline-secondary">Check</button>
+                    </div>
+                </div>
+            </div>
             <div class="text-center">
                 <a href="{% url 'home' %}" class="btn btn-success">Choose more</a>
                 <button id="checkoutButton" class="btn btn-primary">Proceed to Checkout</button>

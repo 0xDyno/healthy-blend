@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from core.models import Ingredient, Order, DaySetting
+from core.models import Ingredient, Order, DaySetting, PromoUsage
 
 
 def get_all_products(products: list):
@@ -378,4 +378,42 @@ def filter_orders(request, orders):
 
 
 def filter_products(request, products):
-    return products
+    pass
+
+
+def get_promo_data(promo, full=False):
+    creator_name = f"{promo.creator.nickname} ({promo.creator.role})" if promo.creator.nickname \
+        else f"{promo.creator.role.capitalize()} #{promo.creator.id}"
+    data = {
+        "id": promo.id,
+        "promo_code": promo.promo_code,
+        "discount": promo.discount,
+        "is_enabled": promo.is_enabled,
+        "is_active": promo.is_active(),
+        "is_finished": promo.is_finished,
+        "active_from": promo.active_from,
+        "active_until": promo.active_until,
+        "usage_limit": promo.usage_limit,
+        "used_count": promo.used_count,
+        "creator": creator_name,
+    }
+    if full:
+        usage_data = PromoUsage.objects.filter(promo=promo).select_related('user', 'order')
+        total_discounted = 0
+        usage_list = []
+
+        for usage in usage_data:
+            usage_info = {
+                'user_role': usage.user.role if usage.user else None,
+                'user_nickname': usage.user.nickname if usage.user else None,
+                'order_id': usage.order.id if usage.order else None,
+                'order_base_price': usage.order.base_price if usage.order else None,
+                'discounted': usage.discounted,
+                'used_at': usage.used_at
+            }
+            total_discounted += usage.discounted
+            usage_list.append(usage_info)
+
+        data["discounted_total"] = total_discounted
+        data['usage_history'] = usage_list
+    return data
