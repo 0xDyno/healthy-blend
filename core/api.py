@@ -41,7 +41,8 @@ def get_all_products_control(request):
         products = Product.objects.filter(is_menu=True)
 
     if products:
-        products = [utils_api.get_products_data(product) for product in products]
+        filtered_products = utils_api.filter_products(request, products)
+        products = [utils_api.get_products_data(product) for product in filtered_products]
         return Response({"products": products}, status=status.HTTP_200_OK)
     return Response({"products": [], "messages": [{"level": "info", "message": "No products found."}]}, status=status.HTTP_404_NOT_FOUND)
 

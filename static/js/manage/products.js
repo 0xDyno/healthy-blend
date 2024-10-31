@@ -14,9 +14,23 @@ function initializeProducts() {
     setupSearchAndFilters();
 }
 
+const debouncedFilter = debounce(filterProducts, 500);
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 function setupSearchAndFilters() {
-    // Search input handler
-    document.getElementById('searchInput').addEventListener('input', filterProducts);
+    // Search input handler с debounce
+    document.getElementById('searchInput').addEventListener('input', debouncedFilter);
 
     // Type filter handler
     document.getElementById('typeFilter').addEventListener('change', filterProducts);
@@ -30,9 +44,30 @@ function setupSearchAndFilters() {
     });
 }
 
-async function loadProducts() {
+async function loadProducts(filters = {}) {
     try {
-        const response = await fetch('/api/control/get/products/');
+        // Construct URL with query parameters
+        const queryParams = new URLSearchParams();
+
+        // Add search parameter
+        if (filters.search) {
+            queryParams.append('search', filters.search);
+        }
+
+        // Add type parameter
+        if (filters.type) {
+            queryParams.append('type', filters.type);
+        }
+
+        // Add status filters
+        if (filters.available) queryParams.append('available', 'true');
+        if (filters.enabled) queryParams.append('enabled', 'true');
+        if (filters.official) queryParams.append('official', 'true');
+        if (filters.menu) queryParams.append('menu', 'true');
+
+        const url = `/api/control/get/products/${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+
+        const response = await fetch(url);
         const data = await response.json();
 
         if (data.messages) {
@@ -47,41 +82,27 @@ async function loadProducts() {
 }
 
 function filterProducts() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const selectedType = document.getElementById('typeFilter').value.toLowerCase();
+    const searchTerm = document.getElementById('searchInput').value;
+    const selectedType = document.getElementById('typeFilter').value;
 
     // Get active filters
     const activeFilters = Array.from(document.querySelectorAll('.filter-btn.active'))
         .map(btn => btn.dataset.filter);
 
-    let filtered = productsData.filter(product => {
-        // Search by name or ID
-        const searchMatch = product.name.toLowerCase().includes(searchTerm) ||
-            product.id.toString().includes(searchTerm);
+    // Construct filters object
+    const filters = {
+        search: searchTerm,
+        type: selectedType,
+    };
 
-        // Type filter
-        const typeMatch = !selectedType || product.product_type.toLowerCase() === selectedType;
+    // Add boolean filters
+    if (activeFilters.includes('available')) filters.available = true;
+    if (activeFilters.includes('enabled')) filters.enabled = true;
+    if (activeFilters.includes('official')) filters.official = true;
+    if (activeFilters.includes('menu')) filters.menu = true;
 
-        // Status filters
-        const filterMatch = activeFilters.every(filter => {
-            switch (filter) {
-                case 'available':
-                    return product.is_available;
-                case 'enabled':
-                    return product.is_enabled;
-                case 'official':
-                    return product.is_official;
-                case 'menu':
-                    return product.is_menu;
-                default:
-                    return true;
-            }
-        });
-
-        return searchMatch && typeMatch && filterMatch;
-    });
-
-    displayProducts(filtered);
+    // Load products with filters
+    loadProducts(filters);
 }
 
 function displayProducts(products) {

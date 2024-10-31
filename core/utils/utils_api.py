@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
 
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
@@ -378,7 +379,35 @@ def filter_orders(request, orders):
 
 
 def filter_products(request, products):
-    pass
+    # Get filter parameters from request.GET
+    search = request.GET.get('search', '').lower()
+    product_type = request.GET.get('type', '').lower()
+
+    # Get boolean filters
+    is_available = request.GET.get('available') == 'true'
+    is_enabled = request.GET.get('enabled') == 'true'
+    is_official = request.GET.get('official') == 'true'
+    is_menu = request.GET.get('menu') == 'true'
+
+    # Search filter
+    if search:
+        products = products.filter(Q(name__icontains=search) | Q(id__icontains=search))
+
+    # Type filter
+    if product_type:
+        products = products.filter(product_type__iexact=product_type)
+
+    # Status filters
+    if is_available:
+        products = products.filter(is_available=True)
+    if is_enabled:
+        products = products.filter(is_enabled=True)
+    if is_official:
+        products = products.filter(is_official=True)
+    if is_menu:
+        products = products.filter(is_menu=True)
+
+    return products
 
 
 def get_promo_data(promo, full=False):
