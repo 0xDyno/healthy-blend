@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch(`/api/get/ingredient/${ingredientId}/`)
         .then(response => response.json())
         .then(data => {
-            ingredientData = data;
+            ingredientData = data.ingredient;
             updateIngredientInfo();
             initializeForm();
             utils.updateCustomMealSummary();

@@ -29,9 +29,19 @@ function loadIngredients(sortBy = 'protein') {
     const nutrientKey = validSortOptions[sortBy] || 'proteins';
 
     fetch(`/api/get/ingredients/`)
-        .then(response => response.json())
-        .then(data => {
-            data.sort((a, b) => {
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error fetching ingredients.');
+            }
+            return response.json();
+        }).then(data => {
+
+            if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages)
+            }
+
+            const ingredients = data.ingredients;
+            ingredients.sort((a, b) => {
                 const aValue = a.nutritional_value[nutrientKey] || 0;
                 const bValue = b.nutritional_value[nutrientKey] || 0;
                 return bValue - aValue;
@@ -40,7 +50,7 @@ function loadIngredients(sortBy = 'protein') {
             const ingredientList = document.getElementById('ingredientList');
             ingredientList.innerHTML = '';
 
-            data.forEach(ingredient => {
+            ingredients.forEach(ingredient => {
                 const card = document.createElement('div');
                 card.className = 'col-md-4 mb-4';
                 card.innerHTML = `
@@ -71,7 +81,7 @@ function loadIngredients(sortBy = 'protein') {
             utils.updateCustomMealSummary();
         })
         .catch(error => {
-            console.error('Ошибка загрузки ингредиентов: ', error);
+            console.error('Error: ', error);
         });
 }
 

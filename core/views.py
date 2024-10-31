@@ -38,7 +38,8 @@ def api_get_ingredients(request):
     """
     ingredients = Ingredient.objects.filter(is_menu=True).select_related("nutritional_value")
     if ingredients:
-        return JsonResponse({"ingredients": utils_api.get_ingredient_data(ingredients)}, status=status.HTTP_200_OK)
+        ingredients = [utils_api.get_ingredient_data(ingredient) for ingredient in ingredients]
+        return JsonResponse({"ingredients": ingredients}, status=status.HTTP_200_OK)
     return JsonResponse({"ingredients": [], "messages": [
         {"level": "info", "message": "No ingredients found."}]}, status=status.HTTP_404_NOT_FOUND)
 
