@@ -425,11 +425,6 @@ export function formatForDateTimeLocal(utcDate) {
         .slice(0, 16);
 }
 
-export function convertLocalToUTC(localDate) {
-    const date = new Date(localDate);
-    return new Date(date.getTime() + date.getTimezoneOffset() * 60000).toISOString();
-}
-
 export function formatDateTime(utcDate) {
     return new Date(utcDate).toLocaleString();
 }

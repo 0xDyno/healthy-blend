@@ -409,6 +409,9 @@ def checkout(request):
         promo_usage.order = order
         promo_usage.save()
 
+        order.promo = promo_usage.promo
+        order.save(update_fields=["promo"])
+
     if official_meals:
         utils.process_official_meal(official_meals, order)
     if custom_meals:

@@ -346,6 +346,7 @@ class Order(models.Model):
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES, default="card")
 
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="first_order")
+    promo_usage = models.ForeignKey("PromoUsage", on_delete=models.PROTECT, null=True, blank=True, related_name="used_promos")
     user_last_update = models.ForeignKey(User, on_delete=models.PROTECT, related_name="last_update")
     nutritional_value = models.OneToOneField(NutritionalValue, on_delete=models.PROTECT, related_name="order")
 
