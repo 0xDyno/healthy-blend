@@ -177,7 +177,7 @@ function handleCheckout() {
         }))
     };
 
-    fetch('/checkout/', {
+    fetch('/api/checkout/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

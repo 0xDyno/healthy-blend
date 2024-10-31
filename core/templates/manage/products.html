@@ -2,14 +2,152 @@
 
 {% extends 'manage/base.html' %}
 
-{% block title %}Product Management - Restaurant System{% endblock %}
+{% load static %}
+
+{% block title %}Products Control{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/manage/products.css' %}">
+{% endblock %}
 
 {% block navbar %}
     {% include "manage/_navbar.html" %}
 {% endblock %}
 {% block content %}
-<div class="container">
-    <h2>Product Management</h2>
-    <p>This feature is coming soon!</p>
-</div>
+    {# Search and filters #}
+    <div class="search-panel">
+        <div class="search-container">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by ID or name...">
+        </div>
+        <div class="filters-container">
+            <div class="filter-group">
+                <select id="typeFilter" class="form-control">
+                    <option value="">All Types</option>
+                    <option value="dish">Dish</option>
+                    <option value="drink">Drink</option>
+                    <option value="dessert">Dessert</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                {% if user.role == "administrator" or user.role == "owner" %}
+                    <button class="filter-btn" data-filter="official">Official</button>
+                    <button class="filter-btn" data-filter="available">Available</button>
+                    <button class="filter-btn" data-filter="enabled">Enabled</button>
+                    <button class="filter-btn" data-filter="menu">Menu</button>
+                {% else %}
+                    <button class="filter-btn" data-filter="available">Available</button>
+                    <button class="filter-btn" data-filter="enabled">Enabled</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Products grid #}
+    <div class="products-container">
+        <div class="products-grid" id="productsGrid">
+            <!-- Products will be loaded here -->
+        </div>
+    </div>
+
+    {# Product Modal #}
+    <div class="modal fade" id="productModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span id="modalProductName"></span>
+                        <small class="text-muted">#<span id="modalProductId"></span></small>
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <!-- First row -->
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="product-type" id="modalProductType"></div>
+                        </div>
+                        <div class="col-6 text-end">
+                            <div class="selling-price" id="modalSellingPrice"></div>
+                        </div>
+                    </div>
+
+                    <!-- Second row -->
+                    <div class="row mb-3">
+                        <div class="col-4">
+                            <img id="modalProductImage" src="" alt="" class="img-fluid">
+                        </div>
+                        <div class="col-8">
+                            <!-- Status table -->
+                            <div class="status-table">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td>Menu Item:</td>
+                                        <td id="modalIsMenu"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Available:</td>
+                                        <td id="modalIsAvailable"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Enabled:</td>
+                                        <td id="modalIsEnabled"></td>
+                                    </tr>
+                                    {% if user.role == "owner" or user.role == "administrator" %}
+                                        <tr>
+                                            <td>Ingredients Price:</td>
+                                            <td id="modalIngredientsPrice"></td>
+                                        </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td>Selling Price:</td>
+                                        <td id="modalPrice"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Third row - Description -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <p id="modalDescription" class="product-description"></p>
+                        </div>
+                    </div>
+
+                    <!-- Fourth row - Lack of ingredients warning -->
+                    <div id="lackOfIngredientsWarning" class="alert alert-warning" style="display: none;"></div>
+
+                    <!-- Fifth row - Action button -->
+                    <div class="text-center mb-3">
+                        <button id="toggleEnableBtn" class="btn"></button>
+                    </div>
+
+                    <!-- Sixth row - Ingredients -->
+                    <div class="ingredients-section mb-3">
+                        <h6>Ingredients</h6>
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Weight (g)</th>
+                            </tr>
+                            </thead>
+                            <tbody id="ingredientsTable"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Seventh row - Nutritional values -->
+                    <div class="nutritional-values">
+                        <h6>Nutritional Values</h6>
+                        <div class="nutritional-grid" id="nutritionalGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% block scripts %}
+        <script type="module" src="{% static 'js/manage/products.js' %}"></script>
+        <script>window.currentUserRole = "{{ user.role }}";</script>
+    {% endblock %}
 {% endblock %}

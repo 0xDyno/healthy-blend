@@ -8,32 +8,35 @@ from core import api
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-
-    path("", home, name="home"),
     path("login/", user_login, name="login"),
     path("logout/", user_logout, name="logout"),
 
+    # CUSTOMER
+    path("", home, name="home"),
     path("custom/", custom_meal, name="custom_meal"),
     path("ingredient/<int:ingredient_id>/", custom_add, name="ingredient_detail"),
     path("cart/", cart, name="cart"),
-    path("checkout/", checkout, name="checkout"),
     path("last-order/", last_order, name="last_order"),
 
-    path("manage/orders/control/", orders_control, name="orders_manage_control"),
-    path("manage/orders/all/", orders_all, name="orders_manage_all"),
-    path("manage/ingredients/", ingredient_management, name="ingredient_management"),
-    path("manage/products/", product_management, name="product_management"),
-    path("kitchen/", kitchen_orders, name="kitchen"),
-    path("kitchen/ingredients/", kitchen_ingredients, name="kitchen_ingredients"),
-
-    # API URLs - customer
+    # API
     path("api/get/products/", api.get_all_products),
     path("api/get/ingredients/", api.get_ingredients),
     path("api/get/ingredient/<int:pk>/", api.get_ingredient),
     path("api/get/order/last/", api.get_order_last),
+    path("api/checkout/", api.checkout, name="checkout"),
 
-    # APU URLs - control
+    # CONTROL
+    path("control/orders/", orders_control, name="orders_control"),
+    path("control/orders/all/", orders_control_all, name="orders_control_all"),
+    path("control/ingredients/", ingredient_control, name="ingredients_control"),
+    path("control/products/", product_control, name="products_control"),
+    path("control/kitchen/orders/", kitchen_orders, name="kitchen"),
+    path("control/kitchen/ingredients/", kitchen_ingredients, name="kitchen_ingredients"),
+
+    # API
     path("api/control/get/products/", api.get_all_products_control),
+    path("api/control/get/product/<int:pk>/", api.get_product_control),
+    path("api/control/update/product/<int:pk>/", api.update_product_control),
 
     path("api/control/get/ingredients/", api.get_ingredients_control),
     path("api/control/get/ingredient/<int:pk>/", api.get_ingredient_control),
@@ -42,9 +45,10 @@ urlpatterns = [
 
     path("api/control/get/orders/", api.get_orders_control),
     path("api/control/get/order/<int:pk>/", api.get_order_control),
-    path("api/control/update/order/<int:pk>/", api.update_order),
+    path("api/control/update/order/<int:pk>/", api.update_order_control),
 
     path("api/control/check/promo/<str:promo_code>/", api.check_promo),
+
 ]
 
 if settings.DEBUG:

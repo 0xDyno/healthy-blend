@@ -9,10 +9,10 @@
             {% endif %}
         </div>
         <div class="center-links">
-            <a href="{% url 'orders_manage_control' %}">Orders Control</a>
-            <a href="{% url 'orders_manage_all' %}">Orders All</a>
-            {# <a href="{% url 'product_management' %}">Products</a> #}
-            <a href="{% url 'ingredient_management' %}">Ingredients</a>
+            <a href="{% url 'orders_control' %}">Orders Control</a>
+            <a href="{% url 'orders_control_all' %}">Orders All</a>
+            <a href="{% url 'ingredients_control' %}">Ingredients</a>
+             <a href="{% url 'products_control' %}">Products</a>
             {% if user.role == "owner" or user.role == "administrator" %}
                 <a href="{% url 'kitchen' %}">Kitchen</a>
             {% endif %}

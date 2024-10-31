@@ -1,16 +1,21 @@
 import json
+import logging
 
 from django.core.exceptions import ValidationError
-from django.http import JsonResponse
+from django.db import transaction
 from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from .models import Ingredient, Product, Order, NutritionalValue
 from core.utils import utils_api
 from core.utils import utils
+
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(["GET"])
@@ -20,16 +25,58 @@ from core.utils import utils
 def get_all_products(request):
     products = Product.objects.filter(is_menu=True)
     if products:
-        return JsonResponse({"products": utils_api.get_all_products(products)}, status=status.HTTP_200_OK)
-    return JsonResponse({"products": [], "messages": [{"level": "info", "message": "No products found."}]}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"products": utils_api.get_all_products(products)}, status=status.HTTP_200_OK)
+    return Response({"products": [], "messages": [{"level": "info", "message": "No products found."}]}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["owner", "administrator", "manager"], redirect_url="home", do_redirect=False)
 @utils.handle_rate_limit
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_all_products_control(request):
-    pass
+    if request.user.role == "owner" or request.user.role == "administrator":
+        products = Product.objects.all()
+    else:
+        products = Product.objects.filter(is_menu=True)
+
+    if products:
+        filtered_products = utils_api.filter_products(request, products)
+        products = [utils_api.get_products_data(product) for product in filtered_products]
+        return Response({"products": products}, status=status.HTTP_200_OK)
+    return Response({"products": [], "messages": [{"level": "info", "message": "No products found."}]}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["owner", "administrator", "manager"], redirect_url="home", do_redirect=False)
+@utils.handle_rate_limit
+@ratelimit(key="user", rate="30/m", method=["GET"])
+def get_product_control(request, pk=None):
+    product = Product.objects.filter(pk=pk).first()
+    if product:
+        if request.user.role == "owner" or request.user.role == "administrator":
+            return Response({"product": utils_api.get_products_data(product, is_full=True, is_admin=True)}, status=status.HTTP_200_OK)
+        else:
+            return Response({"product": utils_api.get_products_data(product, is_full=True)}, status=status.HTTP_200_OK)
+
+    return Response({"product": "", "messages": [
+        {"level": "error", "message": f"Product #{pk} not found"}]}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["owner", "administrator", "manager"], redirect_url="home", do_redirect=False)
+@utils.handle_rate_limit
+@ratelimit(key="user", rate="30/m", method=["GET"])
+def update_product_control(request, pk=None):
+    product = Product.objects.filter(pk=pk).first()
+    if product:
+        product.is_enabled = not product.is_enabled
+        product.save()  # it's important to do .save() bc there's logic to change self availability, depends on enable status & ingredients
+        return Response({"product": utils_api.get_products_data(product, is_full=True)}, status=status.HTTP_200_OK)
+    return Response({"product": "", "messages": [
+        {"level": "error", "message": f"Product #{pk} not found"}]}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(["GET"])
@@ -44,8 +91,8 @@ def get_ingredients(request):
     ingredients = Ingredient.objects.filter(is_menu=True).select_related("nutritional_value")
     if ingredients:
         ingredients = [utils_api.get_ingredient_data(ingredient) for ingredient in ingredients]
-        return JsonResponse({"ingredients": ingredients}, status=status.HTTP_200_OK)
-    return JsonResponse({"ingredients": [], "messages": [
+        return Response({"ingredients": ingredients}, status=status.HTTP_200_OK)
+    return Response({"ingredients": [], "messages": [
         {"level": "info", "message": "No ingredients found."}]}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -61,8 +108,8 @@ def get_ingredient(request, pk=None):
     try:
         ingredient = Ingredient.objects.get(pk=pk, is_menu=True)
     except Ingredient.DoesNotExist:
-        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
-    return JsonResponse({"ingredient": utils_api.get_ingredient_data(ingredient)}, status=status.HTTP_200_OK)
+        return Response({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
+    return Response({"ingredient": utils_api.get_ingredient_data(ingredient)}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -87,9 +134,9 @@ def get_ingredient_control(request, pk=None):
             ingredient = Ingredient.objects.get(pk=pk, is_menu=True)
             ingredient_data = utils_api.get_ingredient_data_lite(ingredient)
     except Ingredient.DoesNotExist:
-        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
 
-    return JsonResponse({"ingredient": ingredient_data}, status=status.HTTP_200_OK)
+    return Response({"ingredient": ingredient_data}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -113,8 +160,8 @@ def get_ingredients_control(request):
         ingredients = [utils_api.get_ingredient_data_lite(ingredient) for ingredient in ingredients]
 
     if ingredients:
-        return JsonResponse({"ingredients": ingredients}, status=status.HTTP_200_OK)
-    return JsonResponse({"ingredients": [], "messages": [
+        return Response({"ingredients": ingredients}, status=status.HTTP_200_OK)
+    return Response({"ingredients": [], "messages": [
         {"level": "info", "message": "No ingredients found."}]}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -126,8 +173,8 @@ def get_ingredients_control(request):
 def get_order_control(request, pk):
     order = Order.objects.filter(pk=pk).first()
     if order:
-        return JsonResponse({"order": utils_api.get_order_full(order)}, status=status.HTTP_200_OK)
-    return JsonResponse({"order": "", "messages": [
+        return Response({"order": utils_api.get_order_full(order)}, status=status.HTTP_200_OK)
+    return Response({"order": "", "messages": [
         {"level": "error", "message": f"Order #{pk} not found"}
     ]}, status=status.HTTP_404_NOT_FOUND)
 
@@ -138,24 +185,24 @@ def get_order_control(request, pk):
 @utils.handle_rate_limit
 @ratelimit(key="user", rate="30/m", method=["GET"])
 def get_orders_control(request):
-    if request.META.get("HTTP_REFERER").endswith("kitchen/"):
+    if request.META.get("HTTP_REFERER").endswith("kitchen/orders/"):
         orders = Order.objects.filter(order_status__in=["cooking"]).order_by("paid_at")
         if orders:
-            return JsonResponse({"orders": utils_api.get_orders_for_kitchen(orders)}, status=status.HTTP_200_OK)
-        return JsonResponse({"orders": [], "messages": [{"level": "info", "message": "No orders."}]}, status=status.HTTP_200_OK)
+            return Response({"orders": utils_api.get_orders_for_kitchen(orders)}, status=status.HTTP_200_OK)
+        return Response({"orders": [], "messages": [{"level": "info", "message": "No orders."}]}, status=status.HTTP_200_OK)
 
     if request.user.role == "owner" or request.user.role == "administrator":
         orders = Order.objects.all()
     elif request.user.role == "manager":
         orders = Order.objects.filter(created_at__date=timezone.now().date())
     else:
-        return JsonResponse({"messages": [{"info": "error", "message": "You don't have access to this data."}]}, status.HTTP_403_FORBIDDEN)
+        return Response({"messages": [{"info": "error", "message": "You don't have access to this data."}]}, status.HTTP_403_FORBIDDEN)
 
     if orders.exists():
         orders = utils_api.filter_orders(request, orders)
-        return JsonResponse({"orders": utils_api.get_orders_general(orders)})
+        return Response({"orders": utils_api.get_orders_general(orders)})
 
-    return JsonResponse({"orders": [], "messages": [{"level": "success", "message": "No orders found."}]}, status=status.HTTP_200_OK)
+    return Response({"orders": [], "messages": [{"level": "success", "message": "No orders found."}]}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -166,8 +213,8 @@ def get_order_last(request):
     order = Order.objects.filter(user=request.user).order_by("-created_at").first()
     if order and order.show_public:
         order = utils_api.get_order_last(order)
-        return JsonResponse({"order": order}, status=status.HTTP_200_OK)
-    return JsonResponse({"order": None, "messages": [
+        return Response({"order": order}, status=status.HTTP_200_OK)
+    return Response({"order": None, "messages": [
         {"level": "info", "message": "There are no recent orders."}
     ]}, status=status.HTTP_200_OK)
 
@@ -177,21 +224,21 @@ def get_order_last(request):
 @utils.handle_rate_limit
 @ratelimit(key="user", rate="30/m", method=["PUT"])
 @utils.role_redirect(roles=["owner", "manager", "kitchen", "administrator"], redirect_url="home", do_redirect=False)
-def update_order(request, pk):
+def update_order_control(request, pk):
     order = Order.objects.get(pk=pk)
 
     if not utils_api.can_edit_order(order) and not (request.user.role == "owner" and request.user.is_superuser):
         msg = "This order can no longer be edited as it was placed over a day ago."
-        return JsonResponse({"messages": [{"level": "warning", "message": msg}]}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"messages": [{"level": "warning", "message": msg}]}, status=status.HTTP_400_BAD_REQUEST)
 
     if request.user.role == "kitchen":
         order.order_status = Order.READY
         order.save()
-        return JsonResponse({"messages": [{"level": "success", "message": "Ready! Well done!"}]}, status=status.HTTP_200_OK)
+        return Response({"messages": [{"level": "success", "message": "Ready! Well done!"}]}, status=status.HTTP_200_OK)
 
-    if request.META.get("HTTP_REFERER").endswith("kitchen/"):
+    if request.META.get("HTTP_REFERER").endswith("kitchen/orders/"):
         msg = f"{request.user.role.capitalize()} can't update orders from kitchen."
-        return JsonResponse({"messages": [{"level": "warning", "message": msg}]}, status=status.HTTP_200_OK)
+        return Response({"messages": [{"level": "warning", "message": msg}]}, status=status.HTTP_200_OK)
 
     data = json.loads(request.body)
 
@@ -206,10 +253,10 @@ def update_order(request, pk):
     try:
         order.clean()
     except ValidationError as e:
-        return JsonResponse({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
     order.save()
 
-    return JsonResponse({"messages": [{"level": "success", "message": f"Order #{order.id} updated."}]}, status=status.HTTP_200_OK)
+    return Response({"messages": [{"level": "success", "message": f"Order #{order.id} updated."}]}, status=status.HTTP_200_OK)
 
 
 @api_view(["PUT"])
@@ -241,11 +288,11 @@ def update_ingredient_control(request, pk):
 
             ingredient.save()
 
-        return JsonResponse({"messages": [{"level": "success", "message": f"{ingredient.name} updated."}]}, status=status.HTTP_200_OK)
+        return Response({"messages": [{"level": "success", "message": f"{ingredient.name} updated."}]}, status=status.HTTP_200_OK)
     except Ingredient.DoesNotExist:
-        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
     except ValidationError as e:
-        return JsonResponse({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["POST"])
@@ -265,11 +312,11 @@ def create_ingredient_control(request):
         nutritional_value = NutritionalValue.objects.create(**nutritional_value)
         id_ = Ingredient.objects.create(**data, nutritional_value=nutritional_value).id
 
-        return JsonResponse({"messages": [{"level": "success", "message": f"Ingredient #{id_} created"}]}, status=status.HTTP_200_OK)
+        return Response({"messages": [{"level": "success", "message": f"Ingredient #{id_} created"}]}, status=status.HTTP_200_OK)
     except Ingredient.DoesNotExist:
-        return JsonResponse({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"messages": [{"level": "error", "message": "Not Found"}]}, status=status.HTTP_404_NOT_FOUND)
     except ValidationError as e:
-        return JsonResponse({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET"])
@@ -278,7 +325,49 @@ def create_ingredient_control(request):
 @ratelimit(key="user", rate="10/m", method=["GET"])
 def check_promo(request, promo_code):
     if utils.check_promo(promo_code):
-        return JsonResponse({"messages": [{"level": "success", "message": "Good to go! The promo code is active."}],
-                             "is_active": True}, status=status.HTTP_200_OK)
-    return JsonResponse({"messages": [{"level": "info", "message": "It appears the promo code entered is not valid.",
-                                       "is_active": False}]}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"messages": [{"level": "success", "message": "Good to go! The promo code is active."}],
+                         "is_active": True}, status=status.HTTP_200_OK)
+    return Response({"messages": [{"level": "info", "message": "It appears the promo code entered is not valid.",
+                                   "is_active": False}]}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
+@utils.handle_rate_limit
+@ratelimit(key="user", rate="5/m", method=["POST"])
+@ratelimit(key="user", rate="100/h", method=["POST"])
+@transaction.atomic
+def checkout(request):
+    try:
+        data = json.loads(request.body)
+        promo_usage = utils.big_validator(data)
+
+        official_meals = data.get("official_meals", [])
+        custom_meals = data.get("custom_meals", [])
+        price_no_fee = round(data.get("raw_price"))
+        price_with_fee = round(data.get("total_price"))
+
+        if promo_usage:
+            promo_usage.save()
+
+        # Save nutrition info with 1 number after the decimal point
+        nutritional_value = NutritionalValue.objects.create(**{k: round(v, 1) for k, v in data["nutritional_value"].items()})
+        order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=data["payment_type"],
+                                     base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
+
+        if promo_usage:
+            promo_usage.user = request.user
+            promo_usage.order = order
+            promo_usage.save(update_fields=["order"])
+
+        if official_meals:
+            utils.process_official_meal(official_meals, order)
+        if custom_meals:
+            utils.process_custom_meal(custom_meals, order)
+
+        return Response({"messages": [
+            {"level": "success", "message": f"Order {order.id} has been created. Redirecting..."}
+        ], "redirect_url": f"/last-order/"}, status=status.HTTP_200_OK)
+    except ValidationError as e:
+        return Response({"messages": [{"level": "warning", "message": e.messages}]}, status=status.HTTP_400_BAD_REQUEST)

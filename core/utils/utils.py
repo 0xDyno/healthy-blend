@@ -407,7 +407,7 @@ def process_custom_meal(custom_meals, order: Order):
         amount = meal.get("amount")
         do_blend = meal.get("do_blend")
 
-        product = Product.objects.create(name=name, description=description, is_official=False, product_type="dish", price=price)
+        product = Product.objects.create(name=name, description=description, is_official=False, product_type="dish", selling_price=price)
 
         total_weight = 0
         for ingredient in meal.get("ingredients", []):

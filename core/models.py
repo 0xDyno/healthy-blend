@@ -186,6 +186,7 @@ class Product(models.Model):
     PRODUCT_TYPES = (
         ("dish", "Dish"),
         ("drink", "Drink"),
+        ("dessert", "Dessert"),
     )
     product_type = models.CharField(max_length=10, choices=PRODUCT_TYPES, default="dish")
 
@@ -219,6 +220,11 @@ class Product(models.Model):
             self.nutritional_value = NutritionalValue.objects.create()
 
         self.full_clean()
+
+        # if Menu & but not Enabled = than it's not available
+        if self.is_menu and not self.is_enabled:
+            self.is_available = False
+        # if Menu & Enabled & No lack_of_ingredients = than we're good to go, is_available = True
         if self.is_menu and self.is_enabled and self.lack_of_ingredients.exists() == 0:
             self.is_available = True
 

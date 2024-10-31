@@ -7,13 +7,14 @@ from core.models import Ingredient, Order, DaySetting
 
 
 def get_all_products(products: list):
+    """ Uses to make orders by Customers"""
     data = []
     for product in products:
         product_info = {"id": product.id,
                         "product_type": product.product_type,
                         "name": product.name,
                         "description": product.description,
-                        "image": product.image.url if product.image else None,
+                        "image": product.image.url if product.image else "/static/icons/manage/no_image.png",
                         "weight": product.weight,
                         "price": product.get_selling_price(),
                         "ingredients": [],
@@ -26,6 +27,44 @@ def get_all_products(products: list):
                                "price": pi.ingredient.get_selling_price()}
             product_info.get("ingredients").append(ingredient_info)
         data.append(product_info)
+    return data
+
+
+def get_products_data(product, is_full=False, is_admin=False):
+    """ Uses in Control Panel"""
+    data = {
+        "id": product.id,
+        "name": product.name,
+        "image": product.image.url if product.image else "/static/icons/manage/no_image.png",
+        "product_type": product.product_type,
+        "is_menu": product.is_menu,
+        "is_official": product.is_official,
+        "is_available": product.is_available,
+        "is_enabled": product.is_enabled,
+        "selling_price": product.selling_price,
+    }
+
+    if is_full:
+        data["description"] = product.description
+        data["is_official"] = product.is_official
+        data["nutritional_value"] = product.nutritional_value.to_dict()
+        data["lack_of_ingredients"] = []
+        data["ingredients"] = []
+        for pi in product.productingredient_set.all():
+            ingredient_info = {"id": pi.ingredient.id,
+                               "name": pi.ingredient.name,
+                               "weight_grams": pi.weight_grams}
+            data.get("ingredients").append(ingredient_info)
+
+        if product.lack_of_ingredients.exists():
+            for ingredient in product.lack_of_ingredients.all():
+                ingredient_data = {"name": ingredient.name}
+                data["lack_of_ingredients"].append(ingredient_data)
+
+    if is_admin:
+        if not product.price:
+            product.save()
+        data["ingredients_price"] = product.price
     return data
 
 
@@ -52,7 +91,7 @@ def get_ingredient_data_lite(ingredient: Ingredient, admin=False):
     data = {
         "id": ingredient.id,
         "name": ingredient.name,
-        "image": ingredient.image.url,
+        "image": ingredient.image.url if ingredient.image else "/static/icons/manage/no_image.png",
         "ingredient_type": ingredient.ingredient_type,
         "is_available": ingredient.is_available,
     }
@@ -336,3 +375,7 @@ def filter_orders(request, orders):
     else:
         orders = orders.order_by("-created_at")
     return orders
+
+
+def filter_products(request, products):
+    return products
