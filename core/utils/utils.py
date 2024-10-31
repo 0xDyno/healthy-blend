@@ -45,6 +45,9 @@ def handle_rate_limit(view_func):
         except Ratelimited:
             return JsonResponse({"messages": [
                 {"level": "error", "message": "Too many requests. Please try again in a minute."}]}, status=429)
+        except Exception as e:
+            print(e)  # logging in the future
+            return JsonResponse({"messages": [{"level": "warning", "message": f"Error occurred. Please try again."}]}, status=500)
     return wrapped_view
 
 

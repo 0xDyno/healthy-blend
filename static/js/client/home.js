@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // Загрузка продуктов с сервера
     fetch('/api/get/products/')
         .then(response => response.json())
-        .then(products => {
-            products.forEach(product => {
+        .then(data => {
+            data.products.forEach(product => {
                 const productElement = createProductElement(product);
                 if (product.product_type === 'dish') {
                     dishesList.appendChild(productElement);

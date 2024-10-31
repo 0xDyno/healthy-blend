@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // API Functions
     async function fetchOrders() {
         try {
-            const response = await fetch('/api/control/get/orders/kitchen/');
+            const response = await fetch('/api/control/get/orders/');
             const data = await response.json();
 
             if (data.messages) {

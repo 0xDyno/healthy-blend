@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import path
 
 from core.views import *
+from core import api
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -26,21 +27,24 @@ urlpatterns = [
     path("kitchen/ingredients/", kitchen_ingredients, name="kitchen_ingredients"),
 
     # API URLs - customer
-    path("api/get/products/", api_get_all_products),
-    path("api/get/ingredients/", api_get_ingredients),
-    path("api/get/ingredient/<int:pk>/", api_get_ingredient),
-    path("api/get/order/last/", api_get_order_last),
-    # APU URLs - control
-    path("api/control/get/ingredients/", api_get_ingredients_control),
-    path("api/control/get/ingredient/<int:pk>/", api_get_ingredient_control),
-    path("api/control/update/ingredient/<int:pk>/", api_update_ingredient),
-    path("api/control/create/ingredient/", api_create_ingredient),
+    path("api/get/products/", api.get_all_products),
+    path("api/get/ingredients/", api.get_ingredients),
+    path("api/get/ingredient/<int:pk>/", api.get_ingredient),
+    path("api/get/order/last/", api.get_order_last),
 
-    path("api/control/get/orders/", api_get_orders),  #
-    path("api/control/get/order/<int:pk>/", api_get_order),  #
-    path("api/control/get/orders/kitchen/", api_get_orders_kitchen),  #
-    path("api/control/update/order/<int:pk>/", api_update_order),  #
-    path("api/control/check/promo/<str:promo_code>/", api_check_promo),  #
+    # APU URLs - control
+    path("api/control/get/products/", api.get_all_products_control),
+
+    path("api/control/get/ingredients/", api.get_ingredients_control),
+    path("api/control/get/ingredient/<int:pk>/", api.get_ingredient_control),
+    path("api/control/update/ingredient/<int:pk>/", api.update_ingredient_control),
+    path("api/control/create/ingredient/", api.create_ingredient_control),
+
+    path("api/control/get/orders/", api.get_orders_control),
+    path("api/control/get/order/<int:pk>/", api.get_order_control),
+    path("api/control/update/order/<int:pk>/", api.update_order),
+
+    path("api/control/check/promo/<str:promo_code>/", api.check_promo),
 ]
 
 if settings.DEBUG:
