@@ -108,9 +108,11 @@ export default {
         }, 0);
     },
 
-    getTotalPrice() {
-        const raw_price = this.getRawPrice()
-        const price_tax = raw_price + (raw_price * 0.01)
+    getTotalPrice(rawPrice = null) {
+        if (!rawPrice) {
+            rawPrice =  this.getRawPrice()
+        }
+        const price_tax = rawPrice + (rawPrice * 0.01)
         return price_tax + (price_tax * 0.07)
     },
 

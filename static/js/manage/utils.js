@@ -167,7 +167,41 @@ export function displayOrderDetails(orderId) {
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="3" class="text-end border-0"><strong>Total:</strong></td>
+                            <td colspan="4" class="text-end border-0"><strong>Base Price:</strong></td>
+                            <td class="column-narrow border-0"><strong>${order.base_price}</strong></td>
+                        </tr>
+                        ${order.promo ? `
+                            <tr>
+                                <td colspan="4" class="text-end border-0">
+                                    Promo (${order.promo.promo_code} -${order.promo.discount * 100}%):
+                                </td>
+                                <td class="column-narrow border-0 text-danger">
+                                    -${order.promo.discounted}
+                                </td>
+                            </tr>
+                        ` : ''}
+                        ${order.service ? `
+                            <tr>
+                                <td colspan="4" class="text-end border-0">
+                                    Service (${order.service}%):
+                                </td>
+                                <td class="column-narrow border-0">
+                                    ${calculateService(order)}
+                                </td>
+                            </tr>
+                        ` : ''}
+                        ${order.tax ? `
+                            <tr>
+                                <td colspan="4" class="text-end border-0">
+                                    Tax (${order.tax}%):
+                                </td>
+                                <td class="column-narrow border-0">
+                                    ${calculateTax(order)}
+                                </td>
+                            </tr>
+                        ` : ''}
+                        <tr>
+                            <td colspan="4" class="text-end border-0"><strong>Final:</strong></td>
                             <td class="column-narrow border-0"><strong>${order.total_price}</strong></td>
                         </tr>
                     </tfoot>
@@ -226,6 +260,35 @@ export function displayOrderDetails(orderId) {
         });
 }
 
+function calculateService(order) {
+    // Базовая цена минус скидка по промокоду (если есть)
+    let baseAmount = order.base_price;
+    if (order.promo) {
+        baseAmount -= order.promo.discounted;
+    }
+
+    // Расчет сервисного сбора
+    const serviceAmount = (baseAmount * order.service) / 100;
+    return Math.round(serviceAmount); // Округляем до целого числа
+}
+
+function calculateTax(order) {
+    // Базовая цена минус скидка по промокоду (если есть)
+    let baseAmount = order.base_price;
+    if (order.promo) {
+        baseAmount -= order.promo.discounted;
+    }
+
+    // Добавляем сервисный сбор к базе для расчета налога
+    if (order.service) {
+        baseAmount += (baseAmount * order.service) / 100;
+    }
+
+    // Расчет налога
+    const taxAmount = (baseAmount * order.tax) / 100;
+    return Math.round(taxAmount); // Округляем до целого числа
+}
+
 export function handleStatusButtonClick(event) {
     const statusButtons = document.querySelectorAll('.status-buttons-container button[data-status]');
     statusButtons.forEach(btn => btn.classList.remove('active'));
@@ -277,10 +340,10 @@ export function updateOrderStatus() {
                 modal.hide();
 
                 // Обновляем список заказов на текущей странице
-                if (window.location.pathname.includes('control')) {
-                    import('./orders_control.js').then(module => module.loadControlOrders());
-                } else {
+                if (window.location.pathname.includes('all')) {
                     import('./orders_all.js').then(module => module.loadAllOrders());
+                } else {
+                    import('./orders_control.js').then(module => module.loadControlOrders());
                 }
             }
         })

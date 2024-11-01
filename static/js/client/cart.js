@@ -200,10 +200,8 @@ function handleCheckout() {
     const totalPrice = discountedPrice + serviceCharge + tax;
 
     const cartData = {
-        raw_price: rawPrice - discountedPrice,
-        discount: currentDiscount,
-        discounted_price: discountedPrice,
-        total_price: totalPrice,
+        base_price: rawPrice,
+        final_price: totalPrice,
         payment_type: paymentType,
         promo_code: promoCode,
         nutritional_value: nutritions,

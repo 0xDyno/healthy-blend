@@ -175,6 +175,13 @@ def get_order_full(order):
         "products": [],
     }
 
+    if order.promo_usage:
+        data_to_send["promo"] = {
+            "promo_code": order.promo_usage.promo.promo_code,
+            "discount": order.promo_usage.promo.discount,
+            "discounted": order.promo_usage.discounted,
+        }
+
     # product -> Product
     # order_product -> OrderProduct
     for order_product in order.products.all():

@@ -131,7 +131,7 @@
     border-left: 4px solid #f39c12;
 }
 
-.order-card[data-order-type="online"] {
+.order-card[data-order-type="delivery"] {
     border-left: 4px solid #3498db;
 }
 
@@ -149,7 +149,7 @@
     color: white;
 }
 
-.order-type-online {
+.order-type-delivery {
     background-color: #3498db;
     color: white;
 }

@@ -53,83 +53,90 @@ def handle_errors(view_func):
     return wrapped_view
 
 
-def big_validator(data: json):
-    """ We return, save & use frontend price - if it's less than 0.5% different of official. Customer oriented
+def order_validator(data: json, settings: dict):
+    """ We return, save & use frontend price - if it's less than 0.1% different of official. Customer oriented
     :return: price
     """
+    # Check ordering is On and it's working time
+    if not settings.get("can_order"):
+        raise ValidationError(message="Currently, ordering is not available. We apologize for the inconveniences.")
+    validate_working_time(settings.get("close_kitchen_before"))
+
     # Get basic info
     official_meals = data.get("official_meals", [])
     custom_meals = data.get("custom_meals", [])
-    raw_price_front = data.get("raw_price")
-    total_price_front = data.get("total_price")
+    front_price_base = data.get("base_price")
+    front_price_final = data.get("final_price")
     payment_type = data.get("payment_type")
+    order_type = data.get("order_type")
     promo_code = data.get("promo_code")
 
     # Check cart is not empty
     if not official_meals and not custom_meals:
         raise ValidationError(message="The cart is empty")
 
-    settings = Setting.objects.values("service", "tax", "can_order", "close_kitchen_before",
-                                      "minimum_order_amount", "maximum_order_amount",
-                                      "maximum_order_weight", "minimum_blend_weight").first()
+    # Check data format
+    if not isinstance(front_price_base, (int, float)) and not isinstance(front_price_final, (int, float)):
+        raise ValidationError(message="Wrong price format")
+    if payment_type not in ["cash", "card", "qr"]:
+        raise ValidationError(message="Wrong payment type")
+    # if order_type not in ["offline", "takeaway", "delivery"]:
+    #     raise ValidationError(message="Wrong order type")
+    if not isinstance(promo_code, str):
+        promo_code = str(promo_code)
 
-    # Check ordering is On
-    if not settings.get("can_order"):
-        raise ValidationError(message="Currently, ordering is not available. We apologize for the inconvenience.")
+    front_price_base = front_price_base
+    front_price_final = front_price_final
 
-    service = settings.get("service")
-    tax = settings.get("tax")
+    # Check the price is Okay before checks that require DataBase
     max_order = settings.get("maximum_order_amount")
     min_order = settings.get("minimum_order_amount")
-    max_order_weight = settings.get("maximum_order_weight")
-    min_blend_weight = settings.get("minimum_blend_weight")
+    if front_price_base < 0 or front_price_final < 0:
+        raise ValidationError("The price cannot be negative. Please review your order details.")
+    if front_price_final > max_order:
+        raise ValidationError(f"Total price ({front_price_final}) exceeds the maximum allowed of {max_order}.")
+    if not promo_code and front_price_final < min_order:
+        raise ValidationError(f"Total price ({front_price_final}) is less than the minimum allowed of {min_order}.")
 
-    # Check it's working time
-    validate_working_time(settings.get("close_kitchen_before"))
-
-    # Check max price (min price later)
-    if not max_order > total_price_front:
-        raise ValidationError(message=f"The order amount exceeds the maximum allowed of {max_order}. Please remove items to meet the limit.")
-
-    # Check promo
+    # Check promo code
     if promo_code:
         promo = check_promo(promo_code)
         if not promo:
             raise ValidationError(message="It appears the promo code entered is not valid.")
+        discount = front_price_base * promo.discount
     else:
-        promo = False
+        promo = None
 
     # Check nutrition values
     validate_nutritional_summary(data.get("nutritional_value"))
 
-    # Check price format and payment types
-    if not isinstance(raw_price_front, (int, float)) and not isinstance(total_price_front, (int, float)):
-        raise ValidationError(message="Wrong price format")
-    if payment_type not in ["cash", "card", "qr"]:
-        raise ValidationError(message="Wrong payment type")
-
-    # Check the price is Okay before checks that require DataBase
-    if raw_price_front < 0 or total_price_front < 0:
-        raise ValidationError("The calculated price cannot be negative. Please review your order details.")
-
     # Check ordered positions
-    validation_result_official = validate_official_meal(official_meals, min_blend_weight)
-    validation_result_custom = validate_custom_meal(custom_meals, min_blend_weight)
+    validation_result_official = validate_official_meal(official_meals, settings.get("minimum_blend_weight"))
+    validation_result_custom = validate_custom_meal(custom_meals, settings.get("minimum_blend_weight"))
 
     # Check weight
     total_weight = validation_result_official.get("weight") + validation_result_custom.get("weight")
-    if total_weight > max_order_weight:
-        raise ValidationError(message=f"The order weight ({round(total_weight)}) exceeds the maximum allowed of {max_order_weight}. "
-                                      f"Please remove items to meet the limit.")
+    if total_weight > settings.get("maximum_order_weight"):
+        raise ValidationError(message=f"The order weight ({round(total_weight)}) exceeds the maximum allowed of "
+                                      f"{settings.get('maximum_order_weight')}. Please remove items to meet the limit.")
 
     # Check all ingredients available
     all_ingredients = validation_result_official.get("ingredients").union(validation_result_custom.get("ingredients"))
     validate_ingredient_availability(all_ingredients)
 
-    # Get price calculated on backend and check it
-    raw_price_back = validation_result_official.get("total_price") + validation_result_custom.get("total_price")
-    return validate_price(service=service, tax=tax, min_order=min_order, promo=promo,
-                          back_price=raw_price_back, front_price=raw_price_front, total_front_price=total_price_front)
+    # Get and check base & finale price calculated on backend
+    back_price_base = validation_result_official.get("total_price") + validation_result_custom.get("total_price")
+
+    discounted_price = back_price_base - discount if promo else back_price_base
+    back_price_final = get_price_with_tax(price=discounted_price, service=settings.get("service"), tax=settings.get("tax"))
+
+    if not validate_price_difference(back_price_base, front_price_base) or not validate_price_difference(back_price_final, front_price_final):
+        raise ValidationError(message=f"Wrong calculated Price. Please review your order details.")
+
+    # Check promo
+    if promo:
+        return PromoUsage.objects.create(promo=promo, discounted=round(discount), user=None, order=None)
+    return None
 
 
 def validate_working_time(close_kitchen_before: int = 30):
@@ -277,27 +284,6 @@ def validate_ingredient_availability(ingredients: set):
         raise ValidationError(f"Following ingredients are not allowed to be ordered: {', '.join(not_menu)}.")
 
 
-def validate_price(service, tax, min_order, promo, back_price, front_price, total_front_price):
-    if promo:
-        discount = back_price * promo.discount
-        back_price = back_price - discount
-
-    # Get price with tax & service
-    total_back_price = get_price_with_tax(service, tax, back_price)
-
-    if not validate_price_difference(back_price, front_price) or not validate_price_difference(total_back_price, total_front_price):
-        raise ValidationError(message=f"Wrong calculated total Price. Web price: {total_front_price}, off price {total_back_price}")
-
-    # Check price is > than minimum
-    if front_price < min_order and not promo:
-        raise ValidationError(message=f"The order amount is below the minimum required. "
-                                      f"Please add more items to reach the minimum order amount of {min_order}.")
-
-    if promo:
-        return PromoUsage.objects.create(promo=promo, discounted=round(discount), user=None, order=None)
-    return None
-
-
 def validate_price_difference(p1, p2, allowed_difference=0.1):
     """it doesn't matter divide difference to p1 or p2
     :param allowed_difference: in %, default 0.1%
@@ -429,9 +415,13 @@ def get_date_today():
     return current_date.strftime("%d-%m-%Y %H:%M:%S")
 
 
-def get_price_with_tax(service, tax, price):
-    price_service = price + (price * service)
-    return round(price_service + (price_service * tax))
+def get_price_with_tax(price, service, tax):
+    """
+    Tax should be in whole numbers, 10% = 10
+    """
+    price_service = price * (service / 100)
+    price_tax = (price + price_service) * (tax / 100)
+    return price + price_service + price_tax
 
 
 def get_ingredient_type_choices():

@@ -34,6 +34,7 @@ urlpatterns = [
     path("control/promo/", promo_control, name="promo_control"),
     path("control/kitchen/orders/", kitchen_orders, name="kitchen"),
     path("control/kitchen/ingredients/", kitchen_ingredients, name="kitchen_ingredients"),
+    path("control/history/", history, name="history"),
 
     # API
     path("api/control/get/products/", api.get_all_products_control),

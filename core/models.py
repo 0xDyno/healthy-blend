@@ -270,8 +270,7 @@ class Product(models.Model):
         return self.price * self.price_multiplier
 
     def get_price_for_calories(self, calories):
-        base_calories = self.nutritional_value.calories
-        price_factor = calories / base_calories
+        price_factor = calories / self.nutritional_value.calories
         return self.get_selling_price() * price_factor
 
     def is_dish(self):
@@ -334,7 +333,7 @@ class Order(models.Model):
     ORDER_TYPES = (
         ("offline", "Offline"),
         ("takeaway", "Take Away"),
-        ("online", "Online"),
+        ("delivery", "Delivery"),
     )
     PAYMENT_TYPES = (
         ("cash", "Cash"),
@@ -391,8 +390,8 @@ class Order(models.Model):
         if self.order_status == Order.PROBLEM and not self.private_note:
             raise ValidationError("Please add a brief note about the problem to the private notes. Thank you.")
 
-        if self.payment_type == "cash" and self.order_type == "online":
-            raise ValidationError(f"It’s not possible to pay with cash for online orders.")
+        if self.payment_type == "cash" and self.order_type == "delivery":
+            raise ValidationError(f"It’s not possible to pay with cash for delivery orders.")
 
         if not self.user_last_update:
             raise ValidationError("Please specify the user making the update.")
@@ -481,8 +480,8 @@ def save_order_id_before_delete(sender, instance, **kwargs):
 
 
 class Setting(models.Model):
-    service = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
-    tax = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(1)])
+    service = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(15)])
+    tax = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
     can_order = models.BooleanField(default=True)
     timezone = models.CharField(max_length=50, default="Asia/Makassar")
     close_kitchen_before = models.IntegerField(default=20, validators=[MinValueValidator(0), MaxValueValidator(120)])

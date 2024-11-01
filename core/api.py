@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Ingredient, Product, Order, NutritionalValue, Promo
+from .models import Ingredient, Product, Order, NutritionalValue, Promo, Setting
 from core.utils import utils_api
 from core.utils import utils
 
@@ -392,25 +392,27 @@ def check_promo(request, promo_code):
 @ratelimit(key="user", rate="100/h", method=["POST"])
 @transaction.atomic
 def checkout(request):
-    promo_usage = utils.big_validator(request.data)
+    settings = Setting.objects.values().first()
+    promo_usage = utils.order_validator(request.data, settings)
 
     official_meals = request.data.get("official_meals", [])
     custom_meals = request.data.get("custom_meals", [])
-    price_no_fee = round(request.data.get("raw_price"))
-    price_with_fee = round(request.data.get("total_price"))
+    price_base = round(request.data.get("base_price"))
+    price_final = round(request.data.get("final_price"))
 
     # Save nutrition info with 1 number after the decimal point
     nutritional_value = NutritionalValue.objects.create(**{k: round(v, 1) for k, v in request.data["nutritional_value"].items()})
     order = Order.objects.create(user=request.user, user_last_update=request.user, payment_type=request.data["payment_type"],
-                                 base_price=price_no_fee, total_price=price_with_fee, nutritional_value=nutritional_value)
+                                 base_price=price_base, total_price=price_final, nutritional_value=nutritional_value,
+                                 tax=settings.get("tax"), service=settings.get("service"))
 
     if promo_usage:
         promo_usage.user = request.user
         promo_usage.order = order
         promo_usage.save()
 
-        order.promo = promo_usage.promo
-        order.save(update_fields=["promo"])
+        order.promo_usage = promo_usage
+        order.save(update_fields=["promo_usage"])
 
     if official_meals:
         utils.process_official_meal(official_meals, order)

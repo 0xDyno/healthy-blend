@@ -21,14 +21,3 @@ class LoginForm(forms.Form):
         username = self.cleaned_data.get("username")
         password = self.cleaned_data.get("password")
         return authenticate(username=username, password=password)
-
-
-class ProductForm(forms.ModelForm):
-    class Meta:
-        model = Product
-        fields = ["name", "description", "price", "product_type", "is_menu"]
-        labels = {
-            "product_type": "Type",
-            "is_menu": "Official Product",
-        }
-
