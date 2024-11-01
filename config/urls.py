@@ -47,6 +47,8 @@ urlpatterns = [
     path("api/control/create/ingredient/", api.create_ingredient_control),
 
     path("api/control/get/orders/", api.get_orders_control),
+    path("api/control/get/orders/history/", api.get_orders_history),
+    path("api/control/get/order/history/<int:pk>/", api.get_order_history_detail),
     path("api/control/get/order/<int:pk>/", api.get_order_control),
     path("api/control/update/order/<int:pk>/", api.update_order_control),
 

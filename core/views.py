@@ -108,6 +108,6 @@ def kitchen_ingredients(request):
 
 
 @login_required
-@utils.role_redirect(roles=["owner"], redirect_url="home", do_redirect=False)
+@utils.role_redirect(roles=["owner"], redirect_url="orders_control", do_redirect=False)
 def history(request):
     return render(request, "manage/history.html")

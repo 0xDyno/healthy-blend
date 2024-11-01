@@ -19,7 +19,9 @@
             {% endif %}
         </div>
         <div class="right-side">
-            <a href="{% url "history" %}" class="logout-link">History</a> |
+            {% if user.role == "owner" %}
+                <a href="{% url "history" %}" class="logout-link">History</a> |
+            {% endif %}
             <a href="{% url 'logout' %}" class="logout-link">Logout</a>
         </div>
     </div>

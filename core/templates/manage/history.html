@@ -7,7 +7,7 @@
 {% block title %}History{% endblock %}
 
 {% block css %}
-{#    <link rel="stylesheet" href="{% static 'css/manage/history.css' %}">#}
+    {#    <link rel="stylesheet" href="{% static 'css/manage/history.css' %}">#}
 {% endblock %}
 
 {% block navbar %}
@@ -15,9 +15,36 @@
 {% endblock %}
 
 {% block content %}
-    {#    text here     #}
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col">
+                <div class="input-group">
+                    <input type="text" id="orderSearch" class="form-control" placeholder="Search by Order ID...">
+                </div>
+            </div>
+        </div>
+
+        <div class="row" id="ordersList">
+            <!-- Orders will be populated here -->
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="historyModalLabel">Order History</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="historyContent">
+                        <!-- History content will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
-{#    <script type="module" src="{% static 'js/manage/history.js' %}"></script>#}
+    <script type="module" src="{% static 'js/manage/history.js' %}"></script>
 {% endblock %}

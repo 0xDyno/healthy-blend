@@ -10,10 +10,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Ingredient, Product, Order, NutritionalValue, Promo, Setting
+from .models import Ingredient, Product, Order, NutritionalValue, Promo, Setting, OrderHistory
 from core.utils import utils_api
 from core.utils import utils
-
+from .serializers import OrderSerializer, OrderHistorySerializer
 
 logger = logging.getLogger(__name__)
 
@@ -203,6 +203,28 @@ def get_orders_control(request):
         return Response({"orders": utils_api.get_orders_general(orders)})
 
     return Response({"orders": [], "messages": [{"level": "success", "message": "No orders found."}]}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["owner"], redirect_url="home", do_redirect=False)
+@utils.handle_errors
+@ratelimit(key="user", rate="30/m", method=["GET"])
+def get_orders_history(request):
+    orders = Order.objects.all().order_by('-created_at')
+    serializer = OrderSerializer(orders, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["owner"], redirect_url="home", do_redirect=False)
+@utils.handle_errors
+@ratelimit(key="user", rate="30/m", method=["GET"])
+def get_order_history_detail(request, pk=None):
+    history = OrderHistory.objects.filter(order_id=pk).order_by('created_at')
+    serializer = OrderHistorySerializer(history, many=True)
+    return Response(serializer.data)
 
 
 @api_view(["GET"])
