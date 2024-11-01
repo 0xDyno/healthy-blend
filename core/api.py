@@ -397,12 +397,13 @@ def check_promo(request, promo_code):
     promo = utils.check_promo(promo_code)
     if promo:
         discount = round(promo.discount * 100)
+        msg = f"Congratulations! The promo code is active with a max discount of -{discount}%, up to {promo.max_discount:,} IDR."
         return Response({
-            "messages": [{"level": "success", "message": f"Good to go, you have -{discount}%! The promo code is active."}],
+            "messages": [{"level": "success", "message": msg}],
             "is_active": True,
             "discount": promo.discount,
-        }, status=status.HTTP_200_OK)
-    return Response({"messages": [{"level": "info", "message": "It appears the promo code entered is not valid."}],
+            "max_discount": promo.max_discount}, status=status.HTTP_200_OK)
+    return Response({"messages": [{"level": "warning", "message": "It appears the promo code entered is not valid."}],
                      "is_active": False}, status=status.HTTP_200_OK)
 
 

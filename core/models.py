@@ -532,6 +532,7 @@ class Promo(models.Model):
             models.Index(fields=['active_from', 'active_until', 'is_enabled', 'used_count', 'usage_limit'])
         ]
     discount = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(0.5)])
+    max_discount = models.IntegerField(validators=[MinValueValidator(0)], default=0)
     promo_code = models.CharField(max_length=20, unique=True)
     is_enabled = models.BooleanField(default=False)
     is_finished = models.BooleanField(default=False)

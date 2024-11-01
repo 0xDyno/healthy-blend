@@ -4,6 +4,7 @@ import storage from './storage.js';
 import * as utils from './utils.js';
 
 let currentDiscount = 0;
+let maxDiscount = 0;
 
 document.addEventListener('DOMContentLoaded', function () {
     updateCartUI();
@@ -61,13 +62,19 @@ function updateCartUI() {
         const serviceChargeRate = 0.01; // 1% service charge
         const taxRate = 0.07; // 7% tax rate
 
-        const discountAmount = total * currentDiscount;
+        // Новый расчет скидки с учетом максимального значения
+        let discountAmount = total * currentDiscount;
+        if (maxDiscount > 0 && discountAmount > maxDiscount) {
+            discountAmount = maxDiscount;
+            currentDiscount = maxDiscount / total; // Пересчитываем процент скидки
+        }
+
         const subtotalAfterDiscount = total - discountAmount;
         const only_service = subtotalAfterDiscount * serviceChargeRate;
         const service_and_tax = (subtotalAfterDiscount + only_service) * taxRate;
         const totalPrice = subtotalAfterDiscount + only_service + service_and_tax;
 
-         // Add row for subtotal
+        // Add row for subtotal
         const subtotalRow = document.createElement('tr');
         subtotalRow.innerHTML = `
             <td colspan="4" style="text-align: left;">Subtotal:</td>
@@ -80,7 +87,7 @@ function updateCartUI() {
         if (currentDiscount > 0) {
             const discountRow = document.createElement('tr');
             discountRow.innerHTML = `
-                <td colspan="4" style="text-align: left;">Discount (${utils.formatNumber(currentDiscount * 100, 0)}%):</td>
+                <td colspan="4" style="text-align: left;">Discount:</td>
                 <td>-${utils.formatNumber(discountAmount,0)} IDR</td>
                 <td></td>
             `;
@@ -170,7 +177,13 @@ function handlePromoCheck() {
                 MessageManager.handleAjaxMessages(data.messages);
             }
 
-            currentDiscount = data.is_active ? data.discount : 0;
+            if (data.is_active) {
+                currentDiscount = data.discount;
+                maxDiscount = data.max_discount || 0;
+            } else {
+                currentDiscount = 0;
+                maxDiscount = 0;
+            }
             updateCartUI();
         })
         .catch(error => {

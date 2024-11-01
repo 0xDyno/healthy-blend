@@ -173,7 +173,7 @@ export function displayOrderDetails(orderId) {
                         ${order.promo ? `
                             <tr>
                                 <td colspan="4" class="text-end border-0">
-                                    Promo (${order.promo.promo_code} -${order.promo.discount * 100}%):
+                                    Promo ${order.promo.promo_code}, -${order.promo.discount * 100}% (max ${order.promo.max_discount} IDR):
                                 </td>
                                 <td class="column-narrow border-0 text-danger">
                                     -${order.promo.discounted}

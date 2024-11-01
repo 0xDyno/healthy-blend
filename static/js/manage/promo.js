@@ -199,6 +199,7 @@ async function showPromoModal(promo) {
 
 function setupModalForNewPromo() {
     document.getElementById('promoForm').dataset.promoId = '';
+    document.getElementById('modalMaxDiscount').value = '';
 
     document.getElementById('promoTitle').textContent = 'Create New Promo';
     document.getElementById('promoId').textContent = '';
@@ -225,6 +226,7 @@ function setupModalForExistingPromo(promo) {
     // Set form values
     document.getElementById('modalPromoCode').value = promo.promo_code;
     document.getElementById('modalDiscount').value = promo.discount * 100;
+    document.getElementById('modalMaxDiscount').value = promo.max_discount;
     document.getElementById('modalUsageLimit').value = promo.usage_limit;
     document.getElementById('modalUsedCount').value = promo.used_count;
     document.getElementById('modalActiveFrom').value = formatForDateTimeLocal(promo.active_from);
@@ -362,6 +364,7 @@ async function handleFormSubmit(e) {
     const promoData = {
         promo_code: document.getElementById('modalPromoCode').value,
         discount: parseFloat(document.getElementById('modalDiscount').value) / 100,
+        max_discount: document.getElementById('modalMaxDiscount').value ? parseFloat(document.getElementById('modalMaxDiscount').value) : 0,
         usage_limit: parseInt(document.getElementById('modalUsageLimit').value),
         active_from: localToUTC(activeFromLocal),
         active_until: localToUTC(activeUntilLocal),

@@ -180,6 +180,7 @@ def get_order_full(order):
             "promo_code": order.promo_usage.promo.promo_code,
             "discount": order.promo_usage.promo.discount,
             "discounted": order.promo_usage.discounted,
+            "max_discount": order.promo_usage.promo.max_discount,
         }
 
     # product -> Product
@@ -387,14 +388,14 @@ def filter_orders(request, orders):
 
 def filter_products(request, products):
     # Get filter parameters from request.GET
-    search = request.GET.get('search', '').lower()
-    product_type = request.GET.get('type', '').lower()
+    search = request.GET.get("search", "").lower()
+    product_type = request.GET.get("type", "").lower()
 
     # Get boolean filters
-    is_available = request.GET.get('available') == 'true'
-    is_enabled = request.GET.get('enabled') == 'true'
-    is_official = request.GET.get('official') == 'true'
-    is_menu = request.GET.get('menu') == 'true'
+    is_available = request.GET.get("available") == "true"
+    is_enabled = request.GET.get("enabled") == "true"
+    is_official = request.GET.get("official") == "true"
+    is_menu = request.GET.get("menu") == "true"
 
     # Search filter
     if search:
@@ -434,24 +435,25 @@ def get_promo_data(promo, full=False):
         "creator": creator_name,
     }
     if full:
-        usage_data = PromoUsage.objects.filter(promo=promo).select_related('user', 'order')
+        usage_data = PromoUsage.objects.filter(promo=promo).select_related("user", "order")
         total_discounted = 0
         usage_list = []
 
         for usage in usage_data:
             usage_info = {
-                'user_role': usage.user.role if usage.user else None,
-                'user_nickname': usage.user.nickname if usage.user else None,
-                'order_id': usage.order.id if usage.order else None,
-                'order_base_price': usage.order.base_price if usage.order else None,
-                'discounted': usage.discounted,
-                'used_at': usage.used_at
+                "user_role": usage.user.role if usage.user else None,
+                "user_nickname": usage.user.nickname if usage.user else None,
+                "order_id": usage.order.id if usage.order else None,
+                "order_base_price": usage.order.base_price if usage.order else None,
+                "discounted": usage.discounted,
+                "used_at": usage.used_at
             }
             total_discounted += usage.discounted
             usage_list.append(usage_info)
 
         data["discounted_total"] = total_discounted
-        data['usage_history'] = usage_list
+        data["usage_history"] = usage_list
+        data["max_discount"] = promo.max_discount
     return data
 
 
@@ -461,7 +463,8 @@ def update_promo(promo, request):
     promo.usage_limit = request.data.get("usage_limit")
     promo.is_enabled = request.data.get("is_enabled")
     promo.is_finished = request.data.get("is_finished")
-    promo.active_from = parse_datetime(request.data.get('active_from'))
-    promo.active_until = parse_datetime(request.data.get('active_until'))
+    promo.max_discount = request.data.get("max_discount")
+    promo.active_from = parse_datetime(request.data.get("active_from"))
+    promo.active_until = parse_datetime(request.data.get("active_until"))
 
     return promo

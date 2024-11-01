@@ -104,6 +104,7 @@ def order_validator(data: json, settings: dict):
         if not promo:
             raise ValidationError(message="It appears the promo code entered is not valid.")
         discount = front_price_base * promo.discount
+        discount = discount if discount < promo.max_discount else promo.max_discount
     else:
         promo = None
 
@@ -130,6 +131,8 @@ def order_validator(data: json, settings: dict):
     discounted_price = back_price_base - discount if promo else back_price_base
     back_price_final = get_price_with_tax(price=discounted_price, service=settings.get("service"), tax=settings.get("tax"))
 
+    print(f"Front Price Base: {front_price_base}, Front Price Final: {front_price_final}")
+    print(f"Back Price Base: {back_price_base}, Back Price Final: {back_price_final}")
     if not validate_price_difference(back_price_base, front_price_base) or not validate_price_difference(back_price_final, front_price_final):
         raise ValidationError(message=f"Wrong calculated Price. Please review your order details.")
 

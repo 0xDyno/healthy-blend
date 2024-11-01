@@ -76,13 +76,16 @@
                                     <label>Discount (%):</label>
                                     <input type="number" id="modalDiscount" class="form-control" required min="0" max="100" step="0.01">
                                 </div>
+                                <div class="form-group flex-1">
+                                    <label>Max Discount:</label>
+                                    <input type="number" id="modalMaxDiscount" class="form-control" min="0" step="0.01">
+                                </div>
                                 <div class="form-group flex-shrink">
                                     <label class="d-block">&nbsp;</label>
                                     <div class="status-buttons-row">
                                         <button type="button" class="status-button" id="isEnabledBtn" data-field="isEnabled">
                                             <span class="status-text">Enabled</span>
                                         </button>
-                                        <!-- Скрытый чекбокс для сохранения значения -->
                                         <input type="checkbox" id="modalIsEnabled" class="d-none">
                                     </div>
                                 </div>
