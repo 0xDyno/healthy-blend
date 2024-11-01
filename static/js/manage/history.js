@@ -83,6 +83,10 @@ window.showOrderHistory = async function (orderId) {
                                 <div class="col-6">${record.is_paid ? '<span class="badge bg-success">Paid</span>' : '<span class="badge bg-warning">Not Paid</span>'}
                                 ${record.is_refunded ? '<span class="badge bg-danger">Refunded</span>' : ''}</div>
                             </div>
+                            <div class="row">
+                                <div class="col-6">Payment ID:</div>
+                                <div class="col-6">${record.payment_id}</div>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <table class="table table-borderless m-0">

@@ -13,7 +13,7 @@ class OrderHistorySerializer(serializers.ModelSerializer):
         model = OrderHistory
         fields = ['id', 'order_status', 'order_type', 'payment_type', 'user_last_update_name',
                  'tax', 'service', 'base_price', 'total_price', 'is_paid', 'is_refunded',
-                 'public_note', 'private_note', 'created_at']
+                 'public_note', 'private_note', 'created_at', 'payment_id']
 
 
 class OrderSerializer(serializers.ModelSerializer):

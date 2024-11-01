@@ -2,8 +2,6 @@ import json
 import logging
 
 from django.db import transaction
-from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 from django_ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -194,7 +192,8 @@ def get_orders_control(request):
     if request.user.role == "owner" or request.user.role == "administrator":
         orders = Order.objects.all()
     elif request.user.role == "manager":
-        orders = Order.objects.filter(created_at__date=timezone.now().date())
+        start_date, end_date = utils.get_timezone_dates()  # gives date in local timezone
+        orders = Order.objects.filter(created_at__gte=start_date, created_at__lt=end_date)
     else:
         return Response({"messages": [{"info": "error", "message": "You don't have access to this data."}]}, status.HTTP_403_FORBIDDEN)
 

@@ -14,7 +14,7 @@ function initializeProducts() {
     setupSearchAndFilters();
 }
 
-const debouncedFilter = debounce(filterProducts, 500);
+const debouncedFilter = debounce(filterProducts, 1000);
 
 function debounce(func, wait) {
     let timeout;

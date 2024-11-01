@@ -4,25 +4,53 @@
     <div class="nav-container">
         <div class="left-side">
             <a href="{% url 'home' %}" class="home-link">Home</a>
-            {% if user.is_superuser %}
-                | <a href="{% url 'admin:index' %}" class="home-link" target="_blank">Admin</a>
-            {% endif %}
         </div>
         <div class="center-links">
             <a href="{% url 'orders_control' %}">Orders Control</a>
             <a href="{% url 'orders_control_all' %}">Orders All</a>
             <a href="{% url 'ingredients_control' %}">Ingredients</a>
-             <a href="{% url 'products_control' %}">Products</a>
+            <a href="{% url 'products_control' %}">Products</a>
             {% if user.role == "owner" or user.role == "administrator" %}
                 <a href="{% url 'promo_control' %}">Promo</a>
-                <a href="{% url 'kitchen' %}">Kitchen</a>
+
+{#                <div class="dropdown d-inline-block">#}
+{#                    <a class="dropdown-toggle" href="#" role="button" id="supplyManagementDropdown" data-bs-toggle="dropdown"#}
+{#                       aria-expanded="false">#}
+{#                        Supply Management#}
+{#                    </a>#}
+{#                    <ul class="dropdown-menu" aria-labelledby="supplyManagementDropdown">#}
+{#                        <li><a class="dropdown-item" href="{% url 'suppliers' %}">Suppliers</a></li>#}
+{#                        <li><a class="dropdown-item" href="{% url 'commodities' %}">Commodities</a></li>#}
+{#                        <li><a class="dropdown-item" href="{% url 'purchases' %}">Purchases</a></li>#}
+{#                        <li><a class="dropdown-item" href="{% url 'statistic' %}">Statistic</a></li>#}
+{#                    </ul>#}
+{#                </div>#}
             {% endif %}
         </div>
-        <div class="right-side">
-            {% if user.role == "owner" %}
-                <a href="{% url "history" %}" class="logout-link">History</a> |
-            {% endif %}
-            <a href="{% url 'logout' %}" class="logout-link">Logout</a>
-        </div>
+        {% if user.role == "owner" or user.role == "administrator" %}
+
+            <div class="dropdown d-inline-block">
+                <a class="dropdown-toggle profile-toggle" href="#" role="button" id="profileDropdown" data-bs-toggle="dropdown"
+                   aria-expanded="false">
+                    Other
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                    {% if user.role == "owner" %}
+                        <li><a class="dropdown-item" href="{% url 'history' %}">History</a></li>
+                        <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin</a></li>
+                    {% endif %}
+                    <li><a class="dropdown-item" href="{% url 'kitchen' %}">Kitchen</a></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
+                </ul>
+            </div>
+
+        {% else %}
+            <div class="right-side">
+                <a href="{% url 'logout' %}" class="logout-link">Logout</a>
+            </div>
+        {% endif %}
     </div>
 </div>

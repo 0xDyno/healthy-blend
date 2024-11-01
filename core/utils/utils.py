@@ -2,8 +2,10 @@
 
 import json
 from datetime import datetime, timedelta
-from functools import wraps
+from functools import wraps, lru_cache
 
+import pytz
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F
@@ -51,6 +53,27 @@ def handle_errors(view_func):
             print(e)  # logging in the future
             return JsonResponse({"messages": [{"level": "warning", "message": f"Error occurred. Please try again."}]}, status=500)
     return wrapped_view
+
+
+@lru_cache(maxsize=1)
+def get_timezone_setting():
+    return Setting.objects.get(pk=1).timezone
+
+
+def get_user_timezone():
+    timezone_str = cache.get('user_timezone')
+    if not timezone_str:
+        timezone_str = get_timezone_setting()
+        cache.set('user_timezone', timezone_str, 36000)  # cache for 10 hours
+    return pytz.timezone(timezone_str)
+
+
+def get_timezone_dates():
+    user_timezone = get_user_timezone()
+    current_date = timezone.now().astimezone(user_timezone)
+    start_date = user_timezone.localize(datetime.combine(current_date, datetime.min.time()))
+    end_date = start_date + timedelta(days=1)
+    return start_date, end_date
 
 
 def order_validator(data: json, settings: dict):
