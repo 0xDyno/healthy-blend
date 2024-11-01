@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('sortBy').addEventListener('change', filterOrders);
     if (is_admin) {
+        document.getElementById('limitFilter').addEventListener('change', filterOrders);
         document.getElementById("filterDate").addEventListener('change', filterOrders);
     }
     document.getElementById('clearFilters').addEventListener('click', clearFilters);
@@ -28,9 +29,29 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 export function loadAllOrders() {
-    utils.fetchOrders((data) => {
-        displayAllOrders(data);
-    });
+    let url = '/api/control/get/orders/';
+
+    // Добавляем лимит по умолчанию для админа
+    if (is_admin) {
+        url += '?limit=100';
+    }
+
+    fetch(url)
+        .then(async response => {
+            const data = await response.json();
+
+            if (data.messages) {
+                MessageManager.handleAjaxMessages(data.messages);
+            }
+
+            if (data.orders) {
+                displayAllOrders(data.orders);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            MessageManager.handleAjaxMessages([{level: 'error', message: 'No connection.'}]);
+        });
 }
 
 function displayAllOrders(orders) {
@@ -73,6 +94,11 @@ function filterOrders() {
     if (is_admin) {
         const date = document.getElementById("filterDate").value;
         params.append("date", date);
+
+        const limit = document.getElementById('limitFilter').value;
+        if (limit !== 'all') {
+            params.append('limit', limit);
+        }
     }
 
     fetch(`/api/control/get/orders/?${params.toString()}`)
@@ -103,6 +129,7 @@ function clearFilters() {
     document.getElementById('isRefundedFilter').checked = false;
     if (is_admin) {
         document.getElementById('filterDate').value = '';
+        document.getElementById('limitFilter').value = '100';
     }
 
     if (document.getElementById('createdAtFilter')) {

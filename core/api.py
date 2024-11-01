@@ -41,7 +41,7 @@ def get_all_products_control(request):
     if products:
         filtered_products = utils_api.filter_products(request, products)
         products = [utils_api.get_products_data(product) for product in filtered_products]
-        return Response({"products": products}, status=status.HTTP_200_OK)
+        return Response({"products": products[:50]}, status=status.HTTP_200_OK)
     return Response({"products": [], "messages": [{"level": "info", "message": "No products found."}]}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -199,6 +199,15 @@ def get_orders_control(request):
 
     if orders.exists():
         orders = utils_api.filter_orders(request, orders)
+
+        if request.user.role in ["owner", "administrator"]:
+            limit = request.GET.get("limit", "100")
+            try:
+                limit = int(limit)
+                orders = orders[:limit]
+            except ValueError:
+                orders = orders[:100]
+
         return Response({"orders": utils_api.get_orders_general(orders)})
 
     return Response({"orders": [], "messages": [{"level": "success", "message": "No orders found."}]}, status=status.HTTP_200_OK)
