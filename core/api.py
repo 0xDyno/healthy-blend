@@ -1,7 +1,9 @@
 import json
 import logging
+from datetime import timedelta
 
 from django.db import transaction
+from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -442,6 +444,11 @@ def get_purchases(request):
 def update_purchase(request, pk=None):
     try:
         purchase = Purchase.objects.get(pk=pk)
+
+        time_threshold = timezone.now() - timedelta(hours=72)
+        if purchase.created_at < time_threshold:
+            return Response({"messages": [{"level": "error", "message": "Cannot update purchase older than 72 hours."}]},
+                            status=status.HTTP_403_FORBIDDEN)
     except Purchase.DoesNotExist:
         return Response({"messages": [{"level": "error", "message": "Purchase not found."}]},
                         status=status.HTTP_404_NOT_FOUND)
