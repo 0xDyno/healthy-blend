@@ -1,0 +1,89 @@
+{# purchases.html #}
+
+{% extends 'manage/base.html' %}
+
+{% load static %}
+
+{% block title %}Purchase Control{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/manage/purchase.css' %}">
+{% endblock %}
+
+{% block navbar %}
+    {% include "manage/_navbar.html" %}
+{% endblock %}
+
+{% block content %}
+    <div class="search-panel">
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <input type="text" class="form-control" id="search-id" placeholder="Search by ID">
+            </div>
+            <div class="col-md-4">
+                <input type="text" class="form-control" id="search-bought" placeholder="Search by bought">
+            </div>
+            <div class="col-md-4">
+                <input type="text" class="form-control" id="search-note" placeholder="Search by note">
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <input type="date" class="form-control" id="date-search-from" placeholder="From date">
+            </div>
+            <div class="col-md-4">
+                <input type="date" class="form-control" id="date-search-to" placeholder="To date">
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-secondary" id="clear-search">Clear Search</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-controls">
+        <button class="btn btn-primary" id="add-purchase">Add Purchase</button>
+    </div>
+
+    <!-- Purchases Grid -->
+    <div class="purchases-container">
+        <div id="purchases-container">
+            <!-- Purchases will be dynamically added here -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="purchaseModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <form id="purchase-form">
+                        <input type="hidden" id="purchase-id">
+                        <div class="mb-3">
+                            <label for="paid" class="form-label">Paid</label>
+                            <input type="number" class="form-control" id="paid" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label for="what-bought" class="form-label">What Bought</label>
+                            <textarea class="form-control" id="what-bought"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="admin-note" class="form-label">Admin Note</label>
+                            <textarea class="form-control" id="admin-note"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="creator" class="form-label">Creator</label>
+                            <input type="text" class="form-control" id="creator" readonly>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="module" src="{% static 'js/manage/purchase.js' %}"></script>
+{% endblock %}

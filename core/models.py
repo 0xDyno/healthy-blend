@@ -596,3 +596,12 @@ class PromoUsage(models.Model):
                 promo.used_count = promo.used_count + 1
                 promo.save(update_fields=["used_count"])
             super().save(*args, **kwargs)
+
+
+class Purchase(models.Model):
+    paid = models.IntegerField(validators=[MinValueValidator(0)], default=0)
+    what_bought = models.TextField(null=True, blank=True)
+    admin_note = models.TextField(null=True, blank=True)
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="purchase_creator")
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -8,10 +8,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Ingredient, Product, Order, NutritionalValue, Promo, Setting, OrderHistory
+from .models import Ingredient, Product, Order, NutritionalValue, Promo, Setting, OrderHistory, Purchase
 from core.utils import utils_api
 from core.utils import utils
-from .serializers import OrderSerializer, OrderHistorySerializer
+from .serializers import OrderSerializer, OrderHistorySerializer, PurchaseSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -415,12 +415,68 @@ def check_promo(request, promo_code):
                      "is_active": False}, status=status.HTTP_200_OK)
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
+@utils.handle_errors
+@ratelimit(key="user", rate="10/m", method=["POST"])
+def get_purchases(request):
+    purchases = Purchase.objects.all().order_by("-id")
+    if not purchases:
+        return Response({"purchases": [], "messages": [{"level": "info", "message": "No purchases found."}]},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    if request.user.role == "administrator":
+        serializer = PurchaseSerializer(purchases, many=True)
+        return Response({"purchases": serializer.data}, status=status.HTTP_200_OK)
+
+    serializer = PurchaseSerializer(purchases[:50], many=True)
+    return Response({"purchases": serializer.data}, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
+@utils.handle_errors
+@ratelimit(key="user", rate="10/m", method=["POST"])
+def update_purchase(request, pk=None):
+    try:
+        purchase = Purchase.objects.get(pk=pk)
+    except Purchase.DoesNotExist:
+        return Response({"messages": [{"level": "error", "message": "Purchase not found."}]},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    serializer = PurchaseSerializer(purchase, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"purchase": serializer.data, "messages": [{"level": "success", "message": "Purchase updated successfully."}]},
+                        status=status.HTTP_200_OK)
+
+    return Response({"messages": [{"level": "error", "message": "Invalid data provided."}], "errors": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@utils.role_redirect(roles=["owner", "administrator"], redirect_url="home", do_redirect=False)
+@utils.handle_errors
+@ratelimit(key="user", rate="10/m", method=["POST"])
+def create_purchase(request):
+    serializer = PurchaseSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"purchase": serializer.data, "messages": [{"level": "success", "message": "Purchase created successfully."}]},
+                        status=status.HTTP_201_CREATED)
+
+    return Response({"messages": [{"level": "error", "message": "Invalid data provided."}], "errors": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @utils.role_redirect(roles=["kitchen"], redirect_url="home", do_redirect=True)
 @utils.handle_errors
-@ratelimit(key="user", rate="5/m", method=["POST"])
-@ratelimit(key="user", rate="100/h", method=["POST"])
+@ratelimit(key="user", rate="10/m", method=["POST"])
 @transaction.atomic
 def checkout(request):
     settings = Setting.objects.values().first()

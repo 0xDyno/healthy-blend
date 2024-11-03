@@ -34,6 +34,7 @@ urlpatterns = [
     path("control/promo/", promo_control, name="promo_control"),
     path("control/kitchen/orders/", kitchen_orders, name="kitchen"),
     path("control/kitchen/ingredients/", kitchen_ingredients, name="kitchen_ingredients"),
+    path("control/purchase/", purchase, name="purchase_control"),
     path("control/history/", history, name="history"),
 
     # API
@@ -56,6 +57,10 @@ urlpatterns = [
     path("api/control/get/promo/<int:pk>/", api.get_promo),
     path("api/control/update/promo/<int:pk>/", api.update_promo),
     path("api/control/create/promo/", api.create_promo),
+
+    path('api/control/get/purchases/', api.get_purchases),
+    path('api/control/update/purchase/<int:pk>/', api.update_purchase),
+    path('api/control/create/purchase/', api.create_purchase),
 ]
 
 if settings.DEBUG:

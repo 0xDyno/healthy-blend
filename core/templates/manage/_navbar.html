@@ -12,19 +12,6 @@
             <a href="{% url 'products_control' %}">Products</a>
             {% if user.role == "owner" or user.role == "administrator" %}
                 <a href="{% url 'promo_control' %}">Promo</a>
-
-{#                <div class="dropdown d-inline-block">#}
-{#                    <a class="dropdown-toggle" href="#" role="button" id="supplyManagementDropdown" data-bs-toggle="dropdown"#}
-{#                       aria-expanded="false">#}
-{#                        Supply Management#}
-{#                    </a>#}
-{#                    <ul class="dropdown-menu" aria-labelledby="supplyManagementDropdown">#}
-{#                        <li><a class="dropdown-item" href="{% url 'suppliers' %}">Suppliers</a></li>#}
-{#                        <li><a class="dropdown-item" href="{% url 'commodities' %}">Commodities</a></li>#}
-{#                        <li><a class="dropdown-item" href="{% url 'purchases' %}">Purchases</a></li>#}
-{#                        <li><a class="dropdown-item" href="{% url 'statistic' %}">Statistic</a></li>#}
-{#                    </ul>#}
-{#                </div>#}
             {% endif %}
         </div>
         {% if user.role == "owner" or user.role == "administrator" %}
@@ -39,6 +26,7 @@
                         <li><a class="dropdown-item" href="{% url 'history' %}">History</a></li>
                         <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin</a></li>
                     {% endif %}
+                    <li><a class="dropdown-item" href="{% url 'purchase_control' %}">Purchases</a></li>
                     <li><a class="dropdown-item" href="{% url 'kitchen' %}">Kitchen</a></li>
                     <li>
                         <hr class="dropdown-divider">

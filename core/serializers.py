@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from core.models import OrderHistory, Order
+from core.models import OrderHistory, Order, Purchase
 
 
 class OrderHistorySerializer(serializers.ModelSerializer):
@@ -20,3 +20,9 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'order_status', 'created_at']
+
+
+class PurchaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Purchase
+        fields = '__all__'
