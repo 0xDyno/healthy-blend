@@ -157,7 +157,7 @@ function showDishDetails(product, modalBody, modal) {
     const nutritional_value = product.nutritional_value;
     if (nutritional_value) {
         const baseCalories = nutritional_value.calories;
-        const calorieOptions = [400, 600, 800];
+        const calorieOptions = [400, 500, 600, 800];
 
         calorieOptions.forEach((calories, index) => {
             const multiplier = calories / baseCalories;

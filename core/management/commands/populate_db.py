@@ -7,7 +7,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from django.core.files.uploadedfile import SimpleUploadedFile
-        from decimal import Decimal
 
         # Create ingredients
         ingredients = [

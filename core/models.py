@@ -35,28 +35,28 @@ class NutritionalValue(models.Model):
     sugars = models.FloatField(validators=[MinValueValidator(0)], default=0)
     fiber = models.FloatField(validators=[MinValueValidator(0)], default=0)
 
-    vitamin_a = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    vitamin_c = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    vitamin_d = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    vitamin_e = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    vitamin_k = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    thiamin = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    riboflavin = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    niacin = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    vitamin_b6 = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    folate = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    vitamin_b12 = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    vitamin_a = models.FloatField(validators=[MinValueValidator(0)], default=0)  # IU
+    vitamin_c = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    vitamin_d = models.FloatField(validators=[MinValueValidator(0)], default=0)  # µg
+    vitamin_e = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    vitamin_k = models.FloatField(validators=[MinValueValidator(0)], default=0)  # µg
+    thiamin = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    riboflavin = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    niacin = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    vitamin_b6 = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    folate = models.FloatField(validators=[MinValueValidator(0)], default=0)  # µg
+    vitamin_b12 = models.FloatField(validators=[MinValueValidator(0)], default=0)  # µg
 
-    calcium = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    iron = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    magnesium = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    phosphorus = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    potassium = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    sodium = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    zinc = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    copper = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    manganese = models.FloatField(validators=[MinValueValidator(0)], default=0)
-    selenium = models.FloatField(validators=[MinValueValidator(0)], default=0)
+    calcium = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    iron = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    magnesium = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    phosphorus = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    potassium = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    sodium = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    zinc = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    copper = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    manganese = models.FloatField(validators=[MinValueValidator(0)], default=0)  # mg
+    selenium = models.FloatField(validators=[MinValueValidator(0)], default=0)  # µg
 
     def to_dict(self, exclude_fields=None):
         if exclude_fields is None:
@@ -94,7 +94,7 @@ class Ingredient(models.Model):
     )
     name = models.CharField(max_length=100)
     description = models.TextField()
-    image = models.ImageField(upload_to="ingredients/", null=True)
+    image = models.ImageField(upload_to="ingredients/", null=True, blank=True)
     ingredient_type = models.CharField(max_length=10, choices=INGREDIENT_TYPES, default="other")
     step = models.FloatField(default=1, validators=[MinValueValidator(0.05), MaxValueValidator(5)])
     min_order = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(50)])
@@ -209,8 +209,11 @@ class Product(models.Model):
 
     def clean(self):
         super().clean()
-        if self.is_menu and (not self.image or not self.name or not self.description or not self.ingredients):
+        if self.is_menu and (not self.image or not self.name or not self.description):
             raise ValidationError("Menu products must have an image and other data.")
+        if self.pk:
+            if self.is_menu and not self.ingredients:
+                raise ValidationError("Menu products must have ingredients.")
 
     @transaction.atomic
     def save(self, *args, **kwargs):
@@ -221,16 +224,17 @@ class Product(models.Model):
 
         self.full_clean()
 
-        # if Menu & but not Enabled = than it's not available
-        if self.is_menu and not self.is_enabled:
-            self.is_available = False
-        # if Menu & Enabled & No lack_of_ingredients = than we're good to go, is_available = True
-        if self.is_menu and self.is_enabled and self.lack_of_ingredients.exists() == 0:
-            self.is_available = True
+        if self.pk:
+            # if Menu & but not Enabled = than it's not available
+            if self.is_menu and not self.is_enabled:
+                self.is_available = False
+            # if Menu & Enabled & No lack_of_ingredients = than we're good to go, is_available = True
+            if self.is_menu and self.is_enabled and self.lack_of_ingredients.exists() == 0:
+                self.is_available = True
 
         super().save(*args, **kwargs)
 
-        if self.productingredient_set.exists():
+        if Product.objects.get(pk=self.pk).productingredient_set.exists():
             new_nutritional_value, total_weight = self.calculate_nutritional_value()
             NutritionalValue.objects.filter(id=self.nutritional_value.id).update(**new_nutritional_value.to_dict())
 

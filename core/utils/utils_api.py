@@ -108,7 +108,7 @@ def get_ingredient_data_full(ingredient: Ingredient):
         "id": ingredient.id,
         "name": ingredient.name,
         "description": ingredient.description,
-        "image": ingredient.image.url,
+        "image": ingredient.image.url if ingredient.image else "/static/icons/manage/no_image.png",
         "ingredient_type": ingredient.ingredient_type,
         "step": ingredient.step,
         "min_order": ingredient.min_order,
