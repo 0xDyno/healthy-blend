@@ -98,3 +98,7 @@ Kitchen Order
 
 * Table can't logout, for kitchen - go http://127.0.0.1:8000/logout
 * Generate ingredients & products `python manage.py populate_db`
+
+## License
+This project is released into the public domain under [The Unlicense](LICENSE).  
+You are free to use, modify, and distribute it without any restrictions.
